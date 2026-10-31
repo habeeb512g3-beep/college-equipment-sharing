@@ -124,10 +124,55 @@ function updateEquipmentCounts() {
  $('#gridToggleBtn')?.addEventListener('click',()=>{grid.classList.remove('hidden');$('#equipmentTableContainer')?.classList.add('hidden')});
  $('#tableToggleBtn')?.addEventListener('click',()=>{grid.classList.add('hidden');$('#equipmentTableContainer')?.classList.remove('hidden')});
  const search=$('#equipmentSearchInput'),cat=$('#categoryFilter'),status=$('#statusFilter'),location=$('#locationFilter');
- function filterEq(){const q=(search?.value||'').toLowerCase(),st=status?.selectedOptions[0]?.textContent.toLowerCase()||'all',lo=location?.selectedOptions[0]?.textContent.toLowerCase()||'all';$$('.equipment-card',grid).forEach(c=>{const okq=(c.dataset.name+' '+c.dataset.room).toLowerCase().includes(q),oks=st.startsWith('all')||c.dataset.status===st.split(' ')[0],okl=lo.startsWith('all')||c.dataset.room.toLowerCase().includes(lo.split(' (')[0]);c.style.display=okq&&oks&&okl?'':'none'})}
- [search,cat,status,location].forEach(x=>x?.addEventListener('input',filterEq));[cat,status,location].forEach(x=>x?.addEventListener('change',filterEq));
- updateEquipmentCounts();
+
+ 
+function filterEq() {
+    const q = (search?.value || '').toLowerCase().trim();
+    const selectedCategory = cat?.value || 'all';
+    const selectedStatus = status?.value || 'all';
+    const selectedLocation = location?.value || 'all';
+
+    let matched = 0;
+
+    $$('.equipment-card', grid).forEach(card => {
+        const category = card.dataset.category || 'other';
+        const cardStatus = (card.dataset.status || 'available').toLowerCase();
+        const room = (card.dataset.room || '').toLowerCase();
+        const name = (card.dataset.name || '').toLowerCase();
+        const id = (card.dataset.id || '').toLowerCase();
+
+        const matchesSearch =
+            !q || `${name} ${id} ${room}`.toLowerCase().includes(q);
+
+        const matchesCategory =
+            selectedCategory === 'all' || category === selectedCategory;
+
+        const matchesStatus =
+            selectedStatus === 'all' || cardStatus === selectedStatus;
+
+        const matchesLocation =
+            selectedLocation === 'all' ||
+            room.includes(selectedLocation.toLowerCase());
+
+        const visible =
+            matchesSearch && matchesCategory &&
+            matchesStatus && matchesLocation;
+
+        card.style.display = visible ? '' : 'none';
+
+        if (visible) matched++;
+    });
+
+    const visibleCount = $('#visibleCount');
+    if (visibleCount) visibleCount.textContent = matched;
+
+    const emptyState = $('#emptySearchState');
+    if (emptyState) {
+        emptyState.classList.toggle('hidden', matched > 0);
+        emptyState.classList.toggle('flex', matched === 0);
+    }
 }
+
 function requestPage(){
  const container=$('#requestsContainer');if(!container)return;
  window.sendChatMessage=(ev)=>{ev?.preventDefault();const input=$('#chatInputMessage');if(!input?.value.trim())return;const list=$('#chatMessagesList');if(list){const msg=document.createElement('div');msg.className='my-2 p-2 rounded bg-surface-container';msg.textContent=input.value.trim();list.append(msg)}input.value=''};$('#chatInputMessage')?.closest('form')?.addEventListener('submit',window.sendChatMessage);
