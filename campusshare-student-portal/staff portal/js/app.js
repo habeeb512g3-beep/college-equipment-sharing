@@ -25,6 +25,22 @@ function equipmentPage(){
  let editing=null, imageData='';
  
 function updateEquipmentCounts() {
+
+ document.getElementById('availableCount').textContent =
+    counts.available + ' Units';
+
+document.getElementById('inUseCount').textContent =
+    counts.inUse + ' Active';
+
+document.getElementById('maintenanceCount').textContent =
+    counts.maintenance + ' Offline';
+
+document.getElementById('overdueCount').textContent =
+    counts.overdue + ' Overdue';
+
+document.getElementById('totalEquipmentCount').textContent =
+    counts.total;
+ 
     const equipment = db.equipment || [];
 
     const normalize = status =>
