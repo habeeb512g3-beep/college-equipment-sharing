@@ -103,8 +103,7 @@ document.querySelector("#forgot-password").addEventListener("click", async () =>
 document.querySelector("#register-link").addEventListener("click", event => {
   event.preventDefault();
   if (window.parent !== window){ window.parent.postMessage({ source: "campusshare-page", type: "navigate", route: "registration" }, "*");}
- // else{ window.location.href='../../registration/index.html';}
-                                                            
+ 
 });
 const emailFromRoute = new URLSearchParams(window.location.search).get("email");
 if (emailFromRoute) emailInput.value = emailFromRoute;
