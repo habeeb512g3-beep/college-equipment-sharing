@@ -21,7 +21,6 @@
           </span>
           <span class="brand-copy"><strong>CampusShare</strong><small>Asset Directory</small></span>
         </a>
-        <span class="campus-chip"><span class="pulse-dot"></span> ITS Shibboleth 2.4</span>
       </header>
 
       <div class="intro">
@@ -49,7 +48,7 @@
 
       <form id="registration-form" novalidate>
         <div class="field-group">
-          <label for="full-name">Official Campus Name</label>
+          <label for="full-name">Full Name</label>
           <div class="input-wrap">
             <span class="input-icon" aria-hidden="true">♙</span>
             <input id="full-name" name="fullName" type="text" placeholder="e.g. Alex Chen" autocomplete="name" required minlength="2" />
@@ -59,19 +58,19 @@
 
         <div class="field-group">
           <div class="label-line">
-            <label for="institutional-email">Institutional Email (.edu)</label>
+            <label for="personal-email">Personal Email (.edu)</label>
             <span class="verified-label">Campus Realm Verified</span>
           </div>
           <div class="input-wrap">
             <span class="input-icon" aria-hidden="true">＠</span>
-            <input id="institutional-email" name="email" type="email" placeholder="a.chen@university.edu" autocomplete="email" required />
+            <input id="personal-email" name="email" type="email" placeholder="a.chen@university.edu" autocomplete="email" required />
           </div>
           <small class="field-error" id="email-error"></small>
         </div>
 
         <div class="two-column">
           <div class="field-group">
-            <label for="campus-id" id="campus-id-label">Student / NetID</label>
+            <label for="campus-id" id="campus-id-label">StudentID / NetID</label>
             <div class="input-wrap">
               <span class="input-icon" aria-hidden="true">▣</span>
               <input id="campus-id" name="campusId" type="text" placeholder="CS-2024-8841" required />
@@ -79,14 +78,14 @@
             <small class="field-error" id="campus-id-error"></small>
           </div>
           <div class="field-group">
-            <label for="cohort" id="cohort-label">Cohort / Year</label>
+            <label for="cohort" id="cohort-label">Cohort/Year</label>
             <div class="input-wrap select-wrap">
               <select id="cohort" name="cohort" required>
                 <option value="">Select year</option>
-                <option>UG - 1st Year (Jr)</option>
-                <option>UG - 2nd Year (Sophomore)</option>
-                <option selected>UG - 3rd Year (Jr)</option>
-                <option>UG - 4th Year (Senior)</option>
+                <option>UG - 1st Year </option>
+                <option>UG - 2nd Year </option>
+                <option >3rd year</option>
+                <option>UG - 4th Year</option>
                 <option>Postgraduate</option>
               </select>
             </div>
@@ -99,7 +98,7 @@
           <div class="input-wrap select-wrap">
             <select id="department" name="department" required>
               <option value="">Choose your department</option>
-              <option selected>Dept. of Electrical &amp; Computer Engineering</option>
+              <option>Dept. of Electrical &amp; Computer Engineering</option>
               <option>Computer Science &amp; Engineering</option>
               <option>Electronics &amp; Communication Engineering</option>
               <option>Mechanical Engineering</option>
@@ -116,13 +115,13 @@
           <label for="password">Account Security Keyphrase</label>
           <div class="input-wrap">
             <span class="input-icon" aria-hidden="true">♙</span>
-            <input id="password" name="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" required minlength="8" />
+            <input id="password" name="password" type="password" placeholder="At least 12 characters" autocomplete="new-password" required minlength="12" />
             <button class="visibility-toggle" id="toggle-password" type="button" aria-label="Show password" aria-pressed="false">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
             </button>
           </div>
           <div class="password-meter" aria-label="Password strength"><span id="strength-bar"></span></div>
-          <div class="strength-caption"><span id="strength-text">Use 8 or more characters</span><span id="strength-level">—</span></div>
+          <div class="strength-caption"><span id="strength-text">Use 12 or more characters</span><span id="strength-level">—</span></div>
           <small class="field-error" id="password-error"></small>
         </div>
 
@@ -141,10 +140,7 @@
         <button class="submit-button" type="submit" id="submit-button">Create Student Account <span aria-hidden="true">→</span></button>
       </form>
 
-      <div class="signin-panel">
-        <p>Already registered with campus credentials?</p>
-        <a href="#signin" id="signin-link">Sign In via Institutional Gateway <span aria-hidden="true">↗</span></a>
-      </div>
+      
 
       <footer class="security-footer">
         <span><span aria-hidden="true">♙</span> 256-bit SSL Academic Encryption</span>
