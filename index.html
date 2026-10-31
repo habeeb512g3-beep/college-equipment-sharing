@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f4f7fc">
+  <meta name="description" content="CampusShare student equipment sharing portal">
+  <title>CampusShare Student Portal</title>
+  <link rel="stylesheet" href="portal.css">
+</head>
+<body>
+  <main class="portal-host" aria-label="CampusShare Student Portal">
+    <iframe id="portalFrame" title="CampusShare page" src="pages/login/index.html"></iframe>
+  </main>
+  <div id="portalToast" class="portal-toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/database.js"></script>
+  <script src="portal.js"></script>
+</body>
+</html>

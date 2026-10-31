@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f8fc" />
+  <title>Borrowed Equipment | CampusShare</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-frame">
+    <header class="topbar">
+      <a class="brand" href="#dashboard" aria-label="CampusShare home">
+        <span class="brand-mark">⌂</span>
+        <span class="brand-name">CampusShare</span>
+        <span class="brand-tag">Academic Inventory</span>
+      </a>
+
+      <label class="global-search">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" placeholder="Search academic equipment, serials, labs..." aria-label="Search campus equipment">
+        <kbd>⌘K</kbd>
+      </label>
+
+      <div class="top-actions">
+        <span class="portal-pill">Student Portal</span>
+        <span class="portal-pill muted-pill">Lab Manager</span>
+        <button class="icon-button notification-button" type="button" aria-label="Notifications">♧<i></i></button>
+        <button class="profile-button" type="button" aria-label="Open profile menu"><span class="avatar">AC</span><span class="profile-copy"><b>Alex Chen</b><small>Student Member⌄</small></span></button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <p class="nav-label">STUDENT PORTAL</p>
+        <nav class="main-nav" aria-label="Student navigation">
+          <a href="#dashboard" class="nav-link"><span>▦</span>Dashboard</a>
+          <a href="#browse" class="nav-link"><span>⌕</span>Browse Equipment</a>
+          <a href="#requests" class="nav-link"><span>▤</span>My Requests</a>
+          <a href="#borrowed" class="nav-link active"><span>▣</span>Borrowed Equipment</a>
+          <a href="#history" class="nav-link"><span>◷</span>Transaction History</a>
+          <a href="#settings" class="nav-link"><span>⚙</span>Profile &amp; Settings</a>
+        </nav>
+        <div class="sidebar-help">
+          <span class="help-icon">?</span>
+          <b>Need help?</b>
+          <p>Questions about your equipment checkout?</p>
+          <a href="mailto:labdesk@campus.edu">Contact Lab Support ↗</a>
+        </div>
+      </aside>
+
+      <main class="main-content" id="borrowed">
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow">STUDENT EQUIPMENT</div>
+            <h1>Currently Borrowed<br class="mobile-break"> Equipment</h1>
+            <p class="page-subtitle">Review verified loans, track return countdowns, request renewals, or initiate check-in protocols.</p>
+          </div>
+          <div class="summary-cards">
+            <div class="summary-card"><span class="summary-icon blue">▣</span><span class="summary-label">Active in<br>Custody</span><strong>1 <small>Item</small></strong></div>
+            <div class="summary-card"><span class="summary-icon amber">◷</span><span class="summary-label">Next Due<br>Date</span><strong>Nov 01,<br><small>2026</small></strong></div>
+            <div class="summary-card"><span class="summary-icon green">✓</span><span class="summary-label">Account<br>Standing</span><strong>0 <small>Strikes</small><em>(Good)</em></strong></div>
+          </div>
+        </div>
+
+        <section class="due-alert" aria-label="Upcoming return reminder">
+          <span class="alert-clock">◷</span>
+          <div class="alert-copy"><small>ACTION WINDOW NOTICE · Due in 2 calendar days</small><b>TI-Nspire CX II CAS Graphing Calculator must be checked in at Science Complex 204 before 5:00 PM on Sunday.</b></div>
+          <button class="outline-button" id="viewDropoff" type="button">View Drop-off Details <span>↗</span></button>
+        </section>
+
+        <div class="content-grid">
+          <div class="primary-column">
+            <article class="loan-card">
+              <div class="loan-topline">
+                <span class="status-pill active-status"><i></i> Active in Possession</span>
+                <span class="asset-id">Asset: MAT-CALC-0012</span>
+                <span class="countdown" id="countdown">◷ 1d 23h : 59m remaining</span>
+              </div>
+
+              <div class="loan-main">
+                <div class="equipment-column">
+                  <div class="equipment-photo" role="img" aria-label="Scientific graphing calculator on a laboratory workbench">
+                    <div class="desk-glow"></div>
+                    <div class="calculator-device"><div class="calc-screen">Y= 2X + 5<br><b>GRAPH</b></div><div class="calc-keys"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+                    <span class="photo-caption">Lab Inventory · MATHEMATICS</span>
+                  </div>
+                  <div class="serial-tag">Serial Key: <b>SN-TI-201204</b></div>
+                </div>
+
+                <div class="loan-details">
+                  <div class="department-label">MATHEMATICS &amp; COMPUTATIONAL SCIENCES</div>
+                  <h2>Texas Instruments TI‑Nspire CX II CAS Graphing Calculator</h2>
+                  <div class="meta-grid">
+                    <div><small>Checkout Timestamp</small><b>Nov 01, 2026 · 10:15 AM</b></div>
+                    <div><small>Issuing Authority</small><b>Dr. Angela Cooper</b></div>
+                    <div><small>Designated Check-in</small><b>Science Complex · Room 204</b></div>
+                    <div><small>Scheduled Return</small><b>Nov 01, 2026 · 5:00 PM</b></div>
+                  </div>
+                  <div class="condition-box"><span class="condition-check">✓</span><div><b>Condition at Checkout</b><p><strong>Grade A (Excellent):</strong> Includes slide case, USB mini cable, and unit inspection tag intact. Screen scratch-free with battery capacity tested at 98%.</p></div></div>
+                  <div class="policy-note"><span>ⓘ</span><div><b>Policy Allowance:</b> 15-minute extension remaining (+4 hours window). No reservations in queue behind your loan.</div></div>
+
+                  <div class="loan-actions">
+                    <button class="button secondary-button" id="extensionBtn" type="button">◷ Request 4-Hour Time Extension</button>
+                    <button class="text-action" id="qrBtn" type="button">▦ Generate Check-in QR Code</button>
+                    <button class="text-action danger-text" id="issueBtn" type="button">⚑ Report Technical Issue / Damage</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="renewal-banner"><span class="success-mark">✓</span><div><b>Renewal processed! New Due Date: Nov 01, 2026 · 5:00 PM.</b><small>Return limit reached.</small></div><span class="approved-badge">Auto-<br>Approved</span></div>
+            </article>
+
+            <section class="browse-cta">
+              <div class="cta-icon">▣</div>
+              <div><h3>Need Another Item for Class or Research?</h3><p>Browse available video gear, Arduino robotics kits, microscopes, and high-spec laptops.</p></div>
+              <a class="button primary-button" href="#browse">Browse Equipment Catalog <span>→</span></a>
+            </section>
+          </div>
+
+          <aside class="right-column">
+            <section class="side-card protocol-card" id="dropoffDetails">
+              <div class="side-card-heading"><span class="side-icon">♧</span><div><h3>Drop-off &amp; Return Protocol</h3><p>MANDATORY</p></div></div>
+              <p class="side-intro">Follow these 4 sequential steps when surrendering equipment to guarantee its tamper-resistant return and maintain zero-penalty status.</p>
+              <ol class="protocol-list">
+                <li><span>1</span><div><b>Prep Accessories &amp; Case</b><p>Ensure all unit components are bundled securely (slide case and USB cable) before finding the designated return casing.</p></div></li>
+                <li><span>2</span><div><b>Present Digital QR ID</b><p>Scan your Student QR ID (2026) at the Science Complex check-in desk to authenticate custody.</p></div></li>
+                <li><span>3</span><div><b>2-Minute Physical Inspection</b><p>Complete brief physical diagnostic checks alongside the desk by a lab custodian to verify Grade-A condition.</p></div></li>
+                <li><span>4</span><div><b>Digital Sign-off &amp; Receipt</b><p>Final digital sign-off confirms responsibility has ended; retain your automatically generated receipt.</p></div></li>
+              </ol>
+              <div class="contact-strip">ⓘ <span>Questions? Contact Dispatch Desk at<br><a href="mailto:sciencedesk@campus.edu">sciencedesk@campus.edu</a></span></div>
+            </section>
+
+            <section class="side-card location-card">
+              <div class="location-top"><span>ASSIGNED LAB LOCATION</span><span class="open-badge"><i></i> Open Today · 5:00 PM</span></div>
+              <h3>Science Complex — Room 204</h3>
+              <p>Second Floor, North Wing Science Quadrangle. Lab custodian desk adjacent to Bio-Computing Laboratory 2.</p>
+              <div class="custodian"><span class="avatar custodian-avatar">AC</span><div><b>Dr. Angela Cooper</b><small>Assigned Lab &amp; Faculty Custodian</small></div><button class="icon-button small" id="contactBtn" type="button" aria-label="Contact custodian">✉</button></div>
+              <button class="map-link" id="mapBtn" type="button">View Campus Map ↗</button>
+            </section>
+          </aside>
+        </div>
+        <footer class="page-footer">CampusShare · Academic Asset Directory <span>All equipment custody actions are logged for accountability.</span></footer>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" id="modalClose" aria-label="Close dialog">×</button>
+      <div class="modal-icon" id="modalIcon">✓</div>
+      <h2 id="modalTitle">Confirm action</h2>
+      <p id="modalText">Review the details before continuing.</p>
+      <div class="modal-extra" id="modalExtra"></div>
+      <div class="modal-actions"><button class="button secondary-button" id="modalCancel" type="button">Cancel</button><button class="button primary-button" id="modalConfirm" type="button">Confirm</button></div>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+  <script src="../../portal-bridge.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../../js/supabase.js"></script>
+  <script src="../../js/database.js"></script>
+</body>
+</html>

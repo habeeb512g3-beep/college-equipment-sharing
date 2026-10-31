@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f7fb" />
+  <title>Manage Incidents - CampusShare Admin</title>
+  <link rel="stylesheet" href="admin-incidents.css" />
+  <style>body.auth-pending{visibility:hidden}</style>
+</head>
+<body class="auth-pending">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html" aria-label="CampusShare Admin home">
+        <span class="brand-mark">✣</span>
+        <span><strong>CampusShare</strong><small>Admin Console</small></span>
+      </a>
+      <div class="node"><span class="pulse"></span> Production Node</div>
+      <nav class="side-nav" aria-label="Admin navigation">
+        <a class="nav-link" href="index.html"><span class="nav-icon">▦</span>Admin dashboard</a>
+        <a class="nav-link" href="users.html"><span class="nav-icon">♙</span>View and manage users</a>
+        <a class="nav-link" href="owner-applications.html"><span class="nav-icon">✓</span>Approve or reject Owner applications</a>
+        <a class="nav-link" href="equipment.html"><span class="nav-icon">▣</span>Manage all equipment</a>
+        <a class="nav-link" href="bookings.html"><span class="nav-icon">▤</span>Monitor bookings and borrowing</a>
+        <a class="nav-link active" href="incidents.html" aria-current="page"><span class="nav-icon">⚑</span>Manage incidents</a>
+        <a class="nav-link" href="activity-logs.html"><span class="nav-icon">◷</span>View notifications and activity logs</a>
+      </nav>
+      <a class="admin-login" href="index.html">Admin dashboard</a>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="top-search"><span>⌕</span><input id="globalSearch" type="search" data-admin-global-search placeholder="Search users, equipment, incidents..." /><kbd>⌘K</kbd></div>
+        <div class="top-actions">
+          <span class="role-pill"><i></i> INSTITUTIONAL ADMIN</span>
+          <div class="admin-profile"><span>Admin Supervisor</span><small>Campus Operations</small></div>
+          <button class="avatar" aria-label="Admin profile">A</button>
+        </div>
+      </header>
+
+      <section class="page-heading" id="incidents">
+        <div>
+          <p class="eyebrow">ADMINISTRATION / TRUST &amp; SAFETY</p>
+          <h1>Manage incidents</h1>
+          <p class="subtitle">Triage, investigate, and resolve equipment damage, late-return violations, missing accessories, and policy flags across campus labs and media centres.</p>
+        </div>
+        <div class="heading-actions">
+          <button class="btn btn-light" id="exportBtn">⇩ Export EHS Audit Report</button>
+          <button class="btn btn-primary" id="newIncidentBtn">＋ Log New Incident</button>
+        </div>
+      </section>
+
+      <section class="metric-grid" aria-label="Incident summary">
+        <article class="metric-card">
+          <div class="metric-top"><span>Open incidents</span><span class="metric-icon red">△</span></div>
+          <div class="metric-value" id="openCount">7</div>
+          <div class="metric-foot"><span class="dot red-dot"></span> Requires desk action</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-top"><span>Critical severity</span><span class="metric-icon red">▣</span></div>
+          <div class="metric-value critical" id="criticalCount">2</div>
+          <div class="metric-foot">⚑ Dean review required</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-top"><span>In investigation</span><span class="metric-icon blue">♟</span></div>
+          <div class="metric-value" id="investigationCount">4</div>
+          <div class="metric-foot">Active cases under review</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-top"><span>Resolved this term</span><span class="metric-icon green">✓</span></div>
+          <div class="metric-value" id="resolvedCount">38</div>
+          <div class="metric-foot"><span class="positive">↑ 92% resolution rate</span></div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-top"><span>Escrow holds</span><span class="metric-icon amber">▣</span></div>
+          <div class="metric-value" id="escrowValue">₹3,400</div>
+          <div class="metric-foot">Borrower-reported holds</div>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <div class="left-column">
+          <section class="filter-panel panel">
+            <div class="panel-title-row"><h2>☷ &nbsp; Triage Queue Filters</h2><button class="text-button" id="resetFilters">↻ Reset filters</button></div>
+            <div class="filter-grid">
+              <label>Severity level<select id="severityFilter"><option value="all">All Severities (4)</option><option>Critical</option><option>High</option><option>Moderate</option><option>Minor</option></select></label>
+              <label>Violation Category<select id="categoryFilter"><option value="all">All Categories</option><option>Equipment damage</option><option>Late return</option><option>Missing accessory</option><option>Policy violation</option></select></label>
+              <label>Resolution Status<select id="statusFilter"><option value="active">All Active &amp; Closed</option><option value="Open">Open</option><option value="In Investigation">In Investigation</option><option value="Resolved">Resolved</option><option value="Escalated">Escalated</option></select></label>
+            </div>
+          </section>
+
+          <section class="case-panel panel">
+            <div class="case-heading"><div><h2>Case Dossiers <span class="count-pill" id="caseCount">5 Cases Logged</span></h2><p class="section-hint">Select a case to open its investigation triage.</p></div><span class="table-note">Click a row to open investigation triage</span></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Case ID</th><th>Equipment &amp; Category</th><th>Borrower &amp; Reporter</th><th>Severity</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody id="incidentRows"></tbody>
+              </table>
+              <div class="empty-state" id="emptyState" hidden>No incidents match these filters.</div>
+            </div>
+            <div class="table-footer"><span id="showingCount">Displaying 5 cases</span><div class="pagination"><button id="prevPage" disabled>Previous</button><button class="page-current">1</button><button id="nextPage" disabled>Next</button></div></div>
+          </section>
+
+          <section class="policy-card panel">
+            <span class="policy-icon">♙</span>
+            <div><h3>Academic Conduct Sanctions Matrix (EHS-REV-24)</h3><p>Damage exceeding ₹5,000 or repeated safety violations may require review under the institution's equipment-use and academic conduct policies.</p></div>
+            <button class="btn btn-light small" id="policyBtn">▤ Review Regulations</button>
+          </section>
+        </div>
+
+        <aside class="detail-column">
+          <section class="incident-detail panel" id="detailPanel" aria-live="polite"></section>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="incidentModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head"><div><p class="eyebrow">CAMPUSSHARE / ADMIN</p><h2 id="modalTitle">Log New Incident</h2></div><button class="icon-button" id="closeModal" aria-label="Close">×</button></div>
+      <form id="incidentForm">
+        <div class="form-grid">
+          <label>Equipment name<input name="equipment" required placeholder="e.g. Sony FX3 Cinema Rig" /></label>
+          <label>Asset tag<input name="asset" required placeholder="e.g. CAM-FX3-0821" /></label>
+          <label>Category<select name="category" required><option value="">Select category</option><option>Equipment damage</option><option>Late return</option><option>Missing accessory</option><option>Policy violation</option></select></label>
+          <label>Severity<select name="severity" required><option value="">Select severity</option><option>Critical</option><option>High</option><option>Moderate</option><option>Minor</option></select></label>
+          <label>Borrower name<input name="borrower" required placeholder="Student or borrower name" /></label>
+          <label>Reporter name<input name="reporter" required placeholder="Staff / custodian name" /></label>
+          <label class="full">Incident description<textarea name="description" rows="3" required placeholder="Describe what happened, when and where..."></textarea></label>
+        </div>
+        <div class="form-actions"><button type="button" class="btn btn-light" id="cancelModal">Cancel</button><button type="submit" class="btn btn-primary">Create Incident</button></div>
+      </form>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase.js"></script>
+  <script src="admin-auth.js"></script>
+  <script src="admin-incidents.js"></script>
+  <script src="admin-navigation.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase.js"></script>
+  <script src="../../js/database.js"></script>
+  <script src="../js/admin-guard.js"></script>
+</body>
+</html>

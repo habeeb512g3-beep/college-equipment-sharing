@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="CampusShare equipment catalog and equipment details" />
+  <title>CampusShare | Browse Equipment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#browse" aria-label="CampusShare home" id="brandLink">
+        <span class="brand-mark">C</span>
+        <span class="brand-name">CampusShare</span>
+        <span class="brand-tag">ACADEMIC INVENTORY</span>
+      </a>
+
+      <div class="side-label">STUDENT PORTAL</div>
+      <nav class="side-nav" aria-label="Main navigation">
+        <button class="nav-link" data-nav="dashboard"><span class="nav-icon">▦</span>Dashboard</button>
+        <button class="nav-link active" data-nav="browse"><span class="nav-icon">⌕</span>Browse Equipment</button>
+        <button class="nav-link" data-nav="requests"><span class="nav-icon">♧</span>My Requests</button>
+        <button class="nav-link" data-nav="borrowed"><span class="nav-icon">▣</span>Borrowed Items</button>
+        <button class="nav-link" data-nav="history"><span class="nav-icon">◷</span>History</button>
+        <button class="nav-link" data-nav="settings"><span class="nav-icon">⚙</span>Profile &amp; Settings</button>
+      </nav>
+
+      <div class="sidebar-help">
+        <div class="help-icon">?</div>
+        <strong>Need help?</strong>
+        <p>Questions about borrowing equipment?</p>
+        <button class="text-button" id="helpLink">View Lab Directory <span>→</span></button>
+      </div>
+      <div class="sidebar-user">
+        <div class="avatar">AC</div>
+        <div><strong>Alex Chen</strong><small>Student account</small></div>
+        <span class="online-dot"></span>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Toggle menu">☰</button>
+        <div class="top-brand"><span class="mini-brand">C</span><strong>CampusShare</strong><span class="verified-pill">Academic Inventory</span></div>
+        <div class="topbar-right">
+          <label class="global-search"><span>⌕</span><input id="globalSearch" type="search" placeholder="Search equipment, serial numbers, requests..." /><kbd>⌘K</kbd></label>
+          <span class="portal-pill">Student Portal</span>
+          <button class="icon-button" id="notificationsBtn" aria-label="Notifications">♧<i></i></button>
+          <button class="profile-button" id="profileBtn" aria-label="Profile">AC⌄</button>
+        </div>
+      </header>
+
+      <!-- BROWSE EQUIPMENT VIEW -->
+      <section class="page-view active" id="browseView" aria-labelledby="browseTitle">
+        <div class="page-heading browse-heading">
+          <div>
+            <div class="eyebrow">STUDENT EQUIPMENT PORTAL</div>
+            <h1 id="browseTitle">Browse Equipment Catalog <span class="live-pill"><i></i> Live Database</span></h1>
+            <p class="muted" id="resultCount">Showing 6 of 142 items available across all university labs</p>
+          </div>
+          <div class="heading-actions">
+            <button class="outline-button" id="savedButton">♡ Saved Lists <span class="count-bubble">3</span></button>
+            <button class="primary-button" id="directRequestButton">＋ Direct Reservation Request</button>
+          </div>
+        </div>
+
+        <div class="category-strip" id="categoryStrip">
+          <button class="category-tile selected" data-category="All Categories"><span class="cat-icon">▤</span><span><strong>All Equipment</strong><small>142 items</small></span></button>
+          <button class="category-tile" data-category="Robotics & Microcontrollers"><span class="cat-icon">▦</span><span><strong>Robotics</strong><small>42 devices</small></span></button>
+          <button class="category-tile" data-category="Electronics"><span class="cat-icon">⌁</span><span><strong>Electronics</strong><small>27 devices</small></span></button>
+          <button class="category-tile" data-category="Computing"><span class="cat-icon">▣</span><span><strong>Computing</strong><small>19 devices</small></span></button>
+          <button class="category-tile" data-category="Lab Equipment"><span class="cat-icon">⚗</span><span><strong>Lab equipment</strong><small>12 devices</small></span></button>
+          <button class="category-tile dark-tile" data-category="Available Now"><span class="cat-icon">◉</span><span><strong>Available Now</strong><small>142 items</small></span></button>
+        </div>
+
+        <section class="filter-panel" aria-label="Equipment filters">
+          <div class="filter-row">
+            <label class="search-field"><span>⌕</span><input id="catalogSearch" type="search" placeholder="Search equipment by name, model, tag, or lab location..." /><kbd>⌘K</kbd></label>
+            <select id="labFilter" aria-label="Filter by laboratory"><option value="">All Laboratories</option><option>Electronics Lab</option><option>Robotics Lab</option><option>Media Lab</option><option>Computer Lab</option></select>
+            <select id="sortFilter" aria-label="Sort equipment"><option value="popular">Sort: Most Popular</option><option value="name">Name: A to Z</option><option value="available">Available First</option></select>
+          </div>
+          <div class="filter-row secondary-filters">
+            <label class="filter-select"><span>Equipment Category</span><select id="categoryFilter"><option value="">All Categories</option><option>Robotics &amp; Microcontrollers</option><option>Electronics</option><option>Computing</option><option>Lab Equipment</option><option>Cameras &amp; Media</option></select></label>
+            <label class="filter-select"><span>Availability Status</span><select id="availabilityFilter"><option value="">Available New</option><option value="available">Available</option><option value="borrowed">Borrowed</option><option value="waitlist">Waitlist</option></select></label>
+            <label class="filter-select"><span>Any Duration</span><select id="durationFilter"><option value="">Any Duration</option><option>1–3 days</option><option>4–7 days</option><option>More than 7 days</option></select></label>
+            <label class="filter-select"><span>Custodian Department</span><select id="departmentFilter"><option value="">Engineering &amp; Sciences</option><option>Media &amp; Design</option><option>Computer Science</option></select></label>
+          </div>
+          <div class="active-filters"><span>Active Filters:</span><span class="filter-chip">Term: Digital ×</span><span class="filter-chip">Status: Available Now ×</span><span class="filter-chip">Dept: Engineering and Sci. ×</span><button id="clearFilters" class="text-button">Clear all filters</button></div>
+        </section>
+
+        <div class="catalog-toolbar"><div><strong>Equipment available for borrowing</strong><span class="muted"> · Select an item to view full specifications</span></div><span class="muted">Updated just now</span></div>
+        <div class="equipment-grid" id="equipmentGrid" aria-live="polite"></div>
+        <div class="empty-state hidden" id="emptyState"><div class="empty-icon">⌕</div><h3>No equipment found</h3><p>Try changing your search or clearing some filters.</p><button class="outline-button" id="emptyClear">Clear filters</button></div>
+
+        <section class="safety-banner">
+          <div class="safety-icon">♧</div>
+          <div><strong>Standard Borrowing &amp; Safety Protocol</strong><p>All shared equipment requires active student ID card verification at lab pickup. Overdue check-outs must be collected before 4:30 PM. Damage or loss must be subject to academic holding policies.</p></div>
+          <button class="outline-button" id="rulesButton">Lab Rules &amp; Liability</button>
+          <button class="dark-button" id="reserveDeskButton">Reserve Lab Desk</button>
+        </section>
+        <div class="pagination"><span class="muted">Showing 1–6 of 142 items</span><label>Items per page <select><option>6</option><option>12</option><option>24</option></select></label><div class="pages"><button disabled>‹ Previous</button><button class="current">1</button><button>2</button><button>3</button><span>…</span><button>24</button><button>Next ›</button></div></div>
+      </section>
+
+      <!-- EQUIPMENT DETAILS VIEW -->
+      <section class="page-view" id="detailsView" aria-labelledby="detailsTitle">
+        <div class="detail-breadcrumb"><button class="back-link" id="backToBrowse">← Browse Equipment</button><span>/</span><span id="detailBreadcrumbName">Equipment Details</span><button class="share-button" id="shareButton">↗ Share</button></div>
+        <div class="detail-layout">
+          <div class="detail-main-column">
+            <section class="detail-card gallery-card">
+              <div class="hero-image-wrap"><img id="detailHeroImage" src="" alt="Selected equipment" /><span class="image-label" id="heroImageLabel">EQUIPMENT PHOTO</span><button class="image-expand" id="expandImage" aria-label="View image">⛶</button></div>
+              <div class="thumbnail-row" id="thumbnailRow"></div>
+            </section>
+
+            <section class="detail-card specs-card">
+              <div class="section-kicker">TECHNICAL PROFILE</div>
+              <div class="section-title-row"><h2>Equipment Specifications</h2><button class="text-button" id="downloadSpecs">⇩ Download Detailed PDF</button></div>
+              <div class="spec-grid" id="specGrid"></div>
+              <div class="handling-note"><span class="note-icon">♙</span><div><strong>Physical Storage &amp; Handling Location</strong><p id="handlingText">Please collect this equipment from the assigned laboratory. Handle carefully and return all supplied accessories.</p></div></div>
+            </section>
+
+            <section class="detail-card custodians-card">
+              <div class="section-kicker">ACCOUNTABILITY &amp; SUPPORT</div>
+              <h2>Equipment Custodians &amp; Lab Contacts</h2>
+              <div class="custodian-grid">
+                <article class="custodian"><div class="custodian-head"><span class="custodian-avatar">RV</span><div><strong>Dr. Robert Vance</strong><small>Faculty Lab Coordinator</small></div></div><div class="contact-lines"><span>Faculty Office <b>Room 214-B</b></span><span>Office Hours <b>Tue–Thu, 10:00–3:00</b></span><span>Email <b>robert.vance@campus.edu</b></span></div><button class="mini-outline" data-contact="Dr. Robert Vance">✉ Email Lab Director</button></article>
+                <article class="custodian"><div class="custodian-head"><span class="custodian-avatar lavender">SM</span><div><strong>Sarah Miller</strong><small>Student Lab Assistant</small></div></div><div class="contact-lines"><span>Lab Desk <b>Building 3, Room 08</b></span><span>Shift <b>Mon–Fri, 9:00–4:00</b></span><span>Phone <b>+91 90000 12345</b></span></div><button class="mini-outline" data-contact="Sarah Miller">▣ Message Lab Assistant</button></article>
+              </div>
+            </section>
+          </div>
+
+          <aside class="detail-side-column">
+            <section class="detail-card booking-card">
+              <div class="booking-title-row"><span class="status-pill available" id="detailStatus">● Available for Reservation</span><button class="heart-button" id="favoriteButton" aria-label="Save equipment">♡</button></div>
+              <div class="detail-category" id="detailCategory">Electronics · Measurement</div>
+              <h1 id="detailsTitle">Rigol DS1054Z 50MHz Digital Oscilloscope</h1>
+              <p class="detail-description" id="detailDescription">A reliable digital oscilloscope for electronics testing, signal analysis and academic laboratory experiments.</p>
+              <div class="detail-metrics"><div><span>Max Loan Window</span><strong id="maxLoan">5 Consecutive Days</strong><small>Renewable once</small></div><div><span>Replacement Value</span><strong id="replacementValue">₹20,000 USD</strong><small>University asset</small></div></div>
+              <div class="eligibility-box"><strong>♧ Eligibility Pre-Approved</strong><p>Students in approved engineering courses can request this equipment. Final approval is subject to lab availability.</p><small>● Verified for your department</small></div>
+              <div class="requirements"><h3>BORROWING REQUIREMENTS</h3><ul><li>Valid student ID is required at pickup.</li><li>Must be in good academic standing.</li><li>Use only for approved academic or research work.</li><li>Return all accessories in the same condition.</li></ul></div>
+              <button class="primary-button request-button" id="requestEquipment">＋ Request This Equipment</button>
+              <div class="secondary-actions"><button class="outline-button" id="availabilityAlert">♧ Add Availability Alert</button><button class="outline-button" id="viewCalendar">▣ View Lab Calendar</button></div>
+              <div class="small-assurance">♧ Secure lab checkout <span>•</span> ID verified return</div>
+            </section>
+            <section class="detail-card pickup-card"><div class="pickup-heading"><span class="pickup-icon">⌖</span><div><strong>Pickup Location</strong><small>Assigned lab pickup desk</small></div></div><p id="pickupLocation">Electronics Lab · Building 3, Room 08</p><button class="text-button" id="viewLocation">View location details →</button></section>
+          </aside>
+        </div>
+
+        <section class="recommendations-section">
+          <div class="recommend-heading"><div><div class="section-kicker">✣ RECOMMENDED WORKSTATION BUNDLE</div><h2>Frequently Borrowed Together</h2><p>Complementary tools often reserved with this equipment.</p></div><button class="text-button" id="completeInventory">Browse Complete Lab Inventory →</button></div>
+          <div class="recommend-grid" id="recommendGrid"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- Request modal -->
+  <div class="modal-backdrop hidden" id="requestModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <form class="request-modal" id="requestForm">
+      <button type="button" class="modal-close" id="closeModal" aria-label="Close">×</button>
+      <div class="section-kicker">CAMPUSSHARE RESERVATION</div>
+      <h2 id="modalTitle">Request equipment</h2>
+      <p class="muted" id="modalEquipmentName">Selected equipment</p>
+      <label>Start date and time<input type="datetime-local" id="startDate" required /></label>
+      <label>End date and time<input type="datetime-local" id="endDate" required /></label>
+      <label>Purpose of borrowing<textarea id="requestPurpose" rows="3" placeholder="Briefly describe your academic or project use..." required></textarea></label>
+      <label class="checkbox-label"><input type="checkbox" id="agreeTerms" required /> I agree to the equipment handling and return requirements.</label>
+      <button class="primary-button request-button" type="submit">Submit Reservation Request →</button>
+      <p class="form-note">Demo only: this request will be confirmed in the page, not sent to a live database.</p>
+    </form>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../../js/supabase.js"></script>
+<script src="../../js/database.js"></script>
+<script src="../../portal-bridge.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
