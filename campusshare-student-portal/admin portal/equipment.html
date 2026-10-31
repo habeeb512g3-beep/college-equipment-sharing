@@ -6,8 +6,9 @@
   <meta name="theme-color" content="#f5f7fb" />
   <title>Manage All Equipment | CampusShare Admin</title>
   <link rel="stylesheet" href="admin-equipment.css" />
+  <style>body.auth-pending{visibility:hidden}</style>
 </head>
-<body>
+<body class="auth-pending">
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <a class="brand" href="index.html" aria-label="CampusShare Admin home">
@@ -159,6 +160,9 @@
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase.js"></script>
+  <script src="admin-auth.js"></script>
   <script src="admin-equipment.js"></script>
   <script src="admin-navigation.js"></script>
 </body>

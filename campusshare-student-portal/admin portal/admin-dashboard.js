@@ -146,7 +146,7 @@ $('#modalContent').addEventListener('submit',event=>{
     $('#scanResult').innerHTML=record?`<div class="scan-result"><strong>Record found</strong><br/>${escapeHTML(record.equipment)}<br/>Borrower: ${escapeHTML(record.name)}<br/>Status: ${escapeHTML(record.status)}</div>`:`<div class="scan-result">No matching record was found in the demo data. Check the asset tag or booking ID.</div>`;
   }
 });
-$('#adminLoginBtn').addEventListener('click',()=>showToast('Admin authentication is not connected in this frontend demo.'));
+
 $('#mobileMenu').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
 document.addEventListener('keydown',event=>{if(event.key==='Escape')closeModal();if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();$('#globalSearch').focus();}});
 

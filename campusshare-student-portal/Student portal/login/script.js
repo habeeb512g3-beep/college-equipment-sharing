@@ -8,27 +8,6 @@ const emailError = document.querySelector("#email-error");
 const passwordError = document.querySelector("#password-error");
 const formFeedback = document.querySelector("#form-feedback");
 
-// Account type selector
-roleButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    selectedRole = button.dataset.role;
-    roleButtons.forEach((item) => {
-      const isSelected = item === button;
-      item.classList.toggle("is-active", isSelected);
-      item.setAttribute("aria-pressed", String(isSelected));
-    });
-    clearFeedback();
-  });
-});
-
-// Show / hide password
- togglePasswordButton.addEventListener("click", () => {
-  const shouldShow = passwordInput.type === "password";
-  passwordInput.type = shouldShow ? "text" : "password";
-  togglePasswordButton.setAttribute("aria-pressed", String(shouldShow));
-  togglePasswordButton.setAttribute("aria-label", shouldShow ? "Hide password" : "Show password");
-});
-
 function clearFeedback() {
   emailError.textContent = "";
   passwordError.textContent = "";
@@ -37,131 +16,93 @@ function clearFeedback() {
   emailInput.removeAttribute("aria-invalid");
   passwordInput.removeAttribute("aria-invalid");
 }
-
-function isValidInstitutionalEmail(value) {
-  // This is a basic client-side format check only. Configure approved domains on the server.
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailPattern.test(value.trim());
+function showError(message) {
+  formFeedback.classList.add("error");
+  formFeedback.textContent = message;
 }
+function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()); }
 
-[emailInput, passwordInput].forEach((input) => {
-  input.addEventListener("input", () => {
-    if (input === emailInput) {
-      emailError.textContent = "";
-      emailInput.removeAttribute("aria-invalid");
-    } else {
-      passwordError.textContent = "";
-      passwordInput.removeAttribute("aria-invalid");
-    }
-    formFeedback.textContent = "";
-    formFeedback.classList.remove("error");
-  });
+togglePasswordButton.addEventListener("click", () => {
+  const show = passwordInput.type === "password";
+  passwordInput.type = show ? "text" : "password";
+  togglePasswordButton.setAttribute("aria-pressed", String(show));
+  togglePasswordButton.setAttribute("aria-label", show ? "Hide password" : "Show password");
 });
 
-loginForm.addEventListener("submit", async (event) => {
+[emailInput, passwordInput].forEach(input => input.addEventListener("input", () => {
+  clearFeedback();
+  input.removeAttribute("aria-invalid");
+  if (input === emailInput) emailError.textContent = "";
+  else passwordError.textContent = "";
+}));
+
+loginForm.addEventListener("submit", async event => {
   event.preventDefault();
   clearFeedback();
-
   const email = emailInput.value.trim();
   const password = passwordInput.value;
-
-  if (!email || !isValidInstitutionalEmail(email)) {
-    emailError.textContent = "Enter a valid email address.";
-    emailInput.setAttribute("aria-invalid", "true");
-    emailInput.focus();
-    return;
+  if (!validEmail(email)) {
+    emailError.textContent = "Enter a valid institutional email address.";
+    emailInput.setAttribute("aria-invalid", "true"); emailInput.focus(); return;
   }
-
-  if (!password || password.length < 6) {
-    passwordError.textContent = "Enter a valid password.";
-    passwordInput.setAttribute("aria-invalid", "true");
-    passwordInput.focus();
-    return;
+  if (!password) {
+    passwordError.textContent = "Please enter your password.";
+    passwordInput.setAttribute("aria-invalid", "true"); passwordInput.focus(); return;
   }
-
-  if (selectedRole !== "student") {
-    formFeedback.textContent = "Staff Portal is being developed separately.";
-    return;
-  }
-
-  const submitButton = loginForm.querySelector('button[type="submit"]');
-  submitButton.disabled = true;
-  submitButton.textContent = "Signing in...";
-
+  const submit = loginForm.querySelector('[type="submit"]');
+  submit.disabled = true;
+  formFeedback.textContent = "Verifying your account…";
   try {
-    const { data, error } =
-      await window.supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
-
+    if (!window.supabaseClient) throw new Error("Authentication service is not configured. Reload and try again.");
+    const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
     if (error) throw error;
-
     const user = data.user;
-    const metadata = user.user_metadata || {};
-
-    let { data: profile, error: profileError } =
-      await window.supabaseClient
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
-    if (profileError) throw profileError;
-
-    if (!profile) {
-      const newProfile = {
-        id: user.id,
-        full_name: metadata.full_name || email.split("@")[0],
-        email: user.email,
-        department: metadata.department || null,
-        role: "student"
-      };
-
-      const result = await window.supabaseClient
-        .from("profiles")
-        .insert(newProfile)
-        .select()
-        .single();
-
-      if (result.error) throw result.error;
-      profile = result.data;
+    const { data: roleRecord, error: roleError } = await window.supabaseClient
+      .from("user_roles").select("role").eq("user_id", user.id).maybeSingle();
+    if (roleError) throw new Error("Your account role could not be verified. Contact the campus administrator.");
+    const role = roleRecord?.role;
+    const profile = {
+      fullName: user.user_metadata?.full_name || user.user_metadata?.name || email.split("@")[0],
+      email
+    };
+    localStorage.setItem("campusshareAuthProfile", JSON.stringify(profile));
+    localStorage.removeItem("campusshareDemoSession");
+    if (role === "admin") {
+      formFeedback.textContent = "Administrator verified. Opening Admin Portal…";
+      if (window.parent !== window) window.parent.postMessage({ source: "campusshare-page", type: "admin-login-success" }, "*");
+      else window.location.href = "../../admin%20portal/index.html";
+      return;
     }
-
-    if (profile.role !== "student") {
-      throw new Error("This account is not registered as a student.");
+    if (role !== "student") {
+      await window.supabaseClient.auth.signOut();
+      throw new Error("This account does not have student or administrator access.");
     }
-
-    formFeedback.textContent = "Login successful! Opening your portal...";
-
-    if (window.parent !== window) {
-      window.parent.postMessage({
-        source: "campusshare-page",
-        type: "login-success",
-        profile
-      }, "*");
-    }
-
+    localStorage.setItem("campusshareDemoSession", "student-demo");
+    localStorage.setItem("campusshareDemoProfile", JSON.stringify(profile));
+    formFeedback.textContent = "Sign-in successful. Opening your Student Portal…";
+    if (window.parent !== window) window.parent.postMessage({ source: "campusshare-page", type: "login-success", profile }, "*");
   } catch (error) {
-    formFeedback.classList.add("error");
-    formFeedback.textContent = error.message || "Login failed.";
-  } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "Sign In";
-  }
+    try { await window.supabaseClient?.auth.signOut(); } catch (_) {}
+    showError(error.message || "Unable to sign in. Check your credentials and try again.");
+  } finally { submit.disabled = false; }
 });
 
-// These actions are placeholders until registration and password-reset services are connected.
-document.querySelector("#forgot-password").addEventListener("click", () => {
-  formFeedback.classList.remove("error");
-  formFeedback.textContent = "Password reset will be available once the university authentication flow is connected.";
+document.querySelector("#forgot-password").addEventListener("click", async () => {
+  clearFeedback();
+  const email = emailInput.value.trim();
+  if (!validEmail(email)) { showError("Enter your email address first to request a password reset."); emailInput.focus(); return; }
+  try {
+    const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}${window.location.pathname}`
+    });
+    if (error) throw error;
+    formFeedback.textContent = "If the account exists, a password reset email has been sent.";
+  } catch (error) { showError(error.message || "Password reset could not be started."); }
 });
 
-
-document.querySelector("#register-link").addEventListener("click", (event) => {
+document.querySelector("#register-link").addEventListener("click", event => {
   event.preventDefault();
   if (window.parent !== window) window.parent.postMessage({ source: "campusshare-page", type: "navigate", route: "registration" }, "*");
 });
-
 const emailFromRoute = new URLSearchParams(window.location.search).get("email");
 if (emailFromRoute) emailInput.value = emailFromRoute;

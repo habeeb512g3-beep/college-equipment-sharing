@@ -167,7 +167,6 @@ function validateForm() {
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   hideMessage();
-
   if (!validateForm()) {
     showMessage('Please review the highlighted fields and complete the required information.', true);
     const firstInvalid = form.querySelector('.input-wrap.invalid input, .input-wrap.invalid select, #terms:not(:checked)');
@@ -175,57 +174,37 @@ form.addEventListener('submit', async (event) => {
     return;
   }
 
+  const data = {
+    role: selectedRole,
+    fullName: document.getElementById('full-name').value.trim(),
+    email: document.getElementById('institutional-email').value.trim(),
+    campusId: campusIdInput.value.trim(),
+    cohort: cohortSelect.value,
+    department: document.getElementById('department').value,
+    dispatchAlerts: document.getElementById('updates').checked
+  };
+  // Admin privileges are never granted through public registration.
   if (selectedRole !== 'student') {
-    showMessage(
-      'Faculty / Custodian registration will be enabled through the Staff Portal.',
-      true
-    );
+    showMessage('Faculty / Custodian registration will be enabled when the Staff Portal is added. You can create a Student account in this release.', true);
     return;
   }
-
-  const fullName = document.getElementById('full-name').value.trim();
-  const email = document.getElementById('institutional-email').value.trim();
-  const password = passwordInput.value;
-  const campusId = campusIdInput.value.trim();
-  const cohort = cohortSelect.value;
-  const department = document.getElementById('department').value;
-
-  submitButton.disabled = true;
-  submitButton.textContent = 'Creating account...';
-
   try {
-    const { data, error } = await window.supabaseClient.auth.signUp({
-      email: email,
-      password: password,
-      options: {
-        data: {
-          full_name: fullName,
-          department: department,
-          role: 'student',
-          campus_id: campusId,
-          cohort: cohort,
-          dispatch_alerts: document.getElementById('updates').checked
-        }
-      }
+    if (!window.supabaseClient) throw new Error('Authentication service is not configured. Reload and try again.');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Creating secure account…';
+    const { data: signupData, error } = await window.supabaseClient.auth.signUp({
+      email: data.email, password: passwordInput.value,
+      options: { data: { full_name: data.fullName, campus_id: data.campusId, cohort: data.cohort, department: data.department, account_type: 'student' } }
     });
-
     if (error) throw error;
-
-    showMessage(
-      'Registration successful! Please check your email and confirm your account before signing in.',
-      false
-    );
-
-    form.reset();
-    strengthBar.style.width = '0%';
-    strengthText.textContent = 'Use 8 or more characters';
-    strengthLevel.textContent = '—';
-
+    localStorage.setItem('campusshareAuthProfile', JSON.stringify(data));
+    showMessage(signupData.session ? 'Your account is ready. Please sign in to continue.' : 'Account created. Check your institutional email to confirm it, then sign in.', false);
+    if (window.parent !== window) window.parent.postMessage({ source: 'campusshare-page', type: 'registration-success', profile: data }, '*');
   } catch (error) {
-    showMessage(error.message || 'Registration failed. Please try again.', true);
+    showMessage(error.message || 'Account creation failed. Please try again.', true);
   } finally {
     submitButton.disabled = false;
-    submitButton.innerHTML = 'Create Student Account <span aria-hidden="true">→</span>';
+    submitButton.innerHTML = `Create ${selectedRole === 'student' ? 'Student' : 'Faculty / Custodian'} Account <span aria-hidden="true">→</span>`;
   }
 });
 
