@@ -135,7 +135,61 @@ document.getElementById('totalEquipmentCount').textContent =
 );
     updateEquipmentCounts();
     c.innerHTML=`<div class="h-44 bg-surface-container overflow-hidden">${e.image?`<img src="${e.image}" alt="${esc(e.name)}" class="w-full h-full object-cover">`:'<div class="h-full flex items-center justify-center text-outline">No image</div>'}</div><div class="p-5 flex-1"><h2 class="font-title-md">${esc(e.name)}</h2><p class="text-sm text-on-surface-variant mt-2">${esc(e.description)}</p><p class="text-sm mt-3">📍 ${esc(e.location)}</p><div class="flex gap-2 mt-5"><button type="button" data-edit="${e.id}" class="px-3 py-2 rounded bg-surface-container">Edit</button><button type="button" data-delete="${e.id}" class="px-3 py-2 rounded bg-error-container text-error">Delete</button></div></div>`;grid.append(c)});$('#visibleCount')&&($('#visibleCount').textContent=db.equipment.length);const tbody=$('#equipmentTableContainer tbody');if(tbody)tbody.innerHTML=db.equipment.map(e=>`<tr class="border-b"><td class="px-4 py-3"><strong>${esc(e.name)}</strong><div class="text-xs">${esc(e.id)}</div></td><td class="px-4 py-3">—</td><td class="px-4 py-3">${esc(e.location)}</td><td class="px-4 py-3">${esc(e.status||'available')}</td><td class="px-4 py-3">—</td><td class="px-4 py-3 text-right"><button data-edit="${e.id}" class="px-2 py-1 bg-surface-container rounded">Edit</button> <button data-delete="${e.id}" class="px-2 py-1 bg-error-container text-error rounded">Delete</button></td></tr>`).join('')}
- const saveEquipment=()=>{if(!name.value.trim()||!loc.value.trim()){toast('Name and location are required.');return}const item={id:editing||id(),name:name.value.trim(),description:desc.value.trim(),location:loc.value.trim(),image:imageData,status:'available'};if(editing){const i=db.equipment.findIndex(x=>x.id===editing);if(i>=0)db.equipment[i]=item}else db.equipment.push(item);save();render();close();toast(editing?'Equipment updated.':'Equipment added.')};$('#publishEquipmentBtn')?.addEventListener('click',saveEquipment);$('#saveDraftBtn')?.addEventListener('click',saveEquipment);
+ 
+const saveEquipment = (event) => {
+    event?.preventDefault();
+
+    const equipmentName = name.value.trim();
+    const equipmentLocation = loc.value.trim();
+
+    if (!equipmentName || !equipmentLocation) {
+        toast('Please enter equipment name and location.');
+        return;
+    }
+
+    const existingId = editing;
+    const item = {
+        id: existingId || id(),
+        name: equipmentName,
+        description: desc.value.trim(),
+        location: equipmentLocation,
+        image: imageData,
+        status: existingId
+            ? (db.equipment.find(x => x.id === existingId)?.status || 'available')
+            : 'available'
+    };
+
+    if (existingId) {
+        const index = db.equipment.findIndex(x => x.id === existingId);
+        if (index !== -1) {
+            db.equipment[index] = item;
+        }
+    } else {
+        db.equipment.push(item);
+    }
+
+    save();
+    render();
+    close();
+
+    // Clear the form
+    name.value = '';
+    desc.value = '';
+    loc.value = '';
+    file.value = '';
+    imageData = '';
+    editing = null;
+
+    updateEquipmentCounts?.();
+
+    toast(existingId
+        ? 'Equipment updated successfully.'
+        : 'Equipment added successfully.');
+};
+
+$('#publishEquipmentBtn')?.addEventListener('click', saveEquipment);
+$('#saveDraftBtn')?.addEventListener('click', saveEquipment);
+
  grid.addEventListener('click',e=>{const eb=e.target.closest('[data-edit]'),dbtn=e.target.closest('[data-delete]');if(eb){const item=db.equipment.find(x=>x.id===eb.dataset.edit);open(item)}if(dbtn&&confirm('Delete this equipment?')){db.equipment=db.equipment.filter(x=>x.id!==dbtn.dataset.delete);save();render();toast('Equipment deleted.')}});
  render();
  $('#gridToggleBtn')?.addEventListener('click',()=>{grid.classList.remove('hidden');$('#equipmentTableContainer')?.classList.add('hidden')});
