@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f7fb" />
+  <title>Monitor Bookings and Borrowing | CampusShare Admin</title>
+  <link rel="stylesheet" href="admin-bookings.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="index.html" aria-label="CampusShare Admin home">
+        <span class="brand-mark">✣</span>
+        <span><strong>CampusShare</strong><small>Admin Console</small></span>
+      </a>
+      <div class="environment"><i></i> Production Node</div>
+      <nav class="side-nav" aria-label="Admin navigation">
+        <a class="nav-link" href="index.html"><span class="nav-icon">▦</span>Admin dashboard</a>
+        <a class="nav-link" href="users.html"><span class="nav-icon">♙</span>View and manage users</a>
+        <a class="nav-link" href="owner-applications.html"><span class="nav-icon">✓</span>Approve or reject Owner applications</a>
+        <a class="nav-link" href="equipment.html"><span class="nav-icon">▣</span>Manage all equipment</a>
+        <a class="nav-link active" href="bookings.html" aria-current="page"><span class="nav-icon">▤</span>Monitor bookings and borrowing</a>
+        <a class="nav-link" href="incidents.html"><span class="nav-icon">⚑</span>Manage incidents</a>
+        <a class="nav-link" href="activity-logs.html"><span class="nav-icon">◷</span>View notifications and activity logs</a>
+      </nav>
+      <a class="admin-login" href="index.html">Admin dashboard</a>
+    </aside>
+
+    <main class="main-area" id="top">
+      <header class="topbar">
+        <button class="mobile-menu" id="menuToggle" aria-label="Toggle navigation">☰</button>
+        <div class="mini-brand"><span class="brand-mark">✣</span><b>CampusShare</b><small>Academic Inventory</small></div>
+        <label class="global-search"><span>⌕</span><input data-admin-global-search type="search" placeholder="Search users, equipment, incidents..." /><kbd>⌘K</kbd></label>
+        <div class="topbar-right">
+          <span class="admin-pill"><i></i> INSTITUTIONAL ADMIN</span>
+          <span class="admin-name">Admin Supervisor<small>Campus Operations</small></span>
+          <span class="avatar">AS</span>
+        </div>
+      </header>
+
+      <section class="page-content" id="bookings">
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow">OPERATIONS / RESOURCE CONTROL</div>
+            <h1>Monitor bookings and borrowing</h1>
+            <p>Review loan timings, reservation requests, active checkouts, overdue items and custody compliance.</p>
+          </div>
+          <div class="heading-actions">
+            <button class="btn btn-primary" id="quickCheckout">＋ Quick Scan Check-Out</button>
+            <button class="btn btn-light" id="todaySchedule">▣ Today's Schedule</button>
+            <button class="btn btn-light" id="exportCsv">⇩ Export CSV</button>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <article class="metric-card">
+            <div class="metric-top"><span>Total Bookings</span><span class="metric-icon blue">▤</span></div>
+            <div class="metric-value" id="totalBookings">1,842</div>
+            <div class="metric-foot"><span class="positive">↗ +8.2%</span><span>vs. last month</span></div>
+            <div class="mini-line blue-line"></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-top"><span>Active Checkouts</span><span class="metric-icon blue">▣</span></div>
+            <div class="metric-value" id="activeCheckouts">186</div>
+            <div class="metric-foot"><span class="positive">↗ +4.6%</span><span>Currently with students</span></div>
+            <div class="mini-line teal-line"></div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-top"><span>Pending Requests</span><span class="metric-icon purple">◷</span></div>
+            <div class="metric-value" id="pendingRequests">24</div>
+            <div class="metric-foot"><span class="muted">Awaiting owner review</span></div>
+            <div class="mini-line purple-line"></div>
+          </article>
+          <article class="metric-card overdue-metric">
+            <div class="metric-top"><span>Overdue Items</span><span class="metric-icon red">▲</span></div>
+            <div class="metric-value" id="overdueItems">06</div>
+            <div class="metric-foot"><span class="danger-text">Requires institutional follow-up</span></div>
+            <button class="filter-overdue" id="filterOverdue">Filter Overdue Loans</button>
+          </article>
+        </div>
+
+        <div class="alert-banner">
+          <span class="alert-symbol">!</span>
+          <div class="alert-copy"><strong>Overdue Escalation Protocol Active <span class="priority-tag">PRIORITY NOTICE</span></strong><small>6 loans exceed their approved return window. Review outstanding items and contact the assigned borrowers.</small></div>
+          <button class="btn btn-light small-btn" id="notifyBorrowers">Notify All Borrowers</button>
+          <button class="btn btn-danger small-btn" id="applyHold">Apply Hold / Recall</button>
+        </div>
+
+        <div class="overview-grid">
+          <article class="panel distribution-panel">
+            <div class="panel-heading"><div><h2>Borrowing Distribution</h2><p>Live status overview</p></div><span class="live-indicator">● Active</span></div>
+            <div class="distribution-body">
+              <div class="donut-wrap"><div class="donut"><div><strong>216</strong><small>Total loans</small></div></div></div>
+              <div class="legend-list">
+                <div><i class="dot available"></i><span>Active</span><b>186</b><small>86%</small></div>
+                <div><i class="dot pending"></i><span>Pending</span><b>24</b><small>11%</small></div>
+                <div><i class="dot overdue"></i><span>Overdue</span><b>6</b><small>3%</small></div>
+              </div>
+            </div>
+            <div class="panel-foot">Updated just now <span>↗ View analytics</span></div>
+          </article>
+
+          <article class="panel custodians-panel">
+            <div class="panel-heading"><div><h2>Active Custodian Stations</h2><p>Current on-duty locations</p></div><span class="soft-tag">3 ACTIVE</span></div>
+            <div class="station-list">
+              <div class="station"><span class="station-icon">▣</span><div><strong>Media Arts Vault – Zone A</strong><small>Room 204 · Camera & Media</small></div><span class="station-count">2/3</span></div>
+              <div class="station"><span class="station-icon">⌁</span><div><strong>Robotics Lab Hub – Bay 2</strong><small>Bay 2 · Electronics & Robotics</small></div><span class="station-count">2/2</span></div>
+              <div class="station"><span class="station-icon">▤</span><div><strong>IT Central Depot</strong><small>Tower 2 · Computing Devices</small></div><span class="station-count">1/2</span></div>
+            </div>
+            <div class="panel-foot">Manage location capacity <span>Station settings →</span></div>
+          </article>
+
+          <article class="verification-panel">
+            <div class="verify-title"><span>▣</span><div><h2>Borrower Fast Verification</h2><small>STAFF / CUSTODIAN</small></div></div>
+            <p>Verify a student before releasing equipment. Scan a booking QR or search using a request ID.</p>
+            <label class="verify-input"><span>⌕</span><input id="verifyInput" placeholder="Enter booking or student ID" /></label>
+            <button class="btn btn-white" id="verifyBooking">Verify & Match Booking</button>
+            <div class="verify-divider">VERIFICATION CHECKLIST</div>
+            <ul><li>Confirm student identity</li><li>Confirm approval and time window</li><li>Record item condition at handover</li></ul>
+          </article>
+        </div>
+
+        <section class="panel booking-panel">
+          <div class="filter-row">
+            <label class="search-field"><span>⌕</span><input id="bookingSearch" type="search" placeholder="Search booking ID, borrower name, equipment..." /><button id="clearSearch" aria-label="Clear search">×</button></label>
+            <div class="filter-tabs" role="group" aria-label="Booking status filter">
+              <button class="filter-tab active" data-status="All">All (216)</button>
+              <button class="filter-tab" data-status="Active">Active</button>
+              <button class="filter-tab" data-status="Pending">Pending</button>
+              <button class="filter-tab" data-status="Overdue">Overdue</button>
+              <button class="filter-tab" data-status="Returned">Returned</button>
+            </div>
+            <select id="departmentFilter" aria-label="Filter by department"><option value="All">All Departments</option><option>Robotics</option><option>Media Arts</option><option>Computing</option><option>Physics</option><option>Electronics</option></select>
+          </div>
+          <div class="table-meta"><span>Showing <b id="rowCount">7</b> prioritized booking records</span><span>● Auto-sync every 30s <button id="refreshData">↻ Refresh</button></span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>BOOKING ID</th><th>BORROWER</th><th>EQUIPMENT & ASSET</th><th>LOAN SCHEDULE</th><th>LOCATION / CUSTODIAN</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+              <tbody id="bookingRows"></tbody>
+            </table>
+          </div>
+          <div class="table-footer"><span>Rows per page: <select id="pageSize"><option>7</option><option>10</option><option>20</option></select> <span class="muted">Page 1 of 1 (demo records)</span></span><div class="pagination"><button disabled>‹</button><button class="current">1</button><button disabled>›</button></div></div>
+        </section>
+        <footer class="page-footer"><span>CampusShare Admin Console · Booking oversight</span><span>All times shown in institutional local time</span></footer>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head"><div><span class="eyebrow">CAMPUSSHARE OPERATIONS</span><h2 id="modalTitle">Booking action</h2></div><button class="icon-btn" id="closeModal" aria-label="Close">×</button></div>
+      <div id="modalBody"></div>
+      <div class="modal-actions" id="modalActions"></div>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="admin-bookings.js"></script>
+  <script src="admin-navigation.js"></script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="CampusShare borrowing history and custody log" />
+  <title>Transaction History - CampusShare</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#dashboard" aria-label="CampusShare home">
+        <span class="brand-mark">▣</span>
+        <span>CampusShare</span>
+        <span class="brand-tag">Academic Inventory</span>
+      </a>
+      <div class="sidebar-label">STUDENT PORTAL</div>
+      <nav class="side-nav" aria-label="Student portal navigation">
+        <a href="#dashboard"><span>⌂</span> Dashboard</a>
+        <a href="#browse"><span>▤</span> Browse Equipment</a>
+        <a href="#requests"><span>♧</span> My Requests</a>
+        <a href="#borrowed"><span>▣</span> Borrowed Equipment</a>
+        <a class="active" href="#history" aria-current="page"><span>◷</span> History</a>
+        <a href="#settings"><span>⚙</span> Profile &amp; Settings</a>
+      </nav>
+      <div class="sidebar-help">
+        <span class="help-icon">?</span>
+        <strong>Need help?</strong>
+        <p>Questions about your borrowing records?</p>
+        <a href="mailto:campusshare@example.edu">Contact support →</a>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="mobile-menu" id="menuToggle" aria-label="Toggle navigation">☰</button>
+        <div class="top-brand"><span class="brand-mark small">▣</span><strong>CampusShare</strong><span class="brand-tag">Academic Inventory</span></div>
+        <label class="global-search"><span>⌕</span><input type="search" placeholder="Search academic equipment, serials, labs..." aria-label="Global search" /><kbd>⌘K</kbd></label>
+        <div class="portal-switch"><span class="selected">Student Portal</span><span>Lab Manager</span></div>
+        <button class="icon-button notification" aria-label="Notifications">♧<i></i></button>
+        <div class="user-chip"><span class="avatar">AC</span><span><b>Alex Chen</b><small>Student ID · R2024</small></span><span class="chevron">⌄</span></div>
+      </header>
+
+      <div class="breadcrumb">Student Portal <span>›</span> Records <span>›</span> <b>History</b></div>
+
+      <section class="page-heading">
+        <div>
+          <p class="eyebrow">AUDIT &amp; ACCOUNTABILITY</p>
+          <h1>Borrowing History &amp; Custody Log</h1>
+          <p class="subheading">Permanent institutional log, inspection certificates, and chain-of-custody clearances.</p>
+        </div>
+        <div class="heading-actions">
+          <button class="btn btn-outline" id="exportBtn"><span>↓</span> Export History Log</button>
+          <button class="btn btn-primary" id="auditBtn"><span>◉</span> Download Audit Transcript</button>
+        </div>
+      </section>
+
+      <section class="metric-grid" aria-label="Borrowing history summary">
+        <article class="metric-card">
+          <div class="metric-label">LIFETIME<br />CIRCULATION <span class="metric-icon">▣</span></div>
+          <div class="metric-value">14 <small>Items</small></div>
+          <div class="metric-foot positive">✓ 100% all inventory accounted</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">ON-TIME RETURN<br />RATE <span class="metric-icon green">◉</span></div>
+          <div class="metric-value green-text">100% <small>Flawless</small></div>
+          <div class="metric-foot positive">✓ Zero late penalties or strikes</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">AVG BORROW<br />DURATION <span class="metric-icon">▦</span></div>
+          <div class="metric-value">3.8 <small>Days / asset</small></div>
+          <div class="metric-foot">◷ Standard policy cap: 7.0 days</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">INSTITUTIONAL<br />STANDING <span class="metric-icon">♙</span></div>
+          <div class="standing">Tier 2 Clearance</div>
+          <div class="metric-foot">✓ Verified High-Access Access</div>
+          <div class="metric-foot muted">Valid through Fall 2026</div>
+        </article>
+      </section>
+
+      <section class="toolbar" aria-label="History filters">
+        <label class="search-field"><span>⌕</span><input id="recordSearch" type="search" placeholder="Search by equipment, ID..." /></label>
+        <label class="select-wrap"><span class="sr-only">Filter by facility</span><select id="facilityFilter"><option value="all">All Labs &amp; Facilities</option><option>Innovation Hub</option><option>Engineering Block</option><option>Media Arts Center</option><option>Fine Arts Studio</option></select></label>
+        <label class="select-wrap"><span class="sr-only">Filter by semester</span><select id="semesterFilter"><option value="all">Spring 2025 (Current)</option><option>Fall 2024</option><option>Spring 2024</option></select></label>
+        <div class="filter-tabs" role="tablist" aria-label="Record type">
+          <button class="filter-tab active" data-filter="all" role="tab" aria-selected="true">All <b>(14)</b></button>
+          <button class="filter-tab" data-filter="impacted" role="tab" aria-selected="false">Impacted <b>(4)</b></button>
+          <button class="filter-tab" data-filter="reports" role="tab" aria-selected="false">Reports <b>(4)</b></button>
+        </div>
+      </section>
+
+      <div class="results-meta"><span id="resultCount">Showing 4 of 14 audit-logged custody records</span><span class="verified-note">✓ All returns verified by lab directors</span><span class="sync-note">◷ Ledger sync: 12 minutes ago</span></div>
+
+      <section class="table-card" aria-label="Borrowing history records">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Equipment / Asset<br />Identifier</th>
+                <th>Custody Timeline</th>
+                <th>Custodian<br />Facility</th>
+                <th>Inspection &amp;<br />Condition Clearance</th>
+                <th>Ledger<br />Status</th>
+                <th>Record<br />Actions</th>
+              </tr>
+            </thead>
+            <tbody id="historyRows"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="emptyState" hidden>No matching history records. Try changing your search or filters.</div>
+        <footer class="table-footer">
+          <span id="pageSummary">Page 1 of 4&nbsp; | &nbsp;14 records permanently archived on Ledger</span>
+          <div class="pagination" id="pagination" aria-label="History pages">
+            <button data-page="prev" disabled>Previous</button>
+            <button class="current" data-page="1">1</button>
+            <button data-page="2">2</button>
+            <button data-page="3">3</button>
+            <button data-page="4">4</button>
+            <button data-page="next">Next</button>
+          </div>
+        </footer>
+      </section>
+
+      <section class="integrity-banner">
+        <div class="integrity-icon">♢</div>
+        <div><strong>Institutional Chain-of-Custody Integrity Guarantee</strong><p>Every custody transfer is digitally counter-signed by certified university lab managers upon intake. Return receipts serve as official institutional clearance documentation with zero fees.</p></div>
+        <a href="#policy" id="policyLink">Read Borrowing Policy v4.2 →</a>
+      </section>
+      <footer class="site-footer">CampusShare · Academic Asset Directory <span>Secure institutional records</span></footer>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" id="modalClose" aria-label="Close dialog">×</button>
+      <p class="eyebrow">CAMPUSSHARE RECORD</p>
+      <h2 id="modalTitle">Record details</h2>
+      <div id="modalContent"></div>
+      <div class="modal-actions"><button class="btn btn-outline" id="modalDone">Close</button></div>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="../../portal-bridge.js"></script>
+</body>
+</html>

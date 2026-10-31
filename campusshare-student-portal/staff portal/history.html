@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "inverse-surface": "#213145", "on-secondary-container": "#58657b", "on-surface": "#0b1c30", "background": "#f8f9ff", "on-secondary-fixed": "#0e1c2f", "on-background": "#0b1c30", "surface-container-lowest": "#ffffff", "on-secondary-fixed-variant": "#3a475c", "tertiary-fixed-dim": "#bcc7de", "secondary-container": "#d6e3fe", "primary-container": "#008378", "on-error": "#ffffff", "on-tertiary-container": "#fefcff", "inverse-primary": "#6bd8cb", "error": "#ba1a1a", "on-surface-variant": "#3d4947", "primary-fixed-dim": "#6bd8cb", "on-primary-container": "#f4fffc", "on-tertiary-fixed-variant": "#3c475a", "on-error-container": "#93000a", "surface-bright": "#f8f9ff", "on-tertiary-fixed": "#111c2d", "surface": "#f8f9ff", "primary": "#00685f", "outline-variant": "#bcc9c6", "secondary": "#525f75", "surface-dim": "#cbdbf5", "surface-tint": "#006a61", "error-container": "#ffdad6", "on-primary-fixed-variant": "#005049", "on-secondary": "#ffffff", "on-tertiary": "#ffffff", "surface-container-high": "#dce9ff", "outline": "#6d7a77", "surface-variant": "#d3e4fe", "inverse-on-surface": "#eaf1ff", "tertiary-fixed": "#d8e3fb", "tertiary": "#515c71", "surface-container": "#e5eeff", "on-primary-fixed": "#00201d", "secondary-fixed-dim": "#bac7e1", "tertiary-container": "#6a758a", "primary-fixed": "#89f5e7", "surface-container-low": "#eff4ff", "on-primary": "#ffffff", "secondary-fixed": "#d6e3fe", "surface-container-highest": "#d3e4fe" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-2xs": "0.125rem", "space-2xl": "3rem", "gutter-sm": "1rem", "margin-sm": "1rem", "space-sm": "0.5rem", "margin": "2rem", "space-xs": "0.25rem", "space-md": "1rem", "space-lg": "1.5rem", "space-xl": "2rem", "gutter": "1.5rem" }, "fontFamily": { "code": ["Inter"], "headline-lg": ["Inter"], "title-sm": ["Inter"], "headline-xl": ["Inter"], "headline-sm": ["Inter"], "label-sm": ["Inter"], "headline-xl-mobile": ["Inter"], "body-md": ["Inter"], "title-md": ["Inter"], "headline-md": ["Inter"], "headline-lg-mobile": ["Inter"], "caption": ["Inter"], "label-md": ["Inter"], "body-lg": ["Inter"], "body-sm": ["Inter"] }, "fontSize": { "code": ["12px", {"lineHeight": "16px", "letterSpacing": "-0.01em", "fontWeight": "500"}], "headline-lg": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "600"}], "title-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "-0.005em", "fontWeight": "600"}], "headline-xl": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "700"}], "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}], "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "600"}], "headline-xl-mobile": ["28px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}], "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}], "title-md": ["16px", {"lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600"}], "headline-md": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600"}], "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600"}], "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}], "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}], "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}], "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}] } } } };</script><link rel="stylesheet" href="css/style.css" /><title>ShareSpace | Equipment History</title></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-inverse-surface text-inverse-on-surface z-50 flex flex-col justify-between shadow-[0_1px_8px_rgba(0,0,0,0.08)]"><div class="flex flex-col flex-1 min-h-0"><div class="p-space-lg flex flex-col gap-space-xs"><div class="flex items-center gap-space-sm"><img alt="ShareSpace Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1ViDAF2M8Y5IrvFvEtKyP8y3KBDOq_2HBkUDzBgSJ8uusF0o-6ZTbYfNNbtrCwI8LVGWKkivs8w6PX5guk9FnpC0RcHjsGDp-vmG_JeUJDhMnUwk4sBh-8ZhGy1DQdqsu2r8glIh7nLtlfu5wu6kw73EO_q_JUejMJAnhNDlO1fLfXSW4ErlVtJa5kg3lNwd8ITkeGtJhIY7easwNo1gD96skFY59-FeRCF-ol4T3I"/><span class="font-headline-sm text-headline-sm text-surface-container-lowest tracking-tight">ShareSpace</span></div><div class="inline-flex items-center gap-space-xs px-space-xs py-space-2xs rounded bg-surface-container-highest/10 text-primary-fixed"><span class="font-label-sm text-label-sm uppercase tracking-wider">Owner Portal • MIT BioEngineering Labs</span></div></div><nav class="flex-1 px-space-md py-space-sm space-y-space-xs overflow-y-auto" data-active-classes="bg-primary-container text-on-primary-container font-title-sm text-title-sm"><div class="px-space-sm pb-space-xs font-label-sm text-label-sm uppercase text-outline-variant tracking-wider">Operational Core</div><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-outline-variant hover:bg-surface-container-highest/10 hover:text-surface-container-lowest transition-all" data-path="dashboard" href="dashboard.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">grid_view</span><span class="font-body-md text-body-md">Dashboard</span></div></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-outline-variant hover:bg-surface-container-highest/10 hover:text-surface-container-lowest transition-all" data-path="my-equipment" href="equipment.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">biotech</span><span class="font-body-md text-body-md">My Equipment</span></div></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-outline-variant hover:bg-surface-container-highest/10 hover:text-surface-container-lowest transition-all" data-path="booking-requests" href="requests.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">event_available</span><span class="font-body-md text-body-md">Booking Requests</span></div><span class="px-space-xs py-space-2xs rounded-full bg-error text-on-error font-label-sm text-label-sm">4</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-outline-variant hover:bg-surface-container-highest/10 hover:text-surface-container-lowest transition-all" data-path="calendar" href="calendar.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">calendar_month</span><span class="font-body-md text-body-md">Calendar</span></div></a><a aria-current="page" class="flex items-center justify-between px-space-md py-space-sm rounded-lg transition-all bg-primary-container text-on-primary-container font-title-sm text-title-sm" data-path="equipment-history" href="history.html"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">history</span><span class="font-body-md text-body-md">Equipment History</span></div></a></nav></div><div class="p-space-md space-y-space-md bg-inverse-surface/80"><div class="space-y-space-xs"><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded-lg text-outline-variant hover:bg-surface-container-highest/10 hover:text-surface-container-lowest transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]">settings</span><span class="font-body-sm text-body-sm">Settings</span></a><a class="flex items-center gap-space-sm px-space-md py-space-xs rounded-lg text-outline-variant hover:bg-surface-container-highest/10 hover:text-surface-container-lowest transition-all" data-path="help-and-support" href="#"><span class="material-symbols-outlined text-[20px]">support</span><span class="font-body-sm text-body-sm">Help &amp; Support</span></a></div><div class="p-space-sm rounded-xl bg-surface-container-highest/5 space-y-space-xs"><div class="flex items-center justify-between text-outline-variant"><span class="font-caption text-caption">Storage &amp; Lab Quota</span><span class="font-caption text-caption font-semibold text-primary-fixed">84%</span></div><div class="w-full h-1.5 rounded-full bg-surface-container-highest/20 overflow-hidden"><div class="bg-primary-container h-full rounded-full w-[84%]"></div></div><div class="font-caption text-caption text-outline-variant/80">420 GB of 500 GB utilized</div></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 px-space-lg flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs text-on-surface-variant"><span class="font-body-sm text-body-sm">ShareSpace</span><span class="font-body-sm text-body-sm text-outline">/</span><span class="font-body-sm text-body-sm text-on-surface font-semibold">Overview &amp; Analytics</span></div><div class="h-4 w-px bg-outline-variant/40 hidden md:block"></div><button class="hidden md:flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg bg-surface-container-low text-on-surface hover:bg-surface-container transition-all" type="button"><span class="material-symbols-outlined text-[18px] text-primary">domain</span><span class="font-body-sm text-body-sm font-medium">MIT NanoFab &amp; Molecular Bio Lab</span><span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span></button></div><div class="flex items-center gap-space-md"><div class="relative hidden xl:flex items-center"><span class="material-symbols-outlined absolute left-space-sm text-[18px] text-on-surface-variant pointer-events-none">search</span><input class="h-10 pl-9 pr-14 rounded-lg bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary shadow-sm w-72" placeholder="Quick search equipment, reservations..." type="text"/><kbd class="absolute right-space-sm font-code text-code text-outline bg-surface-container-high px-space-xs py-space-2xs rounded">Cmd+K</kbd></div><div class="hidden lg:flex items-center gap-space-sm px-space-sm py-space-xs rounded-full bg-surface-container-low font-body-sm text-body-sm"><div class="flex items-center gap-space-2xs"><span class="w-2 h-2 rounded-full bg-primary"></span><span class="font-label-sm text-label-sm text-on-surface font-semibold">24</span><span class="text-on-surface-variant font-caption text-caption">Active</span></div><span class="text-outline-variant">•</span><div class="flex items-center gap-space-2xs"><span class="w-2 h-2 rounded-full bg-secondary"></span><span class="font-label-sm text-label-sm text-on-surface font-semibold">3</span><span class="text-on-surface-variant font-caption text-caption">Maintenance</span></div></div><div class="relative flex items-center"><button class="p-space-xs rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all relative" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-error ring-2 ring-surface"></span></button></div><button class="hidden sm:flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-primary hover:bg-primary-container text-on-primary font-title-sm text-title-sm transition-all shadow-sm" type="button"><span class="material-symbols-outlined text-[18px]">add</span><span>Add Equipment</span></button><div class="flex items-center gap-space-sm pl-space-xs"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfqayIMGEvCkW4XLtwCA3aVg8W7Ugo21I37c753wcD_KYiecAC94kpse1all1wjaOLtKIOqGQ77beyOm-_LzJ5eDcmyukemo-_d4NeuGres997o-G2X5KvliFi8xc5hEM2AWHAqeeKWjYv0wZMt6Wkdgq8ptnd2xzUxwA_3IJp5ltBdL9QxOcBDZPRxiLN8j6LSuPpffJKtzTaDazXoZNFVH5JxrIn1Gs0BSRjASY"/><div class="hidden md:flex flex-col text-left"><div class="flex items-center gap-space-xs"><span class="font-title-sm text-title-sm text-on-surface leading-tight">Dr. Eleanor Vance</span><span class="px-space-xs py-space-2xs rounded bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm uppercase leading-none">Verified Owner</span></div><span class="font-caption text-caption text-on-surface-variant leading-tight">Lab Director • Biotech Research Core</span></div><span class="material-symbols-outlined text-[18px] text-on-surface-variant hidden md:block">expand_more</span></div></div></header><main class="w-full pt-16 bg-surface px-space-xl"><div class="flex flex-col w-full pb-space-2xl">
+<!-- Top Action & Overview Band -->
+<section class="flex flex-col xl:flex-row xl:items-end justify-between gap-space-lg py-space-xl">
+<div class="space-y-space-xs max-w-3xl">
+<div class="inline-flex items-center gap-space-xs px-space-sm py-space-2xs rounded-full bg-primary/10 text-primary">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Cryptographic Facility Ledger • GLP/ISO 17025 Compliant</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Equipment Usage History &amp; Audit Trail</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+        Complete immutable records of high-throughput scientific instrumentation loans, telemetry operating durations, automated check-in timestamps, return condition assessments, and verified incident manifests.
+      </p>
+</div>
+<!-- Quick Export Actions -->
+<div class="flex flex-wrap items-center gap-space-sm shrink-0">
+<button class="group flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container-high transition-all shadow-sm" id="btn-export-csv">
+<span class="material-symbols-outlined text-[18px] text-secondary group-hover:text-primary transition-colors">table_view</span>
+<span class="font-title-sm text-title-sm">Export Audit Log (CSV / Excel)</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-primary hover:bg-primary-container text-on-primary font-title-sm text-title-sm transition-all shadow-sm" id="btn-export-pdf">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+<span>Facility Compliance Report (PDF)</span>
+</button>
+</div>
+</section>
+<!-- Metric Quick-Telemetry Tiles -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md mb-space-xl">
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-center justify-between">
+<div class="space-y-space-2xs">
+<span class="font-caption text-caption text-secondary uppercase tracking-wider">Total Recorded Sessions</span>
+<div class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">1,482</div>
+<div class="flex items-center gap-space-2xs text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span>+14.2% past 30 days</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">history_toggle_off</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-center justify-between">
+<div class="space-y-space-2xs">
+<span class="font-caption text-caption text-secondary uppercase tracking-wider">Logged Runtime</span>
+<div class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">8,924 <span class="font-title-sm text-title-sm text-secondary font-normal">hrs</span></div>
+<div class="flex items-center gap-space-2xs text-secondary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">precision_manufacturing</span>
+<span>99.2% nominal drift</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-xl bg-secondary-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[24px]">timelapse</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-center justify-between">
+<div class="space-y-space-2xs">
+<span class="font-caption text-caption text-secondary uppercase tracking-wider">Condition Pass Rate</span>
+<div class="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">98.7%</div>
+<div class="flex items-center gap-space-2xs text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Zero biohazard breaches</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-on-primary-fixed-variant">
+<span class="material-symbols-outlined text-[24px]">verified</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex items-center justify-between">
+<div class="space-y-space-2xs">
+<span class="font-caption text-caption text-secondary uppercase tracking-wider">Active Exceptions</span>
+<div class="font-headline-lg text-headline-lg text-error font-semibold tracking-tight">01 <span class="font-title-sm text-title-sm text-error/80 font-normal">Overdue</span></div>
+<div class="flex items-center gap-space-2xs text-error font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span>Automated escalations sent</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-xl bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[24px]">notification_important</span>
+</div>
+</div>
+</section>
+<!-- Multifaceted Filter & Global Query Bar -->
+<section class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm mb-space-lg space-y-space-md">
+<div class="flex flex-col lg:flex-row gap-space-md items-stretch lg:items-center">
+<!-- Universal Search Field -->
+<div class="relative flex-1">
+<span class="material-symbols-outlined absolute left-space-md top-1/2 -translate-y-1/2 text-[20px] text-outline pointer-events-none">search</span>
+<input class="w-full h-11 pl-11 pr-space-md rounded-lg bg-surface-container-low text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary shadow-inner" id="global-search-input" placeholder="Search by equipment name, ID, user name, user ID, or transaction hash..." type="text"/>
+</div>
+<!-- Quick Reset / Filter count indicator -->
+<div class="flex items-center justify-between lg:justify-end gap-space-sm shrink-0">
+<span class="font-caption text-caption text-on-surface-variant font-medium">Filtering 5 of 1,482 records</span>
+<button class="flex items-center gap-space-2xs px-space-sm py-space-xs rounded text-secondary hover:text-on-surface font-label-sm text-label-sm" id="btn-reset-filters">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+<span>Reset</span>
+</button>
+</div>
+</div>
+<!-- Dropdown Filter Strips -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-space-sm pt-space-xs">
+<!-- Equipment Category Filter -->
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-sm text-label-sm text-secondary uppercase tracking-wider" for="filter-category">Equipment Category</label>
+<div class="relative">
+<select class="w-full h-10 px-space-sm pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm appearance-none focus:outline-none focus:ring-1 focus:ring-primary" id="filter-category">
+<option value="all">All Categories</option>
+<option value="mass-spec">Mass Spectrometry</option>
+<option value="microscopy">High-Resolution Microscopy</option>
+<option value="cytometry">Flow Cytometry &amp; Cell Sorting</option>
+<option value="sequencing">Next-Gen Sequencing</option>
+<option value="centrifuge">Centrifugation &amp; Separation</option>
+</select>
+<span class="material-symbols-outlined absolute right-space-sm top-1/2 -translate-y-1/2 text-[18px] text-outline pointer-events-none">unfold_more</span>
+</div>
+</div>
+<!-- Booking Status Filter -->
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-sm text-label-sm text-secondary uppercase tracking-wider" for="filter-status">Booking Status</label>
+<div class="relative">
+<select class="w-full h-10 px-space-sm pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm appearance-none focus:outline-none focus:ring-1 focus:ring-primary" id="filter-status">
+<option value="all">All (Returned, In-Use, Overdue, Cancelled)</option>
+<option value="returned">Returned (Concluded)</option>
+<option value="in-use">In-Use (Operational)</option>
+<option value="overdue">Overdue (Alert Active)</option>
+<option value="cancelled">Cancelled / Voided</option>
+</select>
+<span class="material-symbols-outlined absolute right-space-sm top-1/2 -translate-y-1/2 text-[18px] text-outline pointer-events-none">unfold_more</span>
+</div>
+</div>
+<!-- Date Range Picker Mock -->
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Date Window</label>
+<div class="relative flex items-center">
+<input class="w-full h-10 pl-space-sm pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary" readonly="" type="text" value="Oct 1 – Oct 31, 2024"/>
+<span class="material-symbols-outlined absolute right-space-sm text-[18px] text-outline pointer-events-none">date_range</span>
+</div>
+</div>
+<!-- Specific Equipment Filter -->
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-sm text-label-sm text-secondary uppercase tracking-wider" for="filter-equipment">Specific Equipment</label>
+<div class="relative">
+<select class="w-full h-10 px-space-sm pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm appearance-none focus:outline-none focus:ring-1 focus:ring-primary" id="filter-equipment">
+<option value="all">All Equipment (18 Units)</option>
+<option value="EQ-MS-4802">Orbitrap Exploris 480 (EQ-MS-4802)</option>
+<option value="EQ-MIC-9801">Zeiss LSM 980 Confocal (EQ-MIC-9801)</option>
+<option value="EQ-CYT-0003">BD FACSAria III Sorter (EQ-CYT-0003)</option>
+<option value="EQ-GEN-6003">Illumina NovaSeq 6000 (EQ-GEN-6003)</option>
+<option value="EQ-CEN-0100">Beckman Ultracentrifuge (EQ-CEN-0100)</option>
+</select>
+<span class="material-symbols-outlined absolute right-space-sm top-1/2 -translate-y-1/2 text-[18px] text-outline pointer-events-none">unfold_more</span>
+</div>
+</div>
+<!-- Specific Institution Filter -->
+<div class="flex flex-col gap-space-2xs">
+<label class="font-label-sm text-label-sm text-secondary uppercase tracking-wider" for="filter-institution">User Institution</label>
+<div class="relative">
+<select class="w-full h-10 px-space-sm pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm appearance-none focus:outline-none focus:ring-1 focus:ring-primary" id="filter-institution">
+<option value="all">All Universities &amp; Institutes</option>
+<option value="BU">Boston University</option>
+<option value="Harvard">Harvard University</option>
+<option value="NEU">Northeastern University</option>
+<option value="MIT">MIT Internal Departments</option>
+<option value="Broad">Broad Institute of MIT &amp; Harvard</option>
+</select>
+<span class="material-symbols-outlined absolute right-space-sm top-1/2 -translate-y-1/2 text-[18px] text-outline pointer-events-none">unfold_more</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Comprehensive Structured Activity History Table -->
+<section class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden flex flex-col mb-space-xl">
+<div class="px-space-lg py-space-md bg-surface-container-lowest flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">dataset</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Verified Telemetry &amp; Access Log</h2>
+</div>
+<div class="flex items-center gap-space-xs text-secondary font-caption text-caption">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span>Real-time Sync Active</span>
+</div>
+</div>
+<!-- Table Container -->
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left font-body-sm text-body-sm border-collapse">
+<thead class="bg-surface-container-low text-secondary font-label-sm text-label-sm uppercase tracking-wider">
+<tr>
+<th class="py-space-sm px-space-md">Equipment</th>
+<th class="py-space-sm px-space-md">Borrower / User</th>
+<th class="py-space-sm px-space-md">Allocated Times</th>
+<th class="py-space-sm px-space-md">Actual Check-in / Return</th>
+<th class="py-space-sm px-space-md">Duration</th>
+<th class="py-space-sm px-space-md">Status</th>
+<th class="py-space-sm px-space-md">Pre-Usage Condition</th>
+<th class="py-space-sm px-space-md">Return Condition</th>
+<th class="py-space-sm px-space-md text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-none" id="audit-table-body">
+<!-- Row 1: Orbitrap Exploris 480 -->
+<tr class="hover:bg-surface-container-low/70 transition-colors cursor-pointer group" onclick="openAuditDrawer('EQ-MS-4802', 'Dr. Elena Rostova', 'USR-8820', 'Boston University', 'Oct 23, 2024', '7 hrs 55 min', 'Returned', 'Pristine - Chamber Cleaned', 'TX-89240-E48')">
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-sm">
+<img class="w-11 h-11 rounded-lg object-cover bg-surface-container shrink-0 shadow-sm" data-alt="High precision Orbitrap Exploris 480 mass spectrometer scientific instrument chassis in a pristine biomedical cleanroom lab with soft teal ambient LED lights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCf1RyPJYbBV21T8uq7Ke6x-Q2SKMwZBzTc0itcREQ1f9FH9WNsM4F3R6jSYyy0GKG2LTrmVCL7IW3zyezWAaPUJb1cS0H-vrpE2MRolvHwQNopoE-efUzYSjcrS5fK4EzPlFAu6oNYJ8JLKLXo0nnP2D3GGA_4G1e4epERp-3_4Oj1ATgMk0tK8pZM0AnTFKTqnCcEPOFC883OmQz6sCdqy_juC7HMCBoMgKzz8Ww"/>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm text-on-surface truncate group-hover:text-primary transition-colors">Orbitrap Exploris 480</span>
+<span class="font-code text-code text-secondary">EQ-MS-4802</span>
+<span class="font-caption text-caption text-outline">Mass Spectrometry</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-sm">
+<img class="w-9 h-9 rounded-full object-cover bg-surface-container shrink-0" data-alt="Professional portrait of researcher Dr. Elena Rostova in laboratory safety eyewear against a neutral university research laboratory backdrop." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBm2UytKNiSTroJbzHDrCxvGBrZT3rYXEu1K-cWsVDlXGjgnCFO1qX3lyn87U2yqiz98y62TZSx1YRona0lPs8of6_SEsPSCoVz8NrKftI-95NeVthcku2UJ_G9fBSR5fVbMFdHqyYPh6BfgwM8uAxRH17LjOW1_78wEb6tY8E2rgK7PbUOHfxpTorcQ9KXzuSl9QZlyXAixoOZo4PSJc2BSz5JqdTQmRrCk8A4I1A"/>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm text-on-surface truncate">Dr. Elena Rostova</span>
+<div class="flex items-center gap-space-2xs text-secondary font-caption text-caption">
+<span class="font-code text-code text-secondary">USR-8820</span>
+<span>•</span>
+<span class="truncate">Boston Univ.</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Oct 23, 2024</span>
+<span class="font-caption text-caption text-secondary">09:00 – 17:00 EDT</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface">In: 08:55 EDT</span>
+<span class="font-caption text-caption text-secondary">Out: 16:50 EDT</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<span class="font-title-sm text-title-sm text-on-surface">7 hrs 55 min</span>
+<span class="block font-caption text-caption text-primary">In compliance</span>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<span class="inline-flex items-center gap-space-2xs px-space-xs py-space-2xs rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>Returned</span>
+</span>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-2xs text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+<span class="font-caption text-caption">100% Calibrated</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex flex-col gap-space-2xs">
+<span class="inline-flex items-center gap-space-2xs text-primary font-caption text-caption font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>Pristine - Chamber Cleaned</span>
+</span>
+<span class="font-caption text-caption text-secondary">Verified by Tech #402</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-space-xs">
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-on-surface transition-colors" onclick="event.stopPropagation(); openAuditDrawer('EQ-MS-4802', 'Dr. Elena Rostova', 'USR-8820', 'Boston University', 'Oct 23, 2024', '7 hrs 55 min', 'Returned', 'Pristine - Chamber Cleaned', 'TX-89240-E48')" title="View Full Audit">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-primary transition-colors" onclick="event.stopPropagation(); showToast('Condition Report Loaded (PDF ready)')" title="Condition Report">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</button>
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-on-surface transition-colors" onclick="event.stopPropagation(); showToast('Downloading Cryptographic Session Receipt...')" title="Download Receipt">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Zeiss LSM 980 Confocal -->
+<tr class="hover:bg-surface-container-low/70 transition-colors cursor-pointer group" onclick="openAuditDrawer('EQ-MIC-9801', 'Dr. Marcus Chen', 'USR-8921', 'Harvard University', 'Oct 22, 2024', '8 hrs 13 min', 'Returned', 'Lens Wiped with Optic Grade Alcohol', 'TX-77192-Z98')">
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-sm">
+<img class="w-11 h-11 rounded-lg object-cover bg-surface-container shrink-0 shadow-sm" data-alt="High magnification Zeiss laser scanning confocal microscope workstation with dual monitors displaying cell fluorescent imagery in modern research facility." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfo2UK9R5UojzpXoNr7WC7lrCVvlMga5ZJ2nuEtfAO_9xbmIrrJ7VrJjB5lCRn7eAf081d6p7d8fF7q2QN4k8mz1cflHuP6AOYmZjL-vKB9mkVKcpv6M1fnUNNYICkr5mcr3UnCtBEma8_wYR6cSrcYrwtVgGQFcDhzzcIfRRwlAzq3bOdZFYRy-wULjflCfZ0K-DiShBs2dAsejcF528-B1EtMFkIqwAArlURDHk"/>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm text-on-surface truncate group-hover:text-primary transition-colors">Zeiss LSM 980 Confocal</span>
+<span class="font-code text-code text-secondary">EQ-MIC-9801</span>
+<span class="font-caption text-caption text-outline">Optics / Microscopy</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-sm">
+<img class="w-9 h-9 rounded-full object-cover bg-surface-container shrink-0" data-alt="Portrait of Asian scientist Dr Marcus Chen wearing a smart lab coat in a state of the art genomics facility." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBE5s_0U6ka1eX962gZeLKLE08XLMX-I9AdK6a7nXnm1WQC6loC8k-ZxfDXqumDV5JFZW76pMXNSDc1_2tCFAOcm-qVgBWW_b34nIl9IY8FKP1Qj15czCcrwxfEeRpPuhdH0VKwZR8jE8PheUZ90t1W9gDnquShfg-SuHqsIUCMfL3xCBwzxGxz2sjQ0h0kwD8sX98Wqjy_hxcueDtyKNlCXIaMas01rsvCxNo5trU"/>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm text-on-surface truncate">Dr. Marcus Chen</span>
+<div class="flex items-center gap-space-2xs text-secondary font-caption text-caption">
+<span class="font-code text-code text-secondary">USR-8921</span>
+<span>•</span>
+<span class="truncate">Harvard</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Oct 22, 2024</span>
+<span class="font-caption text-caption text-secondary">10:00 – 18:00 EDT</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface">In: 10:02 EDT</span>
+<span class="font-caption text-caption text-secondary">Out: 18:15 EDT</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<span class="font-title-sm text-title-sm text-on-surface">8 hrs 13 min</span>
+<span class="block font-caption text-caption text-secondary">+13 min tolerance ok</span>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<span class="inline-flex items-center gap-space-2xs px-space-xs py-space-2xs rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>Returned</span>
+</span>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-2xs text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+<span class="font-caption text-caption">Nominal</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex flex-col gap-space-2xs">
+<span class="font-caption text-caption text-on-surface font-medium">Lens Wiped with Optic Grade Alcohol</span>
+<span class="font-caption text-caption text-secondary">Laser hours logged (4.2h active)</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-space-xs">
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-on-surface transition-colors" onclick="event.stopPropagation(); openAuditDrawer('EQ-MIC-9801', 'Dr. Marcus Chen', 'USR-8921', 'Harvard University', 'Oct 22, 2024', '8 hrs 13 min', 'Returned', 'Lens Wiped with Optic Grade Alcohol', 'TX-77192-Z98')" title="View Full Audit">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-primary transition-colors" onclick="event.stopPropagation(); showToast('Condition Report Loaded (PDF ready)')" title="Condition Report">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</button>
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-on-surface transition-colors" onclick="event.stopPropagation(); showToast('Downloading Cryptographic Session Receipt...')" title="Download Receipt">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: BD FACSAria III Sorter (OVERDUE) -->
+<tr class="hover:bg-error-container/30 transition-colors cursor-pointer group bg-error-container/10" onclick="openAuditDrawer('EQ-CYT-0003', 'Kevin Vance', 'USR-9931', 'NEU Bio', 'Oct 24, 2024', '3 hrs 45 min elapsed', 'Overdue', 'Pending Inspection', 'TX-10943-BD3')">
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-sm">
+<img class="w-11 h-11 rounded-lg object-cover bg-surface-container shrink-0 shadow-sm" data-alt="Flow cytometer BD FACSAria cell sorter station with fluidics cart and high precision lasers in a cell biology laboratory." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJ5VzXXCflInUyToH3tXG9E1ncc5Bw_HCOa-mknvP3PLzVVYgFnlCX9eZZdyMiF7kg1ApEi6GWYP8_G4cukXb_pygLaPQZB8FW2u3OOZpQnKkz7XLFFNfhsNunYd9c0cbSA8I8SzOGI3Ot18J7ZQLUu2QXI3m0GeQr-xhbxKDyjeTLLpcIyfrRk7OWUH7RN3v8vhoNabOv0B4C_xj48PIU1-gtcJDlIYAoLLyJrs8"/>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm text-on-surface truncate group-hover:text-error transition-colors">BD FACSAria III Sorter</span>
+<span class="font-code text-code text-secondary">EQ-CYT-0003</span>
+<span class="font-caption text-caption text-outline">Cell Sorting / Flow</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-sm">
+<img class="w-9 h-9 rounded-full object-cover bg-surface-container shrink-0" data-alt="Portrait of young biomedical engineering graduate student Kevin Vance inside an academic research facility." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbTiI0qln3PzPs5SDvGttggj-QGxRA9GFsbaivRP3i8KtigPNo7vffGK_rNKNxroI7RJfOtVPe_maBsQTneKfLB02fHAhG-5CWxur8OcjXMKeDvug0P3-gqmK_XoVGzWHhY_oeCbzKWVqTQu925OAInNcHbc9TFT-2xIgeeTcreIHfbFJ5nUggP_aG7k5Ik7BMG0vlCAr9lLKGzCQ42Z0JjAoL08n5KZGvjNO_lTY"/>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm text-on-surface truncate">Kevin Vance</span>
+<div class="flex items-center gap-space-2xs text-secondary font-caption text-caption">
+<span class="font-code text-code text-secondary">USR-9931</span>
+<span>•</span>
+<span class="truncate">NEU Bio</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Oct 24, 2024</span>
+<span class="font-caption text-caption text-secondary">09:00 – 12:00 EDT</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface">In: 09:10 EDT</span>
+<span class="font-caption text-caption text-error font-semibold">Not Returned Yet</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<span class="font-title-sm text-title-sm text-error">3 hrs+</span>
+<span class="block font-label-sm text-label-sm text-error font-semibold">+45 min overdue alert</span>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<span class="inline-flex items-center gap-space-2xs px-space-xs py-space-2xs rounded-full bg-error text-on-error font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">warning</span>
+<span>Overdue (+45m)</span>
+</span>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-2xs text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+<span class="font-caption text-caption">Calibrated</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex flex-col gap-space-2xs">
+<span class="font-caption text-caption text-error font-medium">Pending Inspection</span>
+<span class="font-caption text-caption text-secondary">Session lock engaged</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-space-xs">
+<button class="px-space-xs py-space-2xs rounded bg-error-container text-error font-label-sm text-label-sm hover:bg-error hover:text-on-error transition-all" onclick="event.stopPropagation(); showToast('Urgent dispatch notification sent to Kevin Vance via SMS and Email.')" title="Send Urgent Ping">
+                  Ping User
+                </button>
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-on-surface transition-colors" onclick="event.stopPropagation(); openAuditDrawer('EQ-CYT-0003', 'Kevin Vance', 'USR-9931', 'NEU Bio', 'Oct 24, 2024', '3 hrs 45 min elapsed', 'Overdue', 'Pending Inspection', 'TX-10943-BD3')" title="View Audit Details">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Illumina NovaSeq 6000 -->
+<tr class="hover:bg-surface-container-low/70 transition-colors cursor-pointer group" onclick="openAuditDrawer('EQ-GEN-6003', 'Dr. Sarah Lin', 'USR-4410', 'MIT BioEngineering', 'Oct 20, 2024', '11 hrs 45 min', 'Returned', 'Pristine - Flow cell flushed', 'TX-55102-NS6')">
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-sm">
+<img class="w-11 h-11 rounded-lg object-cover bg-surface-container shrink-0 shadow-sm" data-alt="Illumina NovaSeq 6000 ultra-high throughput genome sequencing system sleek server-style cabinet in a state-of-the-art clean genomic laboratory." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNWopag9KvxuJpC6joSHqzCncM3axcoP7fu91t5542qe2HldPTfjXBJ8s0VzLH6tNOAMVH-cddFxv_rmCaPjJvnfLliprpDnwikzhKHzd3Z8TTKkKF7KGET77EGnEA9tu0aA4xw0DrvNOwuYgYrEmCa_fFzZT_DLYSCRml_W5WYvgxWmeFmtKyy0flshhalol0wXQ8HUVbgOo-fdnDVrOKGyUXneMUv0MWE6iFLmg"/>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm text-on-surface truncate group-hover:text-primary transition-colors">Illumina NovaSeq 6000</span>
+<span class="font-code text-code text-secondary">EQ-GEN-6003</span>
+<span class="font-caption text-caption text-outline">Genomic Sequencing</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-sm">
+<img class="w-9 h-9 rounded-full object-cover bg-surface-container shrink-0" data-alt="Close up portrait of Dr. Sarah Lin, senior genomics research specialist smiling confidently inside a biotechnology core laboratory." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDx7uXjU_hhMoO6HrAGcJ2CebEVPBYqQwNs4NE17lr0WnCgf-qL-XF43NWMRCzVrQYnGPzzqE3wwubZ9TGx4KOVYC9vsgkiJi9l9jfrlbqQCi6e3-9sKA4yRVBbMTxd6WjrvDEC228ogTDaFl26YepQx7V26SRs_GWOG_8JtUQlgGuSMzUmpYcLA_Qld9gZGoukL-8abj77JY8CGxrWH3jpWmG1JcKZTMvIQSKpp7w"/>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm text-on-surface truncate">Dr. Sarah Lin</span>
+<div class="flex items-center gap-space-2xs text-secondary font-caption text-caption">
+<span class="font-code text-code text-secondary">USR-4410</span>
+<span>•</span>
+<span class="truncate">MIT BioEng</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Oct 20, 2024</span>
+<span class="font-caption text-caption text-secondary">08:00 – 20:00 EDT</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface">In: 08:00 EDT</span>
+<span class="font-caption text-caption text-secondary">Out: 19:45 EDT</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<span class="font-title-sm text-title-sm text-on-surface">11 hrs 45 min</span>
+<span class="block font-caption text-caption text-primary">Concluded early</span>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<span class="inline-flex items-center gap-space-2xs px-space-xs py-space-2xs rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>Returned</span>
+</span>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-2xs text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+<span class="font-caption text-caption">Pristine</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex flex-col gap-space-2xs">
+<span class="inline-flex items-center gap-space-2xs text-primary font-caption text-caption font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>Pristine</span>
+</span>
+<span class="font-caption text-caption text-secondary">Wash cycle verified</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-space-xs">
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-on-surface transition-colors" onclick="event.stopPropagation(); openAuditDrawer('EQ-GEN-6003', 'Dr. Sarah Lin', 'USR-4410', 'MIT BioEngineering', 'Oct 20, 2024', '11 hrs 45 min', 'Returned', 'Pristine - Flow cell flushed', 'TX-55102-NS6')" title="View Full Audit">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-primary transition-colors" onclick="event.stopPropagation(); showToast('Condition Report Loaded (PDF ready)')" title="Condition Report">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</button>
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-on-surface transition-colors" onclick="event.stopPropagation(); showToast('Downloading Cryptographic Session Receipt...')" title="Download Receipt">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Beckman Ultracentrifuge -->
+<tr class="hover:bg-surface-container-low/70 transition-colors cursor-pointer group" onclick="openAuditDrawer('EQ-CEN-0100', 'Prof. David Miller', 'USR-1109', 'Broad Institute', 'Oct 18, 2024', '3 hrs 55 min', 'Returned', 'Rotor Decontaminated', 'TX-33829-BC1')">
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-sm">
+<img class="w-11 h-11 rounded-lg object-cover bg-surface-container shrink-0 shadow-sm" data-alt="Beckman Coulter floor standing ultracentrifuge with titanium rotor visible inside vacuum chamber in a pristine academic lab." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBc7K1j8WaodN1SAREKDX00TfoAZ_j4ue15m6qZjxZDPR4UouPNPjoYSGaxZbR5Sid-uRYk74EO07zUn6fAF5OIs00eeY6oUSAVh-qbo2nJCL6Ohw8hFyu0FkAviKNcrYqTdxZNsP0jJyRO5X1caJtbzoHrcyuA62scGlXKjOnORy7s2slauutYoejWzlHgVT8ENQxbAjkA4DgJLeoN6puVoNlpIt6AcVUV5EOslis"/>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm text-on-surface truncate group-hover:text-primary transition-colors">Beckman Ultracentrifuge</span>
+<span class="font-code text-code text-secondary">EQ-CEN-0100</span>
+<span class="font-caption text-caption text-outline">High-G Separation</span>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-sm">
+<img class="w-9 h-9 rounded-full object-cover bg-surface-container shrink-0" data-alt="Portrait of senior biology professor David Miller with glasses and lab coat in front of laboratory analytics stations." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpbACb7Qhk8vdL4Gir1f8qCB_lQovJrd6rnoCUszjTXOsgq2QEDGvDr8szDebREQqiDH8vI1yHKbHCv2jw7oqqxWSSO_vVmBbz9T0b9R1BtWnXMDxIRk5z1UObsoFIRbY_zoKu5_-VpqHOWXTxb4ZhYXWzuvUCict9G4UbjOE66hDYireK1S6IMzZUu-YZ2tlMXNed0XRleNFsSCbVNGhSmsCabildrhpI_UcTzfg"/>
+<div class="flex flex-col min-w-0">
+<span class="font-title-sm text-title-sm text-on-surface truncate">Prof. David Miller</span>
+<div class="flex items-center gap-space-2xs text-secondary font-caption text-caption">
+<span class="font-code text-code text-secondary">USR-1109</span>
+<span>•</span>
+<span class="truncate">Broad Inst.</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Oct 18, 2024</span>
+<span class="font-caption text-caption text-secondary">13:00 – 17:00 EDT</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface">In: 13:00 EDT</span>
+<span class="font-caption text-caption text-secondary">Out: 16:55 EDT</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<span class="font-title-sm text-title-sm text-on-surface">3 hrs 55 min</span>
+<span class="block font-caption text-caption text-primary">In compliance</span>
+</td>
+<td class="py-space-md px-space-md align-top whitespace-nowrap">
+<span class="inline-flex items-center gap-space-2xs px-space-xs py-space-2xs rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span>Returned</span>
+</span>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex items-center gap-space-2xs text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary">check_circle</span>
+<span class="font-caption text-caption">Rotor Inspected</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top">
+<div class="flex flex-col gap-space-2xs">
+<span class="font-caption text-caption text-on-surface font-medium">Rotor Decontaminated</span>
+<span class="font-caption text-caption text-secondary">Vacuum seal intact</span>
+</div>
+</td>
+<td class="py-space-md px-space-md align-top text-right whitespace-nowrap">
+<div class="inline-flex items-center gap-space-xs">
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-on-surface transition-colors" onclick="event.stopPropagation(); openAuditDrawer('EQ-CEN-0100', 'Prof. David Miller', 'USR-1109', 'Broad Institute', 'Oct 18, 2024', '3 hrs 55 min', 'Returned', 'Rotor Decontaminated', 'TX-33829-BC1')" title="View Full Audit">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-primary transition-colors" onclick="event.stopPropagation(); showToast('Condition Report Loaded (PDF ready)')" title="Condition Report">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</button>
+<button class="p-space-xs rounded-lg hover:bg-surface-container text-secondary hover:text-on-surface transition-colors" onclick="event.stopPropagation(); showToast('Downloading Cryptographic Session Receipt...')" title="Download Receipt">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination Footer -->
+<div class="px-space-lg py-space-md bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-xs font-body-sm text-body-sm text-secondary">
+<span>Showing <strong class="text-on-surface">1 - 5</strong> of <strong class="text-on-surface">1,482</strong> records</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-space-sm py-space-xs rounded-lg bg-surface-container-lowest text-secondary hover:text-on-surface font-title-sm text-title-sm shadow-sm opacity-50 cursor-not-allowed">Previous</button>
+<button class="w-8 h-8 rounded-lg bg-primary text-on-primary font-title-sm text-title-sm flex items-center justify-center shadow-sm">1</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container-lowest text-on-surface font-title-sm text-title-sm flex items-center justify-center hover:bg-surface-container">2</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container-lowest text-on-surface font-title-sm text-title-sm flex items-center justify-center hover:bg-surface-container">3</button>
+<span class="px-space-2xs text-secondary">...</span>
+<button class="w-8 h-8 rounded-lg bg-surface-container-lowest text-on-surface font-title-sm text-title-sm flex items-center justify-center hover:bg-surface-container">74</button>
+<button class="px-space-sm py-space-xs rounded-lg bg-surface-container-lowest text-secondary hover:text-on-surface font-title-sm text-title-sm shadow-sm">Next</button>
+</div>
+</div>
+</section>
+<!-- Permanent Activity Audit Log Widget at bottom -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-space-lg">
+<!-- Live Event Feed Widget (2 cols) -->
+<div class="lg:col-span-2 bg-surface-container-lowest rounded-xl p-space-lg shadow-sm space-y-space-md">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-space-sm">
+<div class="w-2.5 h-2.5 rounded-full bg-primary animate-ping"></div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Facility Event Ledger (Real-Time Feed)</h3>
+</div>
+<span class="font-caption text-caption text-secondary">Auto-refreshed 2 sec ago</span>
+</div>
+<div class="space-y-space-sm">
+<!-- Event item 1 -->
+<div class="p-space-sm rounded-lg bg-error-container/20 flex items-start gap-space-md transition-all hover:bg-error-container/30">
+<div class="w-8 h-8 rounded-full bg-error text-on-error flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+<span class="material-symbols-outlined text-[18px]">crisis_alert</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-space-sm mb-space-2xs">
+<span class="font-title-sm text-title-sm text-error">Overdue Escalation Triggered</span>
+<span class="font-code text-code text-error/80 shrink-0">Oct 24, 11:45 AM</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface">
+              System automated flag: <span class="font-semibold text-on-surface">EQ-CYT-0003 (BD FACSAria III)</span> exceeded slot end time. Dispatch notification and SMS advisory dispatched to <span class="font-semibold text-on-surface">Kevin Vance (NEU Bio)</span>.
+            </p>
+</div>
+</div>
+<!-- Event item 2 -->
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-start gap-space-md transition-all hover:bg-surface-container">
+<div class="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-space-sm mb-space-2xs">
+<span class="font-title-sm text-title-sm text-on-surface">Booking Request Initialized</span>
+<span class="font-code text-code text-secondary shrink-0">Oct 24, 09:02 AM</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+<span class="font-semibold text-on-surface">Dr. Marcus Chen (Harvard)</span> submitted new high-priority 4-day session request for Orbitrap MS (Exploris 480). Awaiting Director Vance review.
+            </p>
+</div>
+</div>
+<!-- Event item 3 -->
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-start gap-space-md transition-all hover:bg-surface-container">
+<div class="w-8 h-8 rounded-full bg-primary-fixed text-on-primary-fixed-variant flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-space-sm mb-space-2xs">
+<span class="font-title-sm text-title-sm text-on-surface">Condition Sign-Off Authenticated</span>
+<span class="font-code text-code text-secondary shrink-0">Oct 23, 17:00 PM</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Condition report verified and signed off for <span class="font-semibold text-on-surface">Orbitrap Exploris 480</span> by MIT Facility Tech Lead #402. Digital hash generated and anchored.
+            </p>
+</div>
+</div>
+<!-- Event item 4 -->
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-start gap-space-md transition-all hover:bg-surface-container">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest text-secondary flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+<span class="material-symbols-outlined text-[18px]">door_sliding</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-space-sm mb-space-2xs">
+<span class="font-title-sm text-title-sm text-on-surface">Badge Reader Check-in Logged</span>
+<span class="font-code text-code text-secondary shrink-0">Oct 23, 08:55 AM</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Physical RFID smart badge access verified at Cleanroom Suite 310 by <span class="font-semibold text-on-surface">Dr. Elena Rostova</span>. Environmental safety lock released.
+            </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Facility Compliance Summary & Cryptographic Assurance Box -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col justify-between space-y-space-md">
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Security &amp; Audit Status</h3>
+<span class="px-space-xs py-space-2xs rounded bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm uppercase font-semibold">Immutable</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          All sensor telemetry, check-ins, pre-checks, and clean-down logs are timestamped and signed with SHA-256 cryptographic signatures according to federal grant compliance guidelines.
+        </p>
+<div class="p-space-sm rounded-xl bg-surface-container-low space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-caption text-caption text-secondary">Chain of Custody Integrity</span>
+<span class="font-label-sm text-label-sm text-primary font-semibold">100.0% Verified</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-primary rounded-full w-full"></div>
+</div>
+<div class="font-code text-code text-secondary flex items-center justify-between pt-1">
+<span>Root Hash: 0x8a9f...3e29</span>
+<span class="text-primary hover:underline cursor-pointer" onclick="showToast('Verifying chain integrity with central registry...')">Verify</span>
+</div>
+</div>
+<div class="space-y-space-xs pt-space-xs">
+<div class="flex items-center gap-space-xs text-on-surface font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[18px] text-primary">gavel</span>
+<span>Audited against NIH &amp; NSF Core Lab Standards</span>
+</div>
+<div class="flex items-center gap-space-xs text-on-surface font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[18px] text-primary">security</span>
+<span>Dual-authorized Biohazard Level 2 Enforcement</span>
+</div>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-title-sm text-title-sm transition-all" onclick="showToast('Initiating ISO 17025 Full Facility Re-Certification Scan...')">
+<span class="material-symbols-outlined text-[18px]">policy</span>
+<span>Run Facility Compliance Audit</span>
+</button>
+</div>
+</section>
+<!-- Detailed Activity Timeline & Transaction Drawer / Modal Backdrop -->
+<div class="fixed inset-0 bg-inverse-surface/60 backdrop-blur-sm z-50 transition-opacity duration-300 opacity-0 pointer-events-none flex justify-end" id="audit-drawer-backdrop" onclick="closeAuditDrawer()">
+<!-- Slide-in Drawer Container -->
+<div class="w-full max-w-2xl bg-surface-container-lowest h-full shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 ease-out overflow-hidden" id="audit-drawer-panel" onclick="event.stopPropagation()">
+<!-- Drawer Header -->
+<div class="p-space-lg bg-surface-container-lowest flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-xl bg-primary-fixed text-on-primary-fixed-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[22px]">fingerprint</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface" id="drawer-equipment-title">Orbitrap Exploris 480</h2>
+<div class="flex items-center gap-space-xs font-code text-code text-secondary">
+<span id="drawer-hash">TX-89240-E48</span>
+<span>•</span>
+<span id="drawer-eq-id">EQ-MS-4802</span>
+</div>
+</div>
+</div>
+<button class="p-space-xs rounded-full text-secondary hover:bg-surface-container hover:text-on-surface transition-all" onclick="closeAuditDrawer()">
+<span class="material-symbols-outlined text-[22px]">close</span>
+</button>
+</div>
+<!-- Drawer Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-space-lg space-y-space-xl">
+<!-- Borrower Snapshot Card -->
+<div class="bg-surface-container-low rounded-xl p-space-md space-y-space-sm">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Authorized Investigator</span>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary font-bold text-headline-sm">
+<span id="drawer-user-initials">ER</span>
+</div>
+<div>
+<div class="font-title-sm text-title-sm text-on-surface" id="drawer-user-name">Dr. Elena Rostova</div>
+<div class="font-caption text-caption text-secondary" id="drawer-user-meta">USR-8820 • Boston University</div>
+</div>
+</div>
+<div class="text-right">
+<span class="font-label-sm text-label-sm uppercase px-space-xs py-space-2xs rounded bg-primary/10 text-primary font-semibold">Tier 1 Certified</span>
+<div class="font-caption text-caption text-secondary mt-1">Badge ID: #MIT-7712</div>
+</div>
+</div>
+</div>
+<!-- End-to-End Booking Lifecycle Timeline -->
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Booking Lifecycle Timeline</h3>
+<span class="font-caption text-caption text-secondary">Chronological Audit Record</span>
+</div>
+<div class="relative pl-6 space-y-space-md before:absolute before:left-2 before:top-3 before:bottom-3 before:w-0.5 before:bg-surface-container-high">
+<!-- Timeline Item 1 -->
+<div class="relative flex items-start gap-space-sm">
+<div class="absolute -left-6 top-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center ring-4 ring-surface-container-lowest"></div>
+<div class="space-y-space-2xs">
+<div class="flex items-center gap-space-xs">
+<span class="font-title-sm text-title-sm text-on-surface">Requested Online</span>
+<span class="font-code text-code text-secondary">Oct 19, 14:22 EDT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Slot requested with proposal #BIO-2024-490 attached. Designated purpose: Quantitative tandem mass tag proteomics.</p>
+</div>
+</div>
+<!-- Timeline Item 2 -->
+<div class="relative flex items-start gap-space-sm">
+<div class="absolute -left-6 top-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center ring-4 ring-surface-container-lowest"></div>
+<div class="space-y-space-2xs">
+<div class="flex items-center gap-space-xs">
+<span class="font-title-sm text-title-sm text-on-surface">Approved by Dr. Eleanor Vance</span>
+<span class="font-code text-code text-secondary">Oct 19, 16:05 EDT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Safety clearance reviewed. Biohazard protocol level verified against institutional IRB.</p>
+</div>
+</div>
+<!-- Timeline Item 3 -->
+<div class="relative flex items-start gap-space-sm">
+<div class="absolute -left-6 top-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center ring-4 ring-surface-container-lowest"></div>
+<div class="space-y-space-2xs">
+<div class="flex items-center gap-space-xs">
+<span class="font-title-sm text-title-sm text-on-surface">Digital Pass Issued</span>
+<span class="font-code text-code text-secondary">Oct 20, 08:00 EDT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Encrypted NFC keycard payload pushed to investigator smartphone wallet with PIN.</p>
+</div>
+</div>
+<!-- Timeline Item 4 -->
+<div class="relative flex items-start gap-space-sm">
+<div class="absolute -left-6 top-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center ring-4 ring-surface-container-lowest"></div>
+<div class="space-y-space-2xs">
+<div class="flex items-center gap-space-xs">
+<span class="font-title-sm text-title-sm text-on-surface">Physical Badge Check-in at Room 310</span>
+<span class="font-code text-code text-secondary">Oct 23, 08:55 EDT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Physical access door badge swiped. Air handling system stepped up to ISO-6 cleanroom flow.</p>
+</div>
+</div>
+<!-- Timeline Item 5 -->
+<div class="relative flex items-start gap-space-sm">
+<div class="absolute -left-6 top-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center ring-4 ring-surface-container-lowest"></div>
+<div class="space-y-space-2xs">
+<div class="flex items-center gap-space-xs">
+<span class="font-title-sm text-title-sm text-on-surface">Mid-Session Automated Telemetry Log</span>
+<span class="font-code text-code text-secondary">Oct 23, 13:00 EDT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Internal vacuum pressure 1.2e-9 mbar (nominal). Spray voltage stable at 2.1 kV. No error interruptions.</p>
+</div>
+</div>
+<!-- Timeline Item 6 -->
+<div class="relative flex items-start gap-space-sm">
+<div class="absolute -left-6 top-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center ring-4 ring-surface-container-lowest"></div>
+<div class="space-y-space-2xs">
+<div class="flex items-center gap-space-xs">
+<span class="font-title-sm text-title-sm text-on-surface">Check-Out &amp; Condition Inspection Verified</span>
+<span class="font-code text-code text-secondary">Oct 23, 16:50 EDT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Chamber cleaned with HPLC grade methanol wash. Final instrument diagnostics signed by technician.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Before & After Condition Photo Visual Inspection -->
+<div class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Photographic Condition Manifest</h3>
+<span class="font-caption text-caption text-secondary">High-Res Optical Proof</span>
+</div>
+<div class="grid grid-cols-2 gap-space-md">
+<div class="space-y-space-xs">
+<span class="font-label-sm text-label-sm text-secondary uppercase">Pre-Usage Inspection (08:55 EDT)</span>
+<div class="relative rounded-xl overflow-hidden aspect-video bg-surface-container group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Close up photographic inspection of mass spectrometer ionization probe and clean electrospray source prior to usage session." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIYi5jO4CUtL3mKpQwKcPM-5OSn0mU7HrN6i85SP3w_RnwmhzAeVD6JONwEdXBivvA2raaaQRxgpsRVvPQi6rYZuY5P8v8lJ4lXOJKfy2BOQsz5s5EHkG4v1qEPH-QTL7yS4fufG5kWkB-56hFEs3kOxudLypL8a3iEqgF-pu-gisvll19xRtAxgZx17W1okjQQKXSXIJWdEPBzLm6-TrkmbzbHOnKLiPKbgBaFCU"/>
+<span class="absolute bottom-2 left-2 px-space-xs py-space-2xs bg-on-surface/80 text-surface rounded font-code text-code">PRE: Pristine</span>
+</div>
+</div>
+<div class="space-y-space-xs">
+<span class="font-label-sm text-label-sm text-secondary uppercase">Post-Return Inspection (16:50 EDT)</span>
+<div class="relative rounded-xl overflow-hidden aspect-video bg-surface-container group">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Inspection photo showing cleaned electrospray source and wiped collector cone of scientific mass spectrometer after completed session." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwfY7I932bMswKzOtxislb-zG6mUaz0ekLG1CTNrZ9uRtOmyDPioHVaua6cr4DOmg_irVxqv3wHYPcPECA_Q7ojeu0VcaxONdCzYip6w4t7HUAWWEjzoYF7GG-AQzog8CDQbMUbh6eHTds9lf3IUZaThD0zjNSJygQldat17TjVWTPhNaTr6Ue0_kEv68mfjBPdeHhYFh6rJom9R7e1gaJ8xZiqTgEgzcpulGHovU"/>
+<span class="absolute bottom-2 left-2 px-space-xs py-space-2xs bg-primary/90 text-on-primary rounded font-code text-code">POST: Cleaned</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Signed Digital Condition Reports & Operator Notes -->
+<div class="bg-surface-container-low rounded-xl p-space-md space-y-space-md">
+<div class="flex items-center justify-between">
+<span class="font-title-sm text-title-sm text-on-surface">Operator Session Sign-Off</span>
+<span class="inline-flex items-center gap-space-2xs font-caption text-caption text-primary">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span>Cryptographically Sealed</span>
+</span>
+</div>
+<div class="space-y-space-xs">
+<span class="font-label-sm text-label-sm text-secondary uppercase">Technician Notes</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant bg-surface-container-lowest p-space-sm rounded-lg">
+              "Investigator Elena Rostova strictly followed our ion-source bake-out procedure. No sample carryover detected on blank calibration runs. Helium collision gas consumed within expected range: 0.14 bar."
+            </p>
+</div>
+<div class="grid grid-cols-2 gap-space-sm pt-space-xs">
+<div class="bg-surface-container-lowest p-space-sm rounded-lg space-y-space-2xs">
+<span class="font-caption text-caption text-secondary">Borrower Signature</span>
+<div class="font-code text-code text-primary font-semibold">SIG: 0x7b...f12a (E. Rostova)</div>
+<span class="font-caption text-caption text-outline">Verified at 16:52 EDT</span>
+</div>
+<div class="bg-surface-container-lowest p-space-sm rounded-lg space-y-space-2xs">
+<span class="font-caption text-caption text-secondary">Supervisor Sign-Off</span>
+<div class="font-code text-code text-primary font-semibold">SIG: 0x4a...c990 (E. Vance)</div>
+<span class="font-caption text-caption text-outline">Verified at 17:00 EDT</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Drawer Action Footer -->
+<div class="p-space-md bg-surface-container-low flex items-center justify-between gap-space-sm shadow-inner">
+<button class="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-surface-container-lowest hover:bg-surface-container text-on-surface font-title-sm text-title-sm transition-all shadow-sm" onclick="showToast('Downloading complete raw JSON session audit...')">
+<span class="material-symbols-outlined text-[18px]">data_object</span>
+<span>Download JSON Proof</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-space-sm rounded-lg bg-primary hover:bg-primary-container text-on-primary font-title-sm text-title-sm transition-all shadow-sm" onclick="showToast('Full PDF Compliance Packet generated and queued for download.')">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Download Audit Dossier</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Notification Toast Notification Element -->
+<div class="fixed bottom-6 right-6 max-w-md bg-inverse-surface text-inverse-on-surface px-space-md py-space-sm rounded-xl shadow-2xl flex items-center gap-space-sm transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50" id="toast-notification">
+<span class="material-symbols-outlined text-primary-fixed text-[20px]">info</span>
+<span class="font-body-sm text-body-sm flex-1" id="toast-text">Operation completed successfully.</span>
+</div>
+</div>
+</main></div><script src="js/app.js"></script></body></html>

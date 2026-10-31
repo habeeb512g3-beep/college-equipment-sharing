@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f7fc" />
+  <title>Notifications & Activity Logs | CampusShare Admin</title>
+  <link rel="stylesheet" href="admin-activity-logs.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="index.html" aria-label="CampusShare Admin home">
+        <span class="brand-mark">✣</span>
+        <span><strong>CampusShare</strong><small>Admin Console</small></span>
+      </a>
+      <div class="node-pill"><span class="dot green"></span> Production Node</div>
+      <nav class="side-nav" aria-label="Admin navigation">
+        <a class="nav-link" href="index.html"><span class="nav-icon">▦</span>Admin dashboard</a>
+        <a class="nav-link" href="users.html"><span class="nav-icon">♙</span>View and manage users</a>
+        <a class="nav-link" href="owner-applications.html"><span class="nav-icon">✓</span>Approve or reject Owner applications</a>
+        <a class="nav-link" href="equipment.html"><span class="nav-icon">▣</span>Manage all equipment</a>
+        <a class="nav-link" href="bookings.html"><span class="nav-icon">▤</span>Monitor bookings and borrowing</a>
+        <a class="nav-link" href="incidents.html"><span class="nav-icon">⚑</span>Manage incidents</a>
+        <a class="nav-link active" href="activity-logs.html" aria-current="page"><span class="nav-icon">◷</span>View notifications and activity logs</a>
+      </nav>
+      <a class="admin-login" href="index.html">Admin dashboard</a>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="top-brand"><span class="brand-mark small">✣</span><strong>CampusShare</strong><small>Academic Inventory</small></div>
+        <label class="global-search"><span>⌕</span><input data-admin-global-search type="search" placeholder="Search users, equipment, incidents..." aria-label="Global search"/><kbd>⌘K</kbd></label>
+        <div class="top-actions"><span class="admin-badge"><i></i> INSTITUTIONAL ADMIN</span><span class="admin-name">Admin Supervisor<small>Campus Operations</small></span><span class="avatar">AS</span></div>
+      </header>
+
+      <section class="page-heading">
+        <div>
+          <p class="eyebrow">ADMINISTRATION / AUDIT</p>
+          <h1>View notifications and activity logs</h1>
+          <p class="subtitle">Immediate activity oversight, security telemetry, check-in records, and real-time administrative notifications.</p>
+        </div>
+        <div class="heading-actions">
+          <button class="btn btn-light" id="refreshBtn">↻ Refresh Stream</button>
+          <button class="btn btn-light" id="exportBtn">⇩ Export Audit Trail (CSV)</button>
+          <button class="btn btn-danger-soft" id="clearBtn">⊗ Clear Notifications</button>
+        </div>
+      </section>
+
+      <section class="metric-grid" aria-label="Activity summary">
+        <article class="metric-card"><div class="metric-top"><span>Today's Events</span><span class="metric-icon blue">▣</span></div><strong id="todayCount">128</strong><small class="positive">↗ +14.8% vs yesterday</small></article>
+        <article class="metric-card"><div class="metric-top"><span>Security Flags</span><span class="metric-icon red">⊗</span></div><strong class="red-text" id="securityCount">2</strong><small class="muted">2 pending review</small></article>
+        <article class="metric-card"><div class="metric-top"><span>System Status</span><span class="metric-icon green">⌁</span></div><strong class="green-text">99.9% <small class="inline-label">UP</small></strong><small class="muted">● Cluster: LAST-BATCH-04</small></article>
+        <article class="metric-card"><div class="metric-top"><span>Active Admin Sessions</span><span class="metric-icon blue">♙</span></div><strong>3</strong><small class="muted">● MFA enforced via SAML 2.0</small></article>
+      </section>
+
+      <section class="toolbar-panel">
+        <div class="tab-row" role="tablist" aria-label="Log type">
+          <button class="tab active" role="tab" aria-selected="true" data-tab="activity">▦ All Activity Logs <span class="tab-count" id="activityCount">128</span></button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="notifications">♧ System Notifications <span class="tab-count alert-count" id="notificationCount">4</span></button>
+        </div>
+        <div class="filters-row">
+          <label class="search-control"><span>⌕</span><input id="searchInput" type="search" placeholder="Search by actor or module..." aria-label="Search logs" /></label>
+          <label class="date-control"><span class="sr-only">Filter by date</span><select id="dateFilter"><option value="all">Today (IST)</option><option value="today">Today only</option><option value="week">Last 7 days</option><option value="month">Last 30 days</option></select></label>
+          <button class="icon-btn" id="resetBtn" title="Reset filters" aria-label="Reset filters">⟲</button>
+        </div>
+      </section>
+
+      <section class="table-panel">
+        <div class="table-meta"><span id="resultSummary">Showing 8 of 128 total log transactions</span><span class="live-indicator"><i></i> Live stream <b id="lastUpdated">just now</b></span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Timestamp</th><th>Actor / Originator</th><th>Category</th><th>Telemetry &amp; Event Description</th><th>Verification</th></tr></thead>
+            <tbody id="logTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="emptyState" hidden>No matching records. Try changing your search or date filter.</div>
+        </div>
+        <div class="pagination"><span id="pageInfo">Displaying 1–5 of 8 total transactions</span><div class="page-controls"><button id="prevBtn" disabled>Previous</button><button class="page-number current" id="pageNumber">1</button><button id="nextBtn">Next</button></div></div>
+      </section>
+
+      <section class="policy-grid">
+        <article class="policy-card"><div class="policy-title"><span class="policy-icon blue">◈</span><strong>Cryptographic Hash Integrity</strong></div><p>Activity records should be protected against unauthorised changes. Production audit storage should preserve event integrity and traceability.</p><a href="#">Audit integrity guidelines →</a></article>
+        <article class="policy-card"><div class="policy-title"><span class="policy-icon purple">♧</span><strong>Retention &amp; FERPA Policy</strong></div><p>Personal and institutional records should be retained only as required by the institution's approved retention and privacy policies.</p><a href="#">Institutional retention schedule →</a></article>
+        <article class="policy-card"><div class="policy-title"><span class="policy-icon green">⌁</span><strong>System Remote Dispatch</strong></div><p>System events and alerts should be delivered through authorised channels with access controls and delivery monitoring.</p><a href="#">System delivery guidelines →</a></article>
+      </section>
+      <footer class="page-footer"><span>CampusShare Admin Console <b>•</b> Audit &amp; Security</span><span>All timestamps displayed in Indian Standard Time (IST)</span></footer>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="modal-backdrop" id="confirmModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-symbol">!</div><h2 id="modalTitle">Clear system notifications?</h2>
+      <p>This demo action removes notification entries from this browser only. Activity-log records will remain visible.</p>
+      <div class="modal-actions"><button class="btn btn-light" id="cancelClear">Cancel</button><button class="btn btn-danger" id="confirmClear">Clear notifications</button></div>
+    </div>
+  </div>
+  <script src="admin-activity-logs.js"></script>
+  <script src="admin-navigation.js"></script>
+</body>
+</html>
