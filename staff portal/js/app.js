@@ -43,27 +43,74 @@ function syncEquipmentToStudentPortal(){
 }
 function save(){localStorage.setItem(KEY,JSON.stringify(db));syncToStudentPortal();syncEquipmentToStudentPortal();}
 function id(){return 'CS-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7)}
-function init(){
- if(!Array.isArray(db.equipment)) db.equipment=[{"id": "EQ-MS-4802", "name": "Thermo Scientific Orbitrap Exploris 480", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDWYUDSWFvjbbKcxE64W8Bx2z6yF3LKoeRE-KtqK6C5HOTx9QlPbPQHtlVNRLrJvpnUbsoQ_uXSRwvpJXdByVcVrOhztAdSTH6uGDBaqHTcCQEoEML_1x2TRyhGIlndoF6MGzKw9RBR2v_gPpgQ29rcsJUCcD_30XArLru5YRClr4urR5RIPP1s3c15veNpoORH--2UpSURA14OlOu-SvUw4fpuFC3HoRdnI3n0kHQ", "location": "Bio Core Bldg 76, Room 310", "status": "available"}, {"id": "EQ-MIC-9801", "name": "Zeiss LSM 980 with Airyscan 2", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBB-nv3LngHYr5ydABjHz1AEhOovW5hIF0kEL3QysQJp_KS3stOL8Euuwxpx7FNrNgtHPyZe-hUwoYNfC1CK7cSyCcHFmmQlKBi5JQbO5lGFs4CZMcc30wUUrGl9FcIP8kSA2Po19-BJ_H8_fp0sbwbwuJQsvIqfQqX3eLpOw0omU8afrL07-1wM9SLFtWdz5AfvRtrORXZPg0rOVqc882ftgtlUa4AD7UomTcd3Og", "location": "Imaging Core, Room 104", "status": "in-use"}, {"id": "EQ-GEN-6003", "name": "Illumina NovaSeq 6000 Sequencer", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCJssts3TSdAxkTivVD6mJvxcbEpSEqIjeDhD9G4WVSCnZy8j6kNySJHdRaJIH_dv4b1mTpLibZwvT2j7VipMNTHmMxmBHpzq2mbM8ZFtUwAxV-Bz5aI1kd2E44zgnhLEVhz1eMRWelA9BEb2Eq2wzC0LhvBQGb6OLljSTP3Gsm8sNot0iJ-DS20TIbzPZ5inr-gYKgLn0GySyvbwgzpqzuDKPZdjbrya_WojgSDe4", "location": "Genomics Hub, Bay 2", "status": "available"}, {"id": "EQ-EM-2100", "name": "JEOL JEM-2100F Field Emission TEM", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCA2H6DhzJzZeUoZ9y89y22FBi6VFJfTAFFCyzJ0gkcWB-zRnJR2zVANEAWz1tf3szpO1_scfodH5PLESIkc2vB5t0E_Wsz5RcJkOjFm14nUCbhJ0auaud5SJ22zAM8VMRYXeBdkExubj5I1o04BRvv0C7kB2c17v9-b5YkUEp7uLFEI9TVLO5ev6W71Xmoin96uiRKlDaZiIqajk-pBuxPq-fbTCRvk-zDG08x930", "location": "NanoFab Suite, B12", "status": "maintenance"}, {"id": "EQ-CEN-0100", "name": "Beckman Coulter Optima XPN-100", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBAgn_E9stYBtzLWRPHctvB-B5Jbne16aLWpjnTCTRCCTtenjwNn0XwhyOppdbb7BZUIrFBUkbGUEwNktRMXwSCVu27FVpOVaYcW_hBAkiqGPgyC4Z4EcLCM7_N8SnJkkHu7rNtUMY1YvH5E5yZxFM8J7oMzwI2PPJNv-l-i85kpm-w4jI8Cqh6gRPKuJla_9wT0FSESKmI_LNwA_IktPcrVoBvtNdBsCC_J8bbrLI", "location": "Prep Lab 2A", "status": "available"}, {"id": "EQ-CYT-0003", "name": "BD FACSAria III Cell Sorter", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDNlgjREKEMbzREz3BF5REkn-fnX_rlTJzMjbB-330YXdmMntvszPLjwxtKCW_IR99aXcGlBcTfHa358GgJPEEnWMPZPnNCi39bsM09hglk2o7Zrq_ph3292BPBcYDg4s6-wCpIaHQJcB9Yl4V-qSZV6xfUNhPQwfTG6kXPY9Y4PBCsMbLbjQFYoQ9XUqCI0nOMlYeVxlGKjqvAakxIfLDm3QHj8leTEmRjsnsVepY", "location": "Immunology Lab, Rm 215", "status": "overdue"}];
- if(!Array.isArray(db.requests)) db.requests=[];
- if(!Array.isArray(db.history)) db.history=[];
- syncFromStudentPortal();
- save();
+function init() {
+    // Start with an empty equipment list.
+    db.equipment = [];
+
+    if (!Array.isArray(db.requests)) {
+        db.requests = [];
+    }
+
+    if (!Array.isArray(db.history)) {
+        db.history = [];
+    }
+
+    syncFromStudentPortal();
+    save();
 }
 
-async function loadEquipmentFromSupabase(){
- if(HAD_SHARED_INVENTORY_AT_STARTUP||!window.CampusDB)return;
- try{
-  const [resources,categories]=await Promise.all([CampusDB.get('resources',{orderBy:'created_at',ascending:false}),CampusDB.get('categories')]);
-  if(!Array.isArray(resources)||!resources.length)return;
-  const categoryMap=Object.fromEntries((categories||[]).map(c=>[c.id,c.category_name]));
-  db.equipment=resources.map(item=>({
-   id:String(item.id),name:item.name||'Unnamed equipment',description:item.description||'',image:item.image_url||item.image||'',location:item.location||'Campus Lab',
-   status:Number(item.available_quantity||0)>0?'available':'in-use',category:categoryMap[item.category_id]||'Other',
-   totalQuantity:Number(item.total_quantity||0),availableQuantity:Number(item.available_quantity||0),condition:item.condition||''
-  }));
-  save();window.refreshEquipmentPage?.();if(location.pathname.endsWith('dashboard.html'))dashboard();
- }catch(error){console.warn('CampusShare: Supabase inventory read unavailable; retaining local inventory.',error);}
+async function loadEquipmentFromSupabase() {
+    if (!window.CampusDB) {
+        console.error("CampusShare: CampusDB is not available.");
+        toast("Database connection is not ready.");
+        return;
+    }
+
+    try {
+        const [resources, categories] = await Promise.all([
+            CampusDB.get("resources", {
+                orderBy: "created_at",
+                ascending: false
+            }),
+            CampusDB.get("categories")
+        ]);
+
+        const categoryMap = Object.fromEntries(
+            (categories || []).map(category => [
+                category.id,
+                category.category_name
+            ])
+        );
+
+        // Always replace the old inventory, even when Supabase is empty.
+        db.equipment = (resources || []).map(item => ({
+            id: String(item.id),
+            name: item.name || "Unnamed equipment",
+            description: item.description || "",
+            image: item.image_url || item.image || "",
+            location: item.location || "",
+            category: categoryMap[item.category_id] || "Other",
+            totalQuantity: Number(item.total_quantity || 0),
+            availableQuantity: Number(item.available_quantity || 0),
+            condition: item.condition || "",
+            status: item.status || "available"
+        }));
+
+        // Refresh the equipment display.
+        window.refreshEquipmentPage?.();
+
+        console.log(
+            `CampusShare: Loaded ${db.equipment.length} equipment records from Supabase.`
+        );
+
+        if (location.pathname.endsWith("dashboard.html")) {
+            dashboard();
+        }
+
+    } catch (error) {
+        console.error("Supabase equipment loading failed:", error);
+        toast("Could not load equipment. Check the browser Console.");
+    }
 }
 
 function findDate(c){const t=c.innerText||'';const m=t.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4}/i);return m?new Date(m[0]).toISOString().slice(0,10):''}
