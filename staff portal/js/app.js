@@ -322,63 +322,181 @@ function updateEquipmentCounts() {
     }
 }
  
-const saveEquipment = (event) => {
+async function saveEquipment(event) {
     event?.preventDefault();
 
     const equipmentName = name.value.trim();
+    const equipmentDescription = desc.value.trim();
     const equipmentLocation = loc.value.trim();
 
     if (!equipmentName || !equipmentLocation) {
-        toast('Please enter equipment name and location.');
+        toast("Please enter equipment name and location.");
         return;
     }
- $('#publishEquipmentBtn')?.addEventListener('click', saveEquipment);
-$('#saveDraftBtn')?.addEventListener('click', saveEquipment);
 
-    const existingId = editing;
-    const item = {
-        id: existingId || id(),
-        name: equipmentName,
-        description: desc.value.trim(),
-        location: equipmentLocation,
-        image: imageData,
-        status: existingId
-            ? (db.equipment.find(x => x.id === existingId)?.status || 'available')
-            : 'available'
-    };
-
-    if (existingId) {
-        const index = db.equipment.findIndex(x => x.id === existingId);
-        if (index !== -1) {
-            db.equipment[index] = item;
-        }
-    } else {
-        db.equipment.push(item);
+    if (!window.CampusDB || !window.supabaseClient) {
+        toast("Database connection is not ready.");
+        return;
     }
 
-    save();
-    render();
-    close();
+    const publishButton = $("#publishEquipmentBtn");
+    const draftButton = $("#saveDraftBtn");
 
-    // Clear the form
-    name.value = '';
-    desc.value = '';
-    loc.value = '';
-    file.value = '';
-    imageData = '';
-    editing = null;
+    try {
+        // Get the currently logged-in owner.
+        const { data: authData, error: authError } =
+            await window.supabaseClient.auth.getUser();
 
-    updateEquipmentCounts?.();
+        if (authError) throw authError;
 
-    toast(existingId
-        ? 'Equipment updated successfully.'
-        : 'Equipment added successfully.');
-};
+        const currentUser = authData.user;
+
+        if (!currentUser) {
+            toast("Please log in again.");
+            return;
+        }
+
+        const existingId = editing;
+
+        // Prepare the database record.
+        const equipmentData = {
+            name: equipmentName,
+            description: equipmentDescription,
+            location: equipmentLocation,
+            image_url: imageData || null,
+            owner_id: currentUser.id,
+            total_quantity: 1,
+            available_quantity: 1,
+            category_id: null,
+            condition: "good",
+            status: "available"
+        };
+
+        // Prevent repeated clicks while saving.
+        if (publishButton) publishButton.disabled = true;
+        if (draftButton) draftButton.disabled = true;
+
+        if (existingId) {
+            // Update existing equipment.
+            await CampusDB.update(
+                "resources",
+                {
+                    id: existingId,
+                    owner_id: currentUser.id
+                },
+                {
+                    name: equipmentName,
+                    description: equipmentDescription,
+                    location: equipmentLocation,
+                    image_url: imageData || null
+                }
+            );
+
+            toast("Equipment updated successfully.");
+
+        } else {
+            // Insert new equipment.
+            await CampusDB.insert(
+                "resources",
+                equipmentData
+            );
+
+            toast("Equipment published successfully.");
+        }
+
+        // Clear editing state and form.
+        editing = null;
+        imageData = "";
+
+        name.value = "";
+        desc.value = "";
+        loc.value = "";
+        file.value = "";
+
+        preview.src = "";
+        preview.classList.add("hidden");
+
+        close();
+
+        // Fetch the latest records from Supabase.
+        await loadEquipmentFromSupabase();
+
+        render();
+
+    } catch (error) {
+        console.error("Equipment save failed:", error);
+
+        toast(
+            error.message ||
+            "Could not save equipment. Check the Console."
+        );
+
+    } finally {
+        if (publishButton) publishButton.disabled = false;
+        if (draftButton) draftButton.disabled = false;
+    }
+}
+
+$("#publishEquipmentBtn")?.addEventListener(
+    "click",
+    saveEquipment
+);
+
+$("#saveDraftBtn")?.addEventListener(
+    "click",
+    saveEquipment
+);
 
 $('#publishEquipmentBtn')?.addEventListener('click', saveEquipment);
 $('#saveDraftBtn')?.addEventListener('click', saveEquipment);
 
- grid.addEventListener('click',e=>{const eb=e.target.closest('[data-edit]'),dbtn=e.target.closest('[data-delete]');if(eb){const item=db.equipment.find(x=>x.id===eb.dataset.edit);open(item)}if(dbtn&&confirm('Delete this equipment?')){db.equipment=db.equipment.filter(x=>x.id!==dbtn.dataset.delete);save();render();toast('Equipment deleted.')}});
+grid.addEventListener("click", async (event) => {
+    const editButton = event.target.closest("[data-edit]");
+    const deleteButton = event.target.closest("[data-delete]");
+
+    if (editButton) {
+        const item = db.equipment.find(
+            equipment => String(equipment.id) ===
+                String(editButton.dataset.edit)
+        );
+
+        if (item) open(item);
+    }
+
+    if (deleteButton) {
+        const equipmentId = deleteButton.dataset.delete;
+
+        if (!confirm("Are you sure you want to delete this equipment?")) {
+            return;
+        }
+
+        try {
+            const { data: authData, error: authError } =
+                await window.supabaseClient.auth.getUser();
+
+            if (authError) throw authError;
+
+            if (!authData.user) {
+                toast("Please log in again.");
+                return;
+            }
+
+            await CampusDB.remove("resources", {
+                id: equipmentId,
+                owner_id: authData.user.id
+            });
+
+            toast("Equipment deleted successfully.");
+
+            await loadEquipmentFromSupabase();
+            render();
+
+        } catch (error) {
+            console.error("Equipment deletion failed:", error);
+            toast(error.message || "Could not delete equipment.");
+        }
+    }
+});
  render();
  $('#gridToggleBtn')?.addEventListener('click',()=>{grid.classList.remove('hidden');$('#equipmentTableContainer')?.classList.add('hidden')});
  $('#tableToggleBtn')?.addEventListener('click',()=>{grid.classList.add('hidden');$('#equipmentTableContainer')?.classList.remove('hidden')});
