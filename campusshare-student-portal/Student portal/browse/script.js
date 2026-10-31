@@ -1,11 +1,42 @@
-const equipment = [
-  {id:'DS1054Z',name:'Rigol DS1054Z 50MHz Digital Oscilloscope',short:'Rigol DS1054Z 50MHz Digital Oscilloscope',category:'Electronics',group:'Electronics',lab:'Electronics Lab',department:'Engineering & Sciences',status:'available',statusText:'Available Now',code:'EQ-OSC-005',loan:'5 Days',value:'₹52,000 USD',description:'Industry-standard four-channel digital scope for circuit validation, waveform analysis and electronics experiments.',tags:['4 Channels','1 GSa/s','USB Host Device','24MHz Depth'],specs:{'Manufacturer / Brand':'Rigol Technologies','Model':'DS1054Z Plus','Analog Bandwidth':'50 MHz (Upgradeable)','Input Channels':'4 Analog Channels','Real-time Sample Rate':'1 GSa/s','Memory Depth':'12 Mpts (upgradable)','Serial Bus':'I²C · SPI · UART','Waveform':'Up to 30,000 wfms/s'},location:'Electronics Lab · Building 3, Room 08',handling:'Collect from the Electronics Lab checkout desk in Building 3, Room 08. The oscilloscope must be returned with its probes and power cable.',images:['https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1200&q=85','https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=600&q=80','https://images.unsplash.com/photo-1581092921461-eab62e97a780?auto=format&fit=crop&w=600&q=80','https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80']},
-  {id:'A7IV-02',name:'Sony Alpha 7 IV Full-Frame Camera',short:'Sony Alpha 7 IV Full-Frame Camera',category:'Cameras & Media',group:'Cameras & Media',lab:'Media Lab',department:'Media & Design',status:'available',statusText:'Available',code:'EQ-CAM-021',loan:'3 Days',value:'₹2,10,000',description:'33MP full-frame mirrorless camera designed for cinema-level documentation, student films and media projects.',tags:['33MP Sensor','4K 60p Video','Full Frame','Creator Ready'],specs:{'Manufacturer / Brand':'Sony','Model':'Alpha 7 IV','Sensor':'33MP Full Frame','Video':'4K 60p','Mount':'Sony E-Mount','Included':'Body, battery, charger','Storage':'SD / CFexpress Type A','Stabilization':'5-axis'},location:'Media Lab · Building 2, Room 14',handling:'Return the camera body, battery, charger and any checked-out lens to the Media Lab counter.',images:['https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1200&q=85','https://images.unsplash.com/photo-1502920917128-1aa500764cbd?auto=format&fit=crop&w=600&q=80','https://images.unsplash.com/photo-1510127034890-1e5898a9f2a9?auto=format&fit=crop&w=600&q=80']},
-  {id:'FLIR-T540',name:'FLIR E Thermal Imaging Camera',short:'FLIR E Thermal Imaging Camera',category:'Lab Equipment',group:'Lab Equipment',lab:'Electronics Lab',department:'Engineering & Sciences',status:'waitlist',statusText:'1 Left / High Demand',code:'EQ-THM-014',loan:'2 Days',value:'₹3,40,000',description:'Rugged thermal imaging camera for equipment diagnostics, heat mapping and laboratory inspection.',tags:['640 × 480 IR','-20 to 650°C','Thermal Lens','Wi-Fi Certified'],specs:{'Manufacturer / Brand':'FLIR Systems','Model':'E Series T540','Thermal Resolution':'640 × 480','Temperature Range':'-20°C to 650°C','Display':'Touchscreen LCD','Connectivity':'Wi-Fi / USB','Focus':'Laser-assisted','Included':'Camera and hard case'},location:'Instrumentation Lab · Building 4, Room 06',handling:'Keep the thermal lens cap fitted when not in use. Return the hard case and charging accessories.',images:['https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=1200&q=85','https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=600&q=80']},
-  {id:'DELL-5570',name:'Dell Precision 5570 i7 32GB RTX Workstation',short:'Dell Precision 5570 i7 32GB RTX Workstation',category:'Computing',group:'Computing',lab:'Computer Lab',department:'Computer Science',status:'borrowed',statusText:'Borrowed Until May 21',code:'EQ-WKS-018',loan:'4 Days',value:'₹1,65,000',description:'High-compute mobile workstation configured for CAD, CUDA acceleration, graphics and machine-learning coursework.',tags:['Core i7','32GB RAM','RTX Graphics','1TB NVMe SSD'],specs:{'Manufacturer / Brand':'Dell','Model':'Precision 5570','Processor':'Intel Core i7','Memory':'32GB DDR5','Graphics':'NVIDIA RTX','Storage':'1TB NVMe SSD','Display':'15.6 inch UHD','OS':'Windows 11 Pro'},location:'Computer Lab · Building 1, Room 12',handling:'Borrower must sign the laptop handover checklist and return the charger with the workstation.',images:['https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1200&q=85','https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80']},
-  {id:'MKR-UNO',name:'MakerBot Replicator 3D Tooling Kit',short:'MakerBot Replicator 3D Tooling Kit',category:'Robotics & Microcontrollers',group:'Robotics & Microcontrollers',lab:'Robotics Lab',department:'Engineering & Sciences',status:'available',statusText:'Available',code:'EQ-3DP-011',loan:'7 Days',value:'₹85,000',description:'Complete rapid-prototyping accessory set including filament, build plates and essential maintenance tools.',tags:['FDM Printing','PLA / ABS','Build Plate','Tool Kit'],specs:{'Manufacturer / Brand':'MakerBot','Model':'Replicator Kit','Technology':'FDM 3D Printing','Materials':'PLA / ABS','Build Volume':'250 × 200 × 150 mm','Included':'Filament and tools','Interface':'USB / Wi-Fi','Support':'Lab-assisted'},location:'Robotics Lab · Building 5, Room 03',handling:'Use only approved filament and follow the lab staff setup instructions before starting a print.',images:['https://images.unsplash.com/photo-1581092335878-2d9ff86ca2bf?auto=format&fit=crop&w=1200&q=85','https://images.unsplash.com/photo-1631556097152-c39479bbfffd?auto=format&fit=crop&w=600&q=80']},
-  {id:'KSG-344',name:'Keysight 34461A 6½ Digit Digital Multimeter',short:'Keysight 34461A 6½ Digit Digital Multimeter',category:'Electronics',group:'Electronics',lab:'Electronics Lab',department:'Engineering & Sciences',status:'available',statusText:'Available Now',code:'EQ-DMM-031',loan:'4 Days',value:'₹1,20,000',description:'Truevolt digital multimeter for precise voltage, current and resistance measurements in academic projects.',tags:['6½ Digit','Truevolt','USB / LAN','High Accuracy'],specs:{'Manufacturer / Brand':'Keysight','Model':'34461A','Resolution':'6½ Digit','Measurement':'V, A, Ω, Frequency','Connectivity':'USB / LAN','Display':'Color LCD','Accuracy':'High precision','Included':'Test leads and cable'},location:'Electronics Lab · Building 3, Room 08',handling:'Return with original test leads and USB cable. Do not exceed rated measurement limits.',images:['https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1200&q=85','https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=600&q=80']}
-];
+async function loadResources() {
+  const { data, error } = await window.supabaseClient
+    .from('resources')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Failed to load resources:', error.message);
+    showToast('Could not load equipment from database.');
+    return;
+  }
+
+  equipment = data.map(item => ({
+    id: item.id,
+    name: item.name,
+    short: item.name,
+    category: item.category_id || 'Other',
+    group: item.category_id || 'Other',
+    lab: 'Campus Lab',
+    department: 'Engineering & Sciences',
+    status: item.available_quantity > 0 ? 'available' : 'borrowed',
+    statusText: item.available_quantity > 0 ? 'Available' : 'Currently Borrowed',
+    code: String(item.id),
+    loan: 'As approved',
+    value: 'Contact custodian',
+    description: item.description || 'No description available.',
+    tags: [`Total: ${item.total_quantity}`, `Available: ${item.available_quantity}`],
+    specs: {
+      Condition: item.condition || 'Not specified',
+      'Total quantity': item.total_quantity,
+      'Available quantity': item.available_quantity
+    },
+    location: 'Contact custodian',
+    handling: 'Follow the custodian instructions.',
+    images: ['https://placehold.co/800x500/e8eef7/294b78?text=CampusShare+Equipment']
+  }));
+
+  renderCatalog();
+}
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const $$ = (selector, root=document) => [...root.querySelectorAll(selector)];
@@ -52,4 +83,4 @@ $$('.nav-link').forEach(btn=>btn.addEventListener('click',()=>{const nav=btn.dat
 $('#mobileMenu').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
 $('#globalSearch').addEventListener('input',()=>{$('#catalogSearch').value=$('#globalSearch').value;renderCatalog();showView('browse')});
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#globalSearch').focus()}if(e.key==='Escape')closeRequestModal()});
-renderCatalog();
+loadResources();
