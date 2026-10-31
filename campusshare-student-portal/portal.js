@@ -36,6 +36,15 @@
       showToast('Administrator verified. Opening Admin Portal.');
       navigate('admin');
     }
+    if (data.type === 'admin-login-success') {
+  window.location.href = 'admin portal/index.html';
+  return;
+}
+
+if (data.type === 'owner-login-success') {
+  window.location.href = 'staff portal/dashboard.html';
+  return;
+}
     if (data.type === 'login-success') {
       localStorage.setItem('campusshareDemoSession', 'student-demo');
       if (data.profile) localStorage.setItem('campusshareDemoProfile', JSON.stringify(data.profile));
