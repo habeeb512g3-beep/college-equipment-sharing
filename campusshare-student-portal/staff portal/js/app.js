@@ -23,6 +23,85 @@ function syncCards(){
 function equipmentPage(){
  const modal=$('#addEquipmentModal'), grid=$('#equipmentGridContainer');if(!modal||!grid)return;
  let editing=null, imageData='';
+ 
+function updateEquipmentCounts() {
+    const equipment = db.equipment || [];
+
+    const normalize = status =>
+        String(status || 'available').toLowerCase().replace(/_/g, '-');
+
+    const counts = {
+        total: equipment.length,
+        available: equipment.filter(e => normalize(e.status) === 'available').length,
+        inUse: equipment.filter(e =>
+            ['in-use', 'in use', 'borrowed'].includes(normalize(e.status))
+        ).length,
+        maintenance: equipment.filter(e =>
+            ['maintenance', 'under-maintenance'].includes(normalize(e.status))
+        ).length,
+        overdue: equipment.filter(e => normalize(e.status) === 'overdue').length
+    };
+
+    // Update the four equipment summary cards
+    const summaryGrid = document.querySelector('main .grid.grid-cols-2.md\\:grid-cols-4');
+
+    if (summaryGrid) {
+        const values = [
+            `${counts.available} Units`,
+            `${counts.inUse} Active`,
+            `${counts.maintenance} Offline`,
+            `${counts.overdue} Overdue`
+        ];
+
+        summaryGrid.querySelectorAll('.font-headline-md').forEach((el, i) => {
+            if (values[i] !== undefined) el.textContent = values[i];
+        });
+    }
+
+    // Update status filter numbers
+    const statusFilter = document.getElementById('statusFilter');
+
+    if (statusFilter) {
+        const statusCounts = {
+            all: counts.total,
+            available: counts.available,
+            'in-use': counts.inUse,
+            maintenance: counts.maintenance,
+            overdue: counts.overdue
+        };
+
+        Array.from(statusFilter.options).forEach(option => {
+            if (statusCounts[option.value] !== undefined) {
+                const labels = {
+                    all: 'All Statuses',
+                    available: 'Available',
+                    'in-use': 'In-Use',
+                    maintenance: 'Maintenance',
+                    overdue: 'Overdue / Delays'
+                };
+
+                option.textContent =
+                    `${labels[option.value]} (${statusCounts[option.value]})`;
+            }
+        });
+    }
+
+    // Update total visible equipment count
+    const visibleCount = document.getElementById('visibleCount');
+    if (visibleCount) visibleCount.textContent = counts.total;
+
+    // Update active equipment indicator in header
+    const headerIndicators = document.querySelectorAll('header .rounded-full');
+
+    headerIndicators.forEach(el => {
+        if (el.textContent.includes('Active') &&
+            el.textContent.includes('Maintenance')) {
+            el.textContent =
+                `${counts.total} Total • ${counts.maintenance} Maintenance`;
+        }
+    });
+}
+
  const name=$('#equipmentNameField'),desc=$('#equipmentDescriptionField'),loc=$('#equipmentLocationField'),file=$('#equipmentImageField'),preview=$('#equipmentImagePreview');
  function open(item){editing=item?.id||null;name.value=item?.name||'';desc.value=item?.description||'';loc.value=item?.location||'';imageData=item?.image||'';preview.src=imageData;preview.classList.toggle('hidden',!imageData);modal.classList.remove('hidden');document.body.style.overflow='hidden'}
  function close(){modal.classList.add('hidden');document.body.style.overflow=''}
