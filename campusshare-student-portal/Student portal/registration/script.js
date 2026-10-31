@@ -15,10 +15,10 @@ let selectedRole = 'student';
 
 const cohortOptions = {
   student: [
-    ['UG - 1st Year (Jr)', 'UG - 1st Year (Jr)'],
-    ['UG - 2nd Year (Sophomore)', 'UG - 2nd Year (Sophomore)'],
-    ['UG - 3rd Year (Jr)', 'UG - 3rd Year (Jr)'],
-    ['UG - 4th Year (Senior)', 'UG - 4th Year (Senior)'],
+    ['UG - 1st Year ', 'UG - 1st Year '],
+    ['UG - 2nd Year ', 'UG - 2nd Year '],
+    ['UG - 3rd Year ', 'UG - 3rd Year '],
+    ['UG - 4th Year ', 'UG - 4th Year '],
     ['Postgraduate', 'Postgraduate']
   ],
   staff: [
@@ -42,7 +42,7 @@ function setRole(role) {
   roleNote.textContent = isStudent
     ? 'Instant Tier 1 Standard gear clearance upon .edu confirmation.'
     : 'Faculty and custodians can request inventory management access after institutional verification.';
-  campusIdLabel.textContent = isStudent ? 'Student / NetID' : 'Employee / Staff ID';
+  campusIdLabel.textContent = isStudent ? 'StudentID / NetID' : 'Employee / Staff ID';
   campusIdInput.placeholder = isStudent ? 'CS-2024-8841' : 'EMP-2024-102';
   cohortLabel.textContent = isStudent ? 'Cohort / Year' : 'Campus Role';
   cohortSelect.innerHTML = '<option value="">Select ' + (isStudent ? 'year' : 'role') + '</option>';
@@ -68,9 +68,9 @@ document.getElementById('toggle-password').addEventListener('click', (event) => 
 });
 
 function getPasswordStrength(value) {
-  if (!value) return { score: 0, label: '—', hint: 'Use 8 or more characters' };
+  if (!value) return { score: 0, label: '—', hint: 'Use 12 or more characters' };
   let score = 0;
-  if (value.length >= 8) score++;
+
   if (value.length >= 12) score++;
   if (/[a-z]/.test(value) && /[A-Z]/.test(value)) score++;
   if (/\d/.test(value)) score++;
@@ -92,7 +92,7 @@ passwordInput.addEventListener('input', () => {
 function setFieldError(field, message) {
   const inputIds = {
     name: 'full-name',
-    email: 'institutional-email',
+    email: 'personal-email',
     'campus-id': 'campus-id',
     cohort: 'cohort',
     department: 'department',
@@ -130,7 +130,7 @@ function hideMessage() {
 form.addEventListener('input', (event) => {
   const fieldMap = {
     'full-name': 'name',
-    'institutional-email': 'email',
+    'personal-email': 'email',
     'campus-id': 'campus-id',
     cohort: 'cohort',
     department: 'department',
@@ -147,19 +147,19 @@ function validateForm() {
   clearErrors();
   let valid = true;
   const fullName = document.getElementById('full-name').value.trim();
-  const email = document.getElementById('institutional-email').value.trim();
+  const email = document.getElementById('personal-email').value.trim();
   const campusId = campusIdInput.value.trim();
   const cohort = cohortSelect.value;
   const department = document.getElementById('department').value;
   const password = passwordInput.value;
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (fullName.length < 2) { setFieldError('name', 'Enter your official campus name.'); valid = false; }
-  if (!emailPattern.test(email)) { setFieldError('email', 'Enter a valid institutional email address.'); valid = false; }
+  if (fullName.length < 2) { setFieldError('name', 'Enter your full name.'); valid = false; }
+  if (!emailPattern.test(email)) { setFieldError('email', 'Enter a valid personal email address.'); valid = false; }
   if (!campusId) { setFieldError('campus-id', 'This field is required.'); valid = false; }
   if (!cohort) { setFieldError('cohort', 'Please select an option.'); valid = false; }
   if (!department) { setFieldError('department', 'Please select your department.'); valid = false; }
-  if (password.length < 8) { setFieldError('password', 'Your security keyphrase must be at least 8 characters.'); valid = false; }
+  if (password.length < 12) { setFieldError('password', 'Your security keyphrase must be at least 12 characters.'); valid = false; }
   if (!document.getElementById('terms').checked) { setFieldError('terms', 'Please accept the campus asset custody guidelines to continue.'); valid = false; }
   return valid;
 }
@@ -177,7 +177,7 @@ form.addEventListener('submit', async (event) => {
   const data = {
     role: selectedRole,
     fullName: document.getElementById('full-name').value.trim(),
-    email: document.getElementById('institutional-email').value.trim(),
+    email: document.getElementById('personal-email').value.trim(),
     campusId: campusIdInput.value.trim(),
     cohort: cohortSelect.value,
     department: document.getElementById('department').value,
