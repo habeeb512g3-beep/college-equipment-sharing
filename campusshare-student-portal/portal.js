@@ -6,7 +6,7 @@
     dashboard: 'Student%20portal/dashboard/index.html', browse: 'Student%20portal/browse/index.html',
     requests: 'Student%20portal/requests/index.html', borrowed: 'Student%20portal/borrowed/index.html',
     history: 'Student%20portal/history/index.html', profile: 'Student%20portal/profile/index.html',
-    admin: 'admin%20portal/index.html'
+    admin: 'admin%20portal/index.html',staff: 'staff%20portal/dashboard.html',
   };
   let toastTimer;
   function showToast(message) {
