@@ -57,14 +57,21 @@ loginForm.addEventListener("submit", async event => {
     const { data, error } = await window.supabaseClient.auth.signInWithPassword({ email, password });
     if (error) throw error;
     const user = data.user;
-    const { data: roleRecord, error: roleError } = await window.supabaseClient
-      .from("user_roles").select("role").eq("user_id", user.id).maybeSingle();
-    if (roleError) throw new Error("Your account role could not be verified. Contact the campus administrator.");
-    const role = roleRecord?.role;
+const { data: roleRecord, error: roleError } = await window.supabaseClient
+  .from("profiles")
+  .select("role, full_name")
+  .eq("id", user.id)
+  .maybeSingle();
+
+if (roleError || !roleRecord) {
+  throw new Error("Your account role could not be verified. Contact the campus administrator.");
+}
+
+const role = roleRecord.role;
     const profile = {
-      fullName: user.user_metadata?.full_name || user.user_metadata?.name || email.split("@")[0],
-      email
-    };
+  fullName: roleRecord.full_name || user.user_metadata?.full_name || email.split("@")[0],
+  email
+};
     localStorage.setItem("campusshareAuthProfile", JSON.stringify(profile));
     localStorage.removeItem("campusshareDemoSession");
     if (role === "admin") {
@@ -73,10 +80,25 @@ loginForm.addEventListener("submit", async event => {
       else window.location.href = "../../admin%20portal/index.html";
       return;
     }
-    if (role !== "student") {
-      await window.supabaseClient.auth.signOut();
-      throw new Error("This account does not have student or administrator access.");
-    }
+    if (role === "owner") {
+  formFeedback.textContent = "Owner verified. Opening Staff Portal…";
+
+  if (window.parent !== window) {
+    window.parent.postMessage({
+      source: "campusshare-page",
+      type: "owner-login-success",
+      profile
+    }, "*");
+  } else {
+    window.location.href = "../../staff%20portal/dashboard.html";
+  }
+  return;
+}
+
+if (role !== "student") {
+  await window.supabaseClient.auth.signOut();
+  throw new Error("Your account does not have an authorized portal role.");
+}
     localStorage.setItem("campusshareDemoSession", "student-demo");
     localStorage.setItem("campusshareDemoProfile", JSON.stringify(profile));
     formFeedback.textContent = "Sign-in successful. Opening your Student Portal…";
