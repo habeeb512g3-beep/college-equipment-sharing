@@ -166,13 +166,17 @@
         .maybeSingle();
 
       if (roleError) {
-        console.error("CampusShare profile lookup failed:", roleError);
+  console.error("CampusShare profile lookup failed:", {
+    message: roleError.message,
+    code: roleError.code,
+    details: roleError.details,
+    hint: roleError.hint
+  });
 
-        throw new Error(
-          "We signed you in, but could not read your CampusShare profile. Check the profiles table SELECT policy for the signed-in user."
-        );
-      }
-
+  throw new Error(
+    `Profile lookup failed: ${roleError.message} (code: ${roleError.code || "unknown"})`
+  );
+}
       if (!roleRecord) {
         throw new Error(
           "Your account exists, but its CampusShare profile is missing. Ask the administrator to create or repair your profiles record, then sign in again."
