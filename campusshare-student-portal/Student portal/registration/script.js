@@ -70,8 +70,8 @@ document.getElementById('toggle-password').addEventListener('click', (event) => 
 function getPasswordStrength(value) {
   if (!value) return { score: 0, label: '—', hint: 'Use 12 or more characters' };
   let score = 0;
-
-  if (value.length >= 12) score++;
+  if (value.length >=8) score++;
+  if (value.length >=12) score++;
   if (/[a-z]/.test(value) && /[A-Z]/.test(value)) score++;
   if (/\d/.test(value)) score++;
   if (/[^A-Za-z0-9]/.test(value)) score++;
