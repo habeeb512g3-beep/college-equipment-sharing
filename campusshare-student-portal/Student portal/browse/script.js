@@ -1,42 +1,83 @@
+
 async function loadResources() {
-  const { data, error } = await window.supabaseClient
-    .from('resources')
-    .select('*')
-    .order('created_at', { ascending: false });
+  try {
+    // Fetch categories and resources together
+    const [categoryResult, resourceResult] = await Promise.all([
+      window.supabaseClient
+        .from('categories')
+        .select('id, category_name'),
 
-  if (error) {
-    console.error('Failed to load resources:', error.message);
+      window.supabaseClient
+        .from('resources')
+        .select('*')
+        .order('created_at', { ascending: false })
+    ]);
+
+    if (categoryResult.error) {
+      throw categoryResult.error;
+    }
+
+    if (resourceResult.error) {
+      throw resourceResult.error;
+    }
+
+    // Convert category IDs into readable names
+    const categoryMap = Object.fromEntries(
+      (categoryResult.data || []).map(category => [
+        category.id,
+        category.category_name
+      ])
+    );
+
+    // Convert database resources into frontend format
+    equipment = (resourceResult.data || []).map(item => {
+      const categoryName =
+        categoryMap[item.category_id] || 'Other';
+
+      return {
+        id: item.id,
+        name: item.name,
+        short: item.name,
+        category: categoryName,
+        group: categoryName,
+        lab: 'Campus Lab',
+        department: 'Engineering & Sciences',
+        status: item.available_quantity > 0 ? 'available' : 'borrowed',
+        statusText: item.available_quantity > 0
+          ? 'Available'
+          : 'Currently Borrowed',
+        code: String(item.id),
+        loan: 'As approved',
+        value: 'Contact custodian',
+        description: item.description || 'No description available.',
+        tags: [
+          `Total: ${item.total_quantity}`,
+          `Available: ${item.available_quantity}`
+        ],
+        specs: {
+          Condition: item.condition || 'Not specified',
+          'Total quantity': item.total_quantity,
+          'Available quantity': item.available_quantity
+        },
+        location: 'Contact custodian',
+        handling: 'Follow the custodian instructions.',
+        images: [
+          'https://placehold.co/800x500/e8eef7/294b78?text=CampusShare+Equipment'
+        ]
+      };
+    });
+
+    selectedEquipment = equipment[0] || null;
+
+    renderCatalog();
+
+    console.log('Categories loaded:', categoryResult.data.length);
+    console.log('Resources loaded:', equipment.length);
+
+  } catch (error) {
+    console.error('Failed to load Browse data:', error);
     showToast('Could not load equipment from database.');
-    return;
   }
-
-  equipment = data.map(item => ({
-    id: item.id,
-    name: item.name,
-    short: item.name,
-    category: item.category_id || 'Other',
-    group: item.category_id || 'Other',
-    lab: 'Campus Lab',
-    department: 'Engineering & Sciences',
-    status: item.available_quantity > 0 ? 'available' : 'borrowed',
-    statusText: item.available_quantity > 0 ? 'Available' : 'Currently Borrowed',
-    code: String(item.id),
-    loan: 'As approved',
-    value: 'Contact custodian',
-    description: item.description || 'No description available.',
-    tags: [`Total: ${item.total_quantity}`, `Available: ${item.available_quantity}`],
-    specs: {
-      Condition: item.condition || 'Not specified',
-      'Total quantity': item.total_quantity,
-      'Available quantity': item.available_quantity
-    },
-    location: 'Contact custodian',
-    handling: 'Follow the custodian instructions.',
-    images: ['https://placehold.co/800x500/e8eef7/294b78?text=CampusShare+Equipment']
-  }));
-  selectedEquipment = equipment[0] || null;
-
-  renderCatalog();
 }
 
 const $ = (selector, root=document) => root.querySelector(selector);
