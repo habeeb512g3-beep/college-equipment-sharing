@@ -25,59 +25,59 @@ function equipmentPage(){
  let editing=null, imageData='';
  
 function updateEquipmentCounts() {
-
- document.getElementById('availableCount').textContent =
-    counts.available + ' Units';
-
-document.getElementById('inUseCount').textContent =
-    counts.inUse + ' Active';
-
-document.getElementById('maintenanceCount').textContent =
-    counts.maintenance + ' Offline';
-
-document.getElementById('overdueCount').textContent =
-    counts.overdue + ' Overdue';
-
-document.getElementById('totalEquipmentCount').textContent =
-    counts.total;
- 
-    const equipment = db.equipment || [];
+    const equipment = Array.isArray(db.equipment) ? db.equipment : [];
 
     const normalize = status =>
-        String(status || 'available').toLowerCase().replace(/_/g, '-');
+        String(status || 'available')
+            .toLowerCase()
+            .replace(/_/g, '-')
+            .trim();
 
+    // Calculate counts BEFORE updating the HTML
     const counts = {
         total: equipment.length,
-        available: equipment.filter(e => normalize(e.status) === 'available').length,
+
+        available: equipment.filter(e =>
+            normalize(e.status) === 'available'
+        ).length,
+
         inUse: equipment.filter(e =>
             ['in-use', 'in use', 'borrowed'].includes(normalize(e.status))
         ).length,
+
         maintenance: equipment.filter(e =>
             ['maintenance', 'under-maintenance'].includes(normalize(e.status))
         ).length,
-        overdue: equipment.filter(e => normalize(e.status) === 'overdue').length
+
+        overdue: equipment.filter(e =>
+            normalize(e.status) === 'overdue'
+        ).length
     };
 
-    // Update the four equipment summary cards
-    const summaryGrid = document.querySelector('main .grid.grid-cols-2.md\\:grid-cols-4');
+    // Update summary cards
+    const setText = (selector, value) => {
+        const element = document.querySelector(selector);
+        if (element) element.textContent = value;
+    };
 
-    if (summaryGrid) {
-        const values = [
-            `${counts.available} Units`,
-            `${counts.inUse} Active`,
-            `${counts.maintenance} Offline`,
-            `${counts.overdue} Overdue`
-        ];
+    setText('#availableCount', `${counts.available} Units`);
+    setText('#inUseCount', `${counts.inUse} Active`);
+    setText('#maintenanceCount', `${counts.maintenance} Offline`);
+    setText('#overdueCount', `${counts.overdue} Overdue`);
+    setText('#totalEquipmentCount', counts.total);
 
-        summaryGrid.querySelectorAll('.font-headline-md').forEach((el, i) => {
-            if (values[i] !== undefined) el.textContent = values[i];
-        });
-    }
-
-    // Update status filter numbers
-    const statusFilter = document.getElementById('statusFilter');
+    // Update status filter counts
+    const statusFilter = $('#statusFilter');
 
     if (statusFilter) {
+        const labels = {
+            all: 'All Statuses',
+            available: 'Available',
+            'in-use': 'In-Use',
+            maintenance: 'Maintenance',
+            overdue: 'Overdue / Delays'
+        };
+
         const statusCounts = {
             all: counts.total,
             available: counts.available,
@@ -87,35 +87,17 @@ document.getElementById('totalEquipmentCount').textContent =
         };
 
         Array.from(statusFilter.options).forEach(option => {
-            if (statusCounts[option.value] !== undefined) {
-                const labels = {
-                    all: 'All Statuses',
-                    available: 'Available',
-                    'in-use': 'In-Use',
-                    maintenance: 'Maintenance',
-                    overdue: 'Overdue / Delays'
-                };
-
+            if (labels[option.value] !== undefined) {
                 option.textContent =
                     `${labels[option.value]} (${statusCounts[option.value]})`;
             }
         });
     }
 
-    // Update total visible equipment count
-    const visibleCount = document.getElementById('visibleCount');
-    if (visibleCount) visibleCount.textContent = counts.total;
+    // Update the equipment total
+    setText('#totalEquipmentCount', counts.total);
 
-    // Update active equipment indicator in header
-    const headerIndicators = document.querySelectorAll('header .rounded-full');
-
-    headerIndicators.forEach(el => {
-        if (el.textContent.includes('Active') &&
-            el.textContent.includes('Maintenance')) {
-            el.textContent =
-                `${counts.total} Total • ${counts.maintenance} Maintenance`;
-        }
-    });
+    return counts;
 }
 
  const name=$('#equipmentNameField'),desc=$('#equipmentDescriptionField'),loc=$('#equipmentLocationField'),file=$('#equipmentImageField'),preview=$('#equipmentImagePreview');
@@ -124,17 +106,122 @@ document.getElementById('totalEquipmentCount').textContent =
  $('#openAddModalBtn')?.addEventListener('click',()=>open());
  $('#closeAddModalBtn')?.addEventListener('click',close);$('#cancelModalBtn')?.addEventListener('click',close);$('#modalOverlay')?.addEventListener('click',close);
  file?.addEventListener('change',()=>{const f=file.files?.[0];if(!f)return;if(!f.type.startsWith('image/')){toast('Please choose an image file.');file.value='';return}if(f.size>2*1024*1024){toast('Image must be 2 MB or smaller.');file.value='';return}const rd=new FileReader();rd.onload=()=>{imageData=rd.result;preview.src=imageData;preview.classList.remove('hidden')};rd.readAsDataURL(f)});
- function render(){grid.innerHTML='';db.equipment.forEach(e=>{const c=document.createElement('article');c.className='equipment-card flex flex-col rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden';c.dataset.id=e.id;c.dataset.name=e.name;c.dataset.room=e.location;c.dataset.status=e.status||'available';
-                                                              c.dataset.category = e.category || (
-    e.id.includes('MS') ? 'mass-spec' :
-    e.id.includes('MIC') ? 'microscopy' :
-    e.id.includes('GEN') ? 'genomics' :
-    e.id.includes('EM') ? 'em' :
-    e.id.includes('CEN') ? 'centrifugation' :
-    e.id.includes('CYT') ? 'flow-cytometry' : 'other'
-);
+
+ function render() {
+    grid.innerHTML = '';
+
+    db.equipment.forEach(e => {
+        const card = document.createElement('article');
+
+        card.className =
+            'equipment-card flex flex-col rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden';
+
+        card.dataset.id = e.id;
+        card.dataset.name = e.name || '';
+        card.dataset.room = e.location || '';
+        card.dataset.status = e.status || 'available';
+
+        card.dataset.category = e.category || (
+            (e.id || '').includes('MS') ? 'mass-spec' :
+            (e.id || '').includes('MIC') ? 'microscopy' :
+            (e.id || '').includes('GEN') ? 'genomics' :
+            (e.id || '').includes('EM') ? 'em' :
+            (e.id || '').includes('CEN') ? 'centrifugation' :
+            (e.id || '').includes('CYT') ? 'flow-cytometry' : 'other'
+        );
+
+        card.innerHTML = `
+            <div class="h-44 bg-surface-container overflow-hidden">
+                ${e.image
+                    ? `<img src="${esc(e.image)}" alt="${esc(e.name)}"
+                        class="w-full h-full object-cover">`
+                    : `<div class="h-full flex items-center justify-center text-outline">
+                        No image
+                       </div>`
+                }
+            </div>
+
+            <div class="p-5 flex-1">
+                <h2 class="font-title-md">${esc(e.name)}</h2>
+
+                <p class="text-sm text-on-surface-variant mt-2">
+                    ${esc(e.description || '')}
+                </p>
+
+                <p class="text-sm mt-3">
+                    📍 ${esc(e.location || '')}
+                </p>
+
+                <p class="text-sm mt-2">
+                    Status: ${esc(e.status || 'available')}
+                </p>
+
+                <div class="flex gap-2 mt-5">
+                    <button type="button"
+                        data-edit="${esc(e.id)}"
+                        class="px-3 py-2 rounded bg-surface-container">
+                        Edit
+                    </button>
+
+                    <button type="button"
+                        data-delete="${esc(e.id)}"
+                        class="px-3 py-2 rounded bg-error-container text-error">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        `;
+
+        grid.appendChild(card);
+    });
+
+    // Update counts only AFTER all equipment cards are rendered
     updateEquipmentCounts();
-    c.innerHTML=`<div class="h-44 bg-surface-container overflow-hidden">${e.image?`<img src="${e.image}" alt="${esc(e.name)}" class="w-full h-full object-cover">`:'<div class="h-full flex items-center justify-center text-outline">No image</div>'}</div><div class="p-5 flex-1"><h2 class="font-title-md">${esc(e.name)}</h2><p class="text-sm text-on-surface-variant mt-2">${esc(e.description)}</p><p class="text-sm mt-3">📍 ${esc(e.location)}</p><div class="flex gap-2 mt-5"><button type="button" data-edit="${e.id}" class="px-3 py-2 rounded bg-surface-container">Edit</button><button type="button" data-delete="${e.id}" class="px-3 py-2 rounded bg-error-container text-error">Delete</button></div></div>`;grid.append(c)});$('#visibleCount')&&($('#visibleCount').textContent=db.equipment.length);const tbody=$('#equipmentTableContainer tbody');if(tbody)tbody.innerHTML=db.equipment.map(e=>`<tr class="border-b"><td class="px-4 py-3"><strong>${esc(e.name)}</strong><div class="text-xs">${esc(e.id)}</div></td><td class="px-4 py-3">—</td><td class="px-4 py-3">${esc(e.location)}</td><td class="px-4 py-3">${esc(e.status||'available')}</td><td class="px-4 py-3">—</td><td class="px-4 py-3 text-right"><button data-edit="${e.id}" class="px-2 py-1 bg-surface-container rounded">Edit</button> <button data-delete="${e.id}" class="px-2 py-1 bg-error-container text-error rounded">Delete</button></td></tr>`).join('')}
+
+    // Update equipment table
+    const tbody = $('#equipmentTableContainer tbody');
+
+    if (tbody) {
+        tbody.innerHTML = db.equipment.map(e => `
+            <tr class="border-b">
+                <td class="px-4 py-3">
+                    <strong>${esc(e.name)}</strong>
+                    <div class="text-xs">${esc(e.id)}</div>
+                </td>
+
+                <td class="px-4 py-3">—</td>
+                <td class="px-4 py-3">${esc(e.location || '')}</td>
+                <td class="px-4 py-3">${esc(e.status || 'available')}</td>
+                <td class="px-4 py-3">—</td>
+
+                <td class="px-4 py-3 text-right">
+                    <button type="button"
+                        data-edit="${esc(e.id)}"
+                        class="px-2 py-1 bg-surface-container rounded">
+                        Edit
+                    </button>
+
+                    <button type="button"
+                        data-delete="${esc(e.id)}"
+                        class="px-2 py-1 bg-error-container text-error rounded">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Initial visible count
+    const visibleCount = $('#visibleCount');
+    if (visibleCount) {
+        visibleCount.textContent = db.equipment.length;
+    }
+
+    const totalCount = $('#totalEquipmentCount');
+    if (totalCount) {
+        totalCount.textContent = db.equipment.length;
+    }
+}
  
 const saveEquipment = (event) => {
     event?.preventDefault();
