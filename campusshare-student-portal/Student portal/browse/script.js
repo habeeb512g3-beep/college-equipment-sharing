@@ -34,13 +34,15 @@ async function loadResources() {
     handling: 'Follow the custodian instructions.',
     images: ['https://placehold.co/800x500/e8eef7/294b78?text=CampusShare+Equipment']
   }));
+  selectedEquipment = equipment[0] || null;
 
   renderCatalog();
 }
 
 const $ = (selector, root=document) => root.querySelector(selector);
 const $$ = (selector, root=document) => [...root.querySelectorAll(selector)];
-let selectedEquipment = equipment[0];
+let equipment = [];
+let selectedEquipment = null;
 let selectedCategory = '';
 let savedIds = new Set();
 let toastTimer;
