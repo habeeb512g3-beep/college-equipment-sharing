@@ -1,1 +1,16 @@
 @layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}
+
+/* Preserved additional styles from the updated staff portal */
+/* Live cross-portal workflow panels */
+#studentPortalLiveRequests, #dashboardLiveStudentRequests, #persistentCalendarBookings, #persistentCompletedHistory { border: 1px solid rgba(100,116,139,.18); }
+#studentPortalLiveRequests button, #dashboardLiveStudentRequests button, #persistentCalendarBookings button { cursor: pointer; transition: filter .15s ease, transform .15s ease; }
+#studentPortalLiveRequests button:hover, #dashboardLiveStudentRequests button:hover, #persistentCalendarBookings button:hover { filter: brightness(.96); transform: translateY(-1px); }
+#studentPortalLiveRequests article, #dashboardLiveStudentRequests > div { background: rgba(148,163,184,.04); }
+@media print { button, input, select, nav { display: none !important; } #persistentCompletedHistory { border: 0; } }
+
+/* Live student booking request workflow */
+#studentPortalLiveRequests [data-live-id] { background: var(--md-sys-color-surface, #fff); }
+#studentPortalLiveRequests button:focus-visible, #studentPortalLiveRequests input:focus-visible { outline: 2px solid var(--md-sys-color-primary, #315b9a); outline-offset: 2px; }
+#studentPortalLiveRequests [data-action], #studentPortalLiveRequests [data-filter] { transition: background-color .15s ease, border-color .15s ease; }
+#studentPortalLiveRequests [data-select-request] { width: 16px; height: 16px; margin-top: 4px; flex: 0 0 auto; accent-color: var(--md-sys-color-primary, #315b9a); }
+@media print { #studentPortalLiveRequests button, #studentPortalLiveRequests input[type=checkbox] { display: none !important; } }
