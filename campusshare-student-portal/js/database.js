@@ -1,5 +1,3 @@
-// CampusShare - Shared Database Service
-
 (() => {
   const supabase = window.supabaseClient;
 
@@ -63,8 +61,6 @@
       if (error) throw error;
       return data;
     },
-
-    // INSERT records
     async insert(table, records) {
       checkTable(table);
 
@@ -76,8 +72,6 @@
       if (error) throw error;
       return data;
     },
-
-    // UPDATE records
     async update(table, filters, changes) {
       checkTable(table);
 
@@ -93,8 +87,6 @@
       if (error) throw error;
       return data;
     },
-
-    // DELETE records
     async remove(table, filters) {
       checkTable(table);
 
