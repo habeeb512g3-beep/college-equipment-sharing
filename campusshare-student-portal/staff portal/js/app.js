@@ -1,22 +1,74 @@
 
 (function(){
 'use strict';
-const KEY='campusshare.ownerportal.v2';
+const KEY='campusshare.ownerportal.v3';
+const STUDENT_REQUESTS_KEY='campusshareDemoRequests';
+const STUDENT_EQUIPMENT_KEY='campusshareDemoEquipment';
+const HAD_SHARED_INVENTORY_AT_STARTUP=localStorage.getItem(STUDENT_EQUIPMENT_KEY)!==null;
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const read=()=>{try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}};
+const read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('campusshare.ownerportal.v2'))||{}}catch(e){return {}}};
 let db=read();let activeFilter='all';
-function save(){localStorage.setItem(KEY,JSON.stringify(db));}
+function studentStatus(category){return ({pending:'review',approved:'approved',waitlist:'waitlist',rejected:'rejected',borrowed:'borrowed','in-use':'borrowed',returned:'returned',cancelled:'rejected'})[category]||'review'}
+function syncFromStudentPortal(){
+ let records=[];try{records=JSON.parse(localStorage.getItem(STUDENT_REQUESTS_KEY)||'[]')}catch(_){records=[]}
+ if(!Array.isArray(records))records=[];
+ const imported=records.map(x=>{
+  const status=String(x.status||'review').toLowerCase();
+  const category=({review:'pending',pending:'pending',approved:'approved',waitlist:'waitlist',rejected:'rejected',cancelled:'rejected',borrowed:'borrowed','in-use':'borrowed',returned:'returned',completed:'returned'})[status]||'pending';
+  const rid=String(x.id||'REQ-'+id());
+  return {id:'STU-'+rid,sourceId:rid,source:'student-portal',category,title:x.studentName||x.userName||x.fullName||x.studentEmail||x.student_email||'Student',studentEmail:x.studentEmail||x.student_email||x.email||'',equipmentName:x.name||x.equipmentName||'Equipment',equipment:String(x.code||x.equipmentId||x.resourceId||''),date:x.start||x.startDate||x.start_date||'',endDate:x.end||x.endDate||x.end_date||'',purpose:x.purpose||'',createdAt:x.createdAt||x.created_at||x.submittedAt||'',search:[x.name,x.code,x.studentName,x.studentEmail,x.purpose].filter(Boolean).join(' '),decisionAt:x.staffDecisionAt||null,decisionReason:x.staffDecisionReason||'',startedAt:x.startedAt||null,elapsed:0};
+ });
+ db.requests=(db.requests||[]).filter(r=>r.source!=='student-portal'&&!String(r.id||'').startsWith('REQ-INIT-')).concat(imported);
+}
+function syncToStudentPortal(){
+ let records=[];try{records=JSON.parse(localStorage.getItem(STUDENT_REQUESTS_KEY)||'[]')}catch(_){records=[]}
+ if(!Array.isArray(records))records=[];
+ db.requests.filter(r=>r.source==='student-portal'&&r.sourceId).forEach(r=>{
+  const rec=records.find(x=>String(x.id)===String(r.sourceId));if(!rec)return;
+  rec.status=studentStatus(r.category);
+  if(r.decisionAt)rec.staffDecisionAt=r.decisionAt;else delete rec.staffDecisionAt;
+  if(r.decisionReason)rec.staffDecisionReason=r.decisionReason;else delete rec.staffDecisionReason;
+  if(r.category==='returned')rec.returnedAt=r.returnedAt||new Date().toISOString();
+ });
+ localStorage.setItem(STUDENT_REQUESTS_KEY,JSON.stringify(records));
+}
+function syncEquipmentToStudentPortal(){
+ const list=(db.equipment||[]).map(e=>{
+  const status=String(e.status||'available').toLowerCase().replace(/_/g,'-');
+  const category=e.category||'Other';
+  return {id:e.id,name:e.name,short:e.name,category,group:category,lab:e.location||'Campus Lab',department:e.department||'Campus',status:status==='in-use'?'borrowed':status,statusText:status==='available'?'Available':status==='in-use'?'Currently Borrowed':status.charAt(0).toUpperCase()+status.slice(1),code:String(e.id),loan:e.loan||'As approved',value:e.value||'Contact custodian',description:e.description||'No description available.',tags:[`Status: ${status}`],specs:{Condition:e.condition||'Not specified',Location:e.location||'Campus Lab',Status:status},location:e.location||'Contact custodian',handling:e.handling||'Follow custodian instructions.',images:[e.image||'https://placehold.co/800x500/e8eef7/294b78?text=CampusShare+Equipment']};
+ });
+ localStorage.setItem(STUDENT_EQUIPMENT_KEY,JSON.stringify(list));
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(db));syncToStudentPortal();syncEquipmentToStudentPortal();}
 function id(){return 'CS-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7)}
 function init(){
  if(!Array.isArray(db.equipment)) db.equipment=[{"id": "EQ-MS-4802", "name": "Thermo Scientific Orbitrap Exploris 480", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDWYUDSWFvjbbKcxE64W8Bx2z6yF3LKoeRE-KtqK6C5HOTx9QlPbPQHtlVNRLrJvpnUbsoQ_uXSRwvpJXdByVcVrOhztAdSTH6uGDBaqHTcCQEoEML_1x2TRyhGIlndoF6MGzKw9RBR2v_gPpgQ29rcsJUCcD_30XArLru5YRClr4urR5RIPP1s3c15veNpoORH--2UpSURA14OlOu-SvUw4fpuFC3HoRdnI3n0kHQ", "location": "Bio Core Bldg 76, Room 310", "status": "available"}, {"id": "EQ-MIC-9801", "name": "Zeiss LSM 980 with Airyscan 2", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBB-nv3LngHYr5ydABjHz1AEhOovW5hIF0kEL3QysQJp_KS3stOL8Euuwxpx7FNrNgtHPyZe-hUwoYNfC1CK7cSyCcHFmmQlKBi5JQbO5lGFs4CZMcc30wUUrGl9FcIP8kSA2Po19-BJ_H8_fp0sbwbwuJQsvIqfQqX3eLpOw0omU8afrL07-1wM9SLFtWdz5AfvRtrORXZPg0rOVqc882ftgtlUa4AD7UomTcd3Og", "location": "Imaging Core, Room 104", "status": "in-use"}, {"id": "EQ-GEN-6003", "name": "Illumina NovaSeq 6000 Sequencer", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCJssts3TSdAxkTivVD6mJvxcbEpSEqIjeDhD9G4WVSCnZy8j6kNySJHdRaJIH_dv4b1mTpLibZwvT2j7VipMNTHmMxmBHpzq2mbM8ZFtUwAxV-Bz5aI1kd2E44zgnhLEVhz1eMRWelA9BEb2Eq2wzC0LhvBQGb6OLljSTP3Gsm8sNot0iJ-DS20TIbzPZ5inr-gYKgLn0GySyvbwgzpqzuDKPZdjbrya_WojgSDe4", "location": "Genomics Hub, Bay 2", "status": "available"}, {"id": "EQ-EM-2100", "name": "JEOL JEM-2100F Field Emission TEM", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCA2H6DhzJzZeUoZ9y89y22FBi6VFJfTAFFCyzJ0gkcWB-zRnJR2zVANEAWz1tf3szpO1_scfodH5PLESIkc2vB5t0E_Wsz5RcJkOjFm14nUCbhJ0auaud5SJ22zAM8VMRYXeBdkExubj5I1o04BRvv0C7kB2c17v9-b5YkUEp7uLFEI9TVLO5ev6W71Xmoin96uiRKlDaZiIqajk-pBuxPq-fbTCRvk-zDG08x930", "location": "NanoFab Suite, B12", "status": "maintenance"}, {"id": "EQ-CEN-0100", "name": "Beckman Coulter Optima XPN-100", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBAgn_E9stYBtzLWRPHctvB-B5Jbne16aLWpjnTCTRCCTtenjwNn0XwhyOppdbb7BZUIrFBUkbGUEwNktRMXwSCVu27FVpOVaYcW_hBAkiqGPgyC4Z4EcLCM7_N8SnJkkHu7rNtUMY1YvH5E5yZxFM8J7oMzwI2PPJNv-l-i85kpm-w4jI8Cqh6gRPKuJla_9wT0FSESKmI_LNwA_IktPcrVoBvtNdBsCC_J8bbrLI", "location": "Prep Lab 2A", "status": "available"}, {"id": "EQ-CYT-0003", "name": "BD FACSAria III Cell Sorter", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDNlgjREKEMbzREz3BF5REkn-fnX_rlTJzMjbB-330YXdmMntvszPLjwxtKCW_IR99aXcGlBcTfHa358GgJPEEnWMPZPnNCi39bsM09hglk2o7Zrq_ph3292BPBcYDg4s6-wCpIaHQJcB9Yl4V-qSZV6xfUNhPQwfTG6kXPY9Y4PBCsMbLbjQFYoQ9XUqCI0nOMlYeVxlGKjqvAakxIfLDm3QHj8leTEmRjsnsVepY", "location": "Immunology Lab, Rm 215", "status": "overdue"}];
- if(!Array.isArray(db.requests)) db.requests=[{"id": "REQ-INIT-1", "category": "borrowed", "search": "elena rostova facsaria cell sorter cytometry borrowed in-use EQ-CYT-0003 return", "title": "Dr. Elena Rostova", "equipment": "EQ-CYT-0003", "date": "", "startedAt": null, "elapsed": 0}, {"id": "REQ-INIT-2", "category": "returned", "search": "david miller zeiss lsm 980 returned completed audit history USR-11094 EQ-MIC-9801", "title": "Prof. David K. Miller", "equipment": "EQ-MIC-9801", "date": "", "startedAt": null, "elapsed": 0}, {"id": "REQ-INIT-3", "category": "pending", "search": "marcus chen harvard mass spec orbitrap exploris peptide USR-89214 EQ-MS-4802", "title": "Dr. Marcus Chen", "equipment": "EQ-MS-4802", "date": "2024-10-25", "startedAt": null, "elapsed": 0}, {"id": "REQ-INIT-4", "category": "pending", "search": "sarah lin mit koch confocal zeiss airyscan USR-44102 EQ-MIC-9801 tumor extravasation", "title": "Sarah Lin", "equipment": "EQ-MIC-9801", "date": "2024-10-26", "startedAt": null, "elapsed": 0}, {"id": "REQ-INIT-5", "category": "waitlist", "search": "david miller broad institute novaseq illumina sequencing genomics USR-11094 EQ-GEN-6003", "title": "Prof. David K. Miller", "equipment": "EQ-GEN-6003", "date": "2024-10-28", "startedAt": null, "elapsed": 0}, {"id": "REQ-INIT-6", "category": "approved", "search": "elena rostova boston university ultracentrifuge beckman optima EQ-CEN-901", "title": "Dr. Elena Rostova", "equipment": "EQ-CEN-901", "date": "2024-10-27", "startedAt": null, "elapsed": 0}, {"id": "REQ-INIT-7", "category": "rejected", "search": "kevin vance northeastern jeol tem jem-2100f USR-58291", "title": "Kevin Vance", "equipment": "", "date": "", "startedAt": null, "elapsed": 0}];
+ if(!Array.isArray(db.requests)) db.requests=[];
  if(!Array.isArray(db.history)) db.history=[];
+ syncFromStudentPortal();
  save();
 }
-function findDate(c){const t=c.innerText||'';const m=t.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\s+\\d{1,2},?\\s+\\d{4}/i);return m?new Date(m[0]).toISOString().slice(0,10):''}
+
+async function loadEquipmentFromSupabase(){
+ if(HAD_SHARED_INVENTORY_AT_STARTUP||!window.CampusDB)return;
+ try{
+  const [resources,categories]=await Promise.all([CampusDB.get('resources',{orderBy:'created_at',ascending:false}),CampusDB.get('categories')]);
+  if(!Array.isArray(resources)||!resources.length)return;
+  const categoryMap=Object.fromEntries((categories||[]).map(c=>[c.id,c.category_name]));
+  db.equipment=resources.map(item=>({
+   id:String(item.id),name:item.name||'Unnamed equipment',description:item.description||'',image:item.image_url||item.image||'',location:item.location||'Campus Lab',
+   status:Number(item.available_quantity||0)>0?'available':'in-use',category:categoryMap[item.category_id]||'Other',
+   totalQuantity:Number(item.total_quantity||0),availableQuantity:Number(item.available_quantity||0),condition:item.condition||''
+  }));
+  save();window.refreshEquipmentPage?.();if(location.pathname.endsWith('dashboard.html'))dashboard();
+ }catch(error){console.warn('CampusShare: Supabase inventory read unavailable; retaining local inventory.',error);}
+}
+
+function findDate(c){const t=c.innerText||'';const m=t.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4}/i);return m?new Date(m[0]).toISOString().slice(0,10):''}
 function toast(msg){let el=$('#appToast');if(!el){el=document.createElement('div');el.id='appToast';el.style.cssText='position:fixed;bottom:22px;right:22px;z-index:9999;background:#213145;color:white;padding:12px 18px;border-radius:10px;box-shadow:0 4px 18px #0003';document.body.append(el)}el.textContent=msg;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2800)}
-function addHistory(r,duration){db.history.unshift({id:id(),requestId:r.id,equipment:r.equipment||r.title,user:r.search.split(' ')[0]||'Researcher',date:new Date().toISOString(),duration,status:'Completed'});r.category='returned';r.startedAt=null;r.elapsed=0;save()}
+function addHistory(r,duration){db.history.unshift({id:id(),requestId:r.id,equipment:r.equipment||r.title,user:r.title||r.search.split(' ')[0]||'Researcher',institution:r.institution||r.department||'',date:new Date().toISOString(),duration,status:'Completed'});r.category='returned';r.returnedAt=new Date().toISOString();r.startedAt=null;r.elapsed=0;const eq=db.equipment.find(e=>String(e.id)===String(r.equipment));if(eq&&eq.status==='in-use')eq.status='available';if(eq&&r.inventoryAdjusted&&Number.isFinite(Number(eq.availableQuantity)))eq.availableQuantity=Number(eq.availableQuantity)+1;r.inventoryAdjusted=false;save()}
 function syncCards(){
  $$('.request-card').forEach((c,i)=>{let r=db.requests[i];if(!r)return;c.dataset.category=r.category;c.dataset.requestId=r.id;if(r.category==='approved'&&!$('.app-start-timer',c)){let b=document.createElement('button');b.className='app-start-timer px-3 py-2 rounded-lg bg-primary text-white';b.textContent=r.startedAt?'Stop Timer':'Start Timer';c.append(b)}else if(r.category!=='approved')$('.app-start-timer',c)?.remove();});
 }
@@ -332,42 +384,85 @@ function filterEq() {
         emptyState.classList.toggle('flex', matched === 0);
     }
 }
+search?.addEventListener('input',filterEq);cat?.addEventListener('change',filterEq);status?.addEventListener('change',filterEq);location?.addEventListener('change',filterEq);
+window.refreshEquipmentPage=render;
+filterEq();
+}
 
 function requestPage(){
- const container=$('#requestsContainer');if(!container)return;
- window.sendChatMessage=(ev)=>{ev?.preventDefault();const input=$('#chatInputMessage');if(!input?.value.trim())return;const list=$('#chatMessagesList');if(list){const msg=document.createElement('div');msg.className='my-2 p-2 rounded bg-surface-container';msg.textContent=input.value.trim();list.append(msg)}input.value=''};$('#chatInputMessage')?.closest('form')?.addEventListener('submit',window.sendChatMessage);
- syncCards();
- container.addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;const card=btn.closest('.request-card');if(!card)return;const r=db.requests.find(x=>x.id===card.dataset.requestId)||db.requests[Array.from($$('.request-card')).indexOf(card)];if(!r)return;const t=btn.innerText.trim().toLowerCase();
- if(t.includes('confirm return')||t.includes('complete request')){addHistory(r,r.startedAt?formatDuration(Date.now()-r.startedAt+r.elapsed):'Not recorded');save();syncCards();toast('Return completed and recorded in History.');}
- else if(t.includes('accept')||t.includes('approve')||t==='promote'){r.category='approved';save();syncCards();toast('Request approved.');}
- else if(t.includes('decline')||t.includes('reject')){r.category='rejected';save();syncCards();toast('Request declined.');}
- else if(t.includes('waitlist')||t.includes('waiting')){r.category='waitlist';save();syncCards();toast('Request moved to waiting list.');}
- else if(t.includes('remove')&&r.category==='waitlist'){r.category='rejected';save();syncCards();toast('Request removed.')}
- else if(btn.classList.contains('app-start-timer')){if(!r.startedAt){r.startedAt=Date.now();btn.textContent='Stop Timer';toast('Usage timer started.')}else{const ms=Date.now()-r.startedAt+r.elapsed;r.elapsed=ms;r.startedAt=null;addHistory(r,formatDuration(ms));btn.remove();toast('Usage completed and added to History.')}save();}
+ const container=$('#requestsContainer')||$('main');if(!container)return;
+ // Replace static sample cards with records from the shared student request store.
+ const oldCards=$$('.request-card',container);oldCards.forEach(card=>{card.hidden=true;card.style.display='none';});
+ let panel=$('#studentPortalLiveRequests');
+ if(!panel){panel=document.createElement('section');panel.id='studentPortalLiveRequests';panel.className='mt-5 rounded-xl bg-surface-container-lowest p-4 md:p-6';container.prepend(panel);}
+ let filter='all';let query='';let selected=new Set();
+ const statusLabel={pending:'Pending review',approved:'Approved',waitlist:'Waitlisted',rejected:'Declined',borrowed:'Currently borrowed',returned:'Returned'};
+ const dateText=v=>{if(!v)return 'Not specified';const d=new Date(v);return Number.isNaN(d.getTime())?esc(v):d.toLocaleDateString()};
+ function visibleItems(){return db.requests.filter(r=>r.source==='student-portal').filter(r=>filter==='all'||r.category===filter).filter(r=>!query||[r.title,r.studentEmail,r.equipment,r.purpose,r.sourceId].join(' ').toLowerCase().includes(query));}
+ function render(){
+  const all=db.requests.filter(r=>r.source==='student-portal');
+  const counts={all:all.length,pending:all.filter(r=>r.category==='pending').length,approved:all.filter(r=>r.category==='approved').length,waitlist:all.filter(r=>r.category==='waitlist').length,rejected:all.filter(r=>r.category==='rejected').length,borrowed:all.filter(r=>r.category==='borrowed').length,returned:all.filter(r=>r.category==='returned').length};
+  const items=visibleItems();
+  panel.innerHTML=`<div class="flex flex-wrap items-start justify-between gap-3 mb-4"><div><h2 class="text-xl font-semibold text-on-surface">Student booking requests</h2><p class="text-sm text-on-surface-variant mt-1">Live requests submitted through the student portal on this browser profile.</p></div><button type="button" data-refresh-requests class="px-3 py-2 rounded-lg border text-sm">Refresh</button></div>
+  <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-4">${['all','pending','approved','waitlist','rejected','borrowed','returned'].map(k=>`<button type="button" data-filter="${k}" class="rounded-lg border p-2 text-left ${filter===k?'bg-primary text-white border-primary':'bg-surface text-on-surface'}"><span class="block text-xs">${k==='all'?'All':statusLabel[k]||k}</span><strong class="text-lg">${counts[k]}</strong></button>`).join('')}</div>
+  <div class="flex flex-col sm:flex-row gap-2 mb-4"><input id="liveRequestSearch" value="${esc(query)}" class="w-full sm:flex-1 rounded-lg border px-3 py-2" placeholder="Search student, equipment, email or purpose"><button type="button" data-select-visible class="px-3 py-2 rounded-lg border">Select visible</button><button type="button" data-batch-approve class="px-3 py-2 rounded-lg bg-primary text-white">Approve selected</button><span class="self-center text-sm text-on-surface-variant">${selected.size} selected</span></div>
+  <div class="space-y-3">${items.length?items.map(r=>{const status=r.category||'pending';const canReview=['pending','waitlist'].includes(status);return `<article class="border rounded-xl p-4" data-live-id="${esc(r.id)}"><div class="flex flex-wrap justify-between gap-3"><div class="flex gap-3 min-w-0"><input type="checkbox" data-select-request="${esc(r.id)}" ${selected.has(r.id)?'checked':''} aria-label="Select request"><div class="min-w-0"><div class="font-semibold">${esc(r.title||'Student')}</div><div class="text-xs text-on-surface-variant">${esc(r.studentEmail||'Email not provided')} · Request ${esc(r.sourceId||r.id)}</div></div></div><span class="px-2 py-1 rounded-full text-xs font-semibold ${status==='approved'||status==='returned'?'bg-emerald-100 text-emerald-800':status==='rejected'?'bg-red-100 text-red-800':'bg-amber-100 text-amber-900'}">${esc(statusLabel[status]||status)}</span></div>
+  <div class="grid sm:grid-cols-2 gap-2 mt-3 text-sm"><div><span class="text-on-surface-variant">Equipment</span><div class="font-medium">${esc(r.equipmentName||r.equipment||'Equipment')}</div><div class="text-xs text-on-surface-variant">ID: ${esc(r.equipment||'Not linked')}</div></div><div><span class="text-on-surface-variant">Booking period</span><div class="font-medium">${dateText(r.date)} – ${dateText(r.endDate)}</div></div></div>
+  ${r.purpose?`<p class="text-sm mt-3"><span class="text-on-surface-variant">Purpose:</span> ${esc(r.purpose)}</p>`:''}${r.decisionReason?`<p class="text-sm mt-2 text-error">Decision note: ${esc(r.decisionReason)}</p>`:''}
+  <div class="flex flex-wrap gap-2 mt-4">${canReview?`<button data-action="approve" class="px-3 py-2 rounded-lg bg-primary text-white text-sm">Approve</button><button data-action="waitlist" class="px-3 py-2 rounded-lg border text-sm">Waitlist</button><button data-action="reject" class="px-3 py-2 rounded-lg bg-error-container text-error text-sm">Decline</button>`:''}${status==='approved'?'<button data-action="start" class="px-3 py-2 rounded-lg bg-primary text-white text-sm">Start borrowing</button>':''}${status==='borrowed'?'<button data-action="return" class="px-3 py-2 rounded-lg bg-primary text-white text-sm">Complete return</button>':''}${status==='waitlist'?'<button data-action="approve" class="px-3 py-2 rounded-lg bg-primary text-white text-sm">Promote / approve</button>':''}${['rejected','returned'].includes(status)?'<button data-action="reopen" class="px-3 py-2 rounded-lg border text-sm">Reopen review</button>':''}<button data-action="details" class="px-3 py-2 rounded-lg border text-sm">Details</button></div><div data-details class="hidden mt-3 rounded-lg bg-surface-container-low p-3 text-xs text-on-surface-variant">Submitted: ${dateText(r.createdAt||r.submittedAt)} · Student record: ${esc(r.sourceId||'—')} · Current status: ${esc(statusLabel[status]||status)}${r.startedAt?` · Started: ${dateText(new Date(r.startedAt).toISOString())}`:''}</div></article>`}).join(''):'<div class="rounded-lg border border-dashed p-8 text-center text-sm text-on-surface-variant">No student booking requests match this filter. Submit a booking from the student portal to see it here.</div>'}</div>`;
+ }
+ window.renderStudentPortalRequests=render;
+ render();
+ panel.addEventListener('input',e=>{if(e.target.id==='liveRequestSearch'){query=e.target.value.toLowerCase().trim();render();const input=$('#liveRequestSearch');input?.focus();input?.setSelectionRange(query.length,query.length);}});
+ panel.addEventListener('change',e=>{const id=e.target.dataset.selectRequest;if(id){if(e.target.checked)selected.add(id);else selected.delete(id);render();}});
+ panel.addEventListener('click',e=>{
+  const filterBtn=e.target.closest('[data-filter]');if(filterBtn){filter=filterBtn.dataset.filter;selected.clear();render();return;}
+  if(e.target.closest('[data-refresh-requests]')){syncFromStudentPortal();render();toast('Booking requests refreshed.');return;}
+  if(e.target.closest('[data-select-visible]')){visibleItems().forEach(r=>selected.add(r.id));render();return;}
+  if(e.target.closest('[data-batch-approve]')){const targets=db.requests.filter(r=>selected.has(r.id)&&r.source==='student-portal'&&['pending','waitlist'].includes(r.category));if(!targets.length){toast('Select pending or waitlisted requests first.');return;}targets.forEach(r=>recordDecision(r,'Approved'));selected.clear();render();toast(`${targets.length} request(s) approved.`);return;}
+  const button=e.target.closest('[data-action]');if(!button)return;const card=button.closest('[data-live-id]');const r=db.requests.find(x=>x.id===card?.dataset.liveId);if(!r)return;const action=button.dataset.action;
+  if(action==='details'){card.querySelector('[data-details]')?.classList.toggle('hidden');button.textContent=card.querySelector('[data-details]')?.classList.contains('hidden')?'Details':'Hide details';return;}
+  if(action==='approve'){recordDecision(r,'Approved');toast('Request approved and student status updated.');}
+  else if(action==='waitlist'){recordDecision(r,'Waitlisted');toast('Request moved to the waitlist.');}
+  else if(action==='reject'){const reason=prompt('Enter the reason for declining this booking:');if(reason===null)return;if(!reason.trim()){toast('A decline reason is required.');return;}recordDecision(r,'Declined',reason.trim());toast('Request declined and reason recorded.');}
+  else if(action==='reopen'){r.category='pending';r.decisionAt=null;r.decisionReason='';db.history.unshift({id:id(),requestId:r.id,equipment:r.equipment||r.equipmentName,user:r.title||'Student',date:new Date().toISOString(),duration:'—',status:'Reopened'});save();toast('Request reopened for review.');}
+  else if(action==='start'){r.category='borrowed';r.startedAt=Date.now();r.inventoryAdjusted=true;const eq=db.equipment.find(x=>String(x.id)===String(r.equipment));if(eq){eq.status='in-use';if(Number.isFinite(Number(eq.availableQuantity))&&eq.availableQuantity>0)eq.availableQuantity--;}save();toast('Borrowing started and equipment marked in use.');}
+  else if(action==='return'){const duration=r.startedAt?formatDuration(Date.now()-r.startedAt):'Not recorded';addHistory(r,duration);toast('Return completed and recorded in Equipment History.');}
+  render();
  });
- $('#searchInput')?.addEventListener('input',()=>applyFilters());
- function applyFilters(){const q=($('#searchInput')?.value||'').toLowerCase();$$('.request-card',container).forEach((c,i)=>{const r=db.requests[i];c.style.display=(!q||(r.search+' '+r.title).toLowerCase().includes(q))?'':'none'})}
 }
 function formatDuration(ms){const m=Math.floor(ms/60000);return `${Math.floor(m/60)}h ${m%60}m`}
 function calendarPage(){
  const main=$('main');if(!main)return;
  let wrap=$('#persistentCalendarBookings');if(!wrap){wrap=document.createElement('section');wrap.id='persistentCalendarBookings';wrap.className='mt-6 p-5 rounded-xl bg-surface-container-lowest';main.append(wrap)}
- function renderApproved(){const approved=db.requests.filter(r=>['approved','borrowed'].includes(r.category));wrap.innerHTML='<h2 class="text-xl font-semibold mb-3">Approved bookings</h2>'+(approved.length?approved.map(r=>`<div class="border-b py-3"><strong>${esc(r.title)}</strong><div class="text-sm text-on-surface-variant">${esc(r.equipment)} · ${r.date||'Date not specified in request'}</div></div>`).join(''):'<p class="text-sm text-on-surface-variant">No approved bookings yet.</p>')}
- renderApproved();
- main.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const t=b.innerText.trim().toLowerCase();if(t==='accept'||t==='approve'||t==='decline'){const r=db.requests.find(x=>x.category==='pending');if(r){r.category=t==='decline'?'rejected':'approved';save();renderApproved();toast('Booking '+(t==='decline'?'declined':'approved')+'.')}}});
+ function renderApproved(){const items=db.requests.filter(r=>r.source==='student-portal'&&['pending','approved','borrowed','waitlist'].includes(r.category));wrap.innerHTML='<h2 class="text-xl font-semibold mb-3">Student booking schedule</h2>'+(items.length?items.map(r=>`<div class="border-b py-3" data-calendar-id="${esc(r.id)}"><div class="flex flex-wrap justify-between gap-2"><strong>${esc(r.title)}</strong><span>${esc(r.category)}</span></div><div class="text-sm text-on-surface-variant">${esc(r.equipment)} · ${esc(r.date||'Date not specified')} ${r.endDate?' – '+esc(r.endDate):''}</div>${r.category==='pending'?`<div class="flex gap-2 mt-2"><button data-cal-action="approve" class="px-3 py-2 rounded bg-primary text-white">Approve</button><button data-cal-action="reject" class="px-3 py-2 rounded bg-error-container">Decline</button></div>`:''}</div>`).join(''):'<p class="text-sm text-on-surface-variant">No student bookings are scheduled.</p>')}
+ renderApproved();window.refreshCalendarPage=renderApproved;
+ wrap.onclick=e=>{const b=e.target.closest('[data-cal-action]');if(!b)return;const r=db.requests.find(x=>x.id===b.closest('[data-calendar-id]')?.dataset.calendarId);if(!r)return;recordDecision(r,b.dataset.calAction==='approve'?'Approved':'Declined');renderApproved();toast('Booking '+r.category+'.');};
+ main.querySelectorAll('button').forEach(b=>{const label=b.innerText.trim().toLowerCase();if(label==='accept'||label==='approve'||label==='decline')b.hidden=true;});
+ const cells=$$('.grid-cols-7 > div');cells.forEach(cell=>cell.addEventListener('click',()=>{if(cell.classList.contains('opacity-50'))return;cells.forEach(x=>x.classList.remove('ring-2','ring-primary'));cell.classList.add('ring-2','ring-primary');}));
 }
 function historyPage(){
- const exportCsv=()=>{const rows=[['Equipment','User','Date','Duration','Status'],...db.history.map(h=>[h.equipment,h.user,h.date,h.duration,h.status])];const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='campusshare-history.csv';a.click();URL.revokeObjectURL(a.href)};
+ const exportCsv=()=>{const rows=[['Equipment','User','Date','Duration','Status','Institution'],...db.history.map(h=>[h.equipment,h.user,h.date,h.duration,h.status,h.institution||''])];const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='campusshare-history.csv';a.click();URL.revokeObjectURL(a.href)};
  $('#btn-export-csv')?.addEventListener('click',exportCsv);$('#btn-export-pdf')?.addEventListener('click',()=>window.print());
-
- const input=$('#global-search-input'), filters=[$('#filter-category'),$('#filter-status'),$('#filter-equipment'),$('#filter-institution')];
- const rows=$$('tbody tr, .history-row, [data-transaction]');
- function apply(){const q=(input?.value||'').toLowerCase();rows.forEach(row=>{row.style.display=!q||row.innerText.toLowerCase().includes(q)?'':'none'});$$('#persistentCompletedHistory > div').forEach(row=>{row.style.display=!q||row.innerText.toLowerCase().includes(q)?'':'none'});}
- input?.addEventListener('input',apply);filters.forEach(x=>x?.addEventListener('change',apply));$('#btn-reset-filters')?.addEventListener('click',()=>{if(input)input.value='';filters.forEach(x=>{if(x)x.selectedIndex=0});apply()});
- if(db.history.length){let section=$('#persistentCompletedHistory');if(!section){section=document.createElement('section');section.id='persistentCompletedHistory';section.className='mt-6 p-5 rounded-xl bg-surface-container-lowest';$('main')?.append(section)}section.innerHTML='<h2 class="text-lg font-semibold mb-3">Activity &amp; completed transactions</h2>'+db.history.map(h=>`<div class="py-2 border-b text-sm"><strong>${esc(h.equipment)}</strong> · ${esc(h.user)} · <span class="font-semibold">${esc(h.status||'Completed')}</span> · ${new Date(h.date).toLocaleString()} · ${esc(h.duration||'Duration unavailable')}${h.reason?' · '+esc(h.reason):''}</div>`).join('')}
+ const input=$('#global-search-input'),category=$('#filter-category'),status=$('#filter-status'),equipment=$('#filter-equipment'),institution=$('#filter-institution');
+ const section=$('#persistentCompletedHistory')||document.createElement('section');section.id='persistentCompletedHistory';section.className='mt-6 p-5 rounded-xl bg-surface-container-lowest';if(!section.isConnected)$('main')?.append(section);
+ // Original HTML contains illustrative transactions. The shared record store is authoritative.
+ $$('tbody tr, .history-row, [data-transaction]').forEach(row=>{row.hidden=true});
+ const categoryFor=h=>{const code=String(h.equipment||'').toUpperCase();return code.includes('MS-')?'mass-spec':code.includes('MIC-')?'microscopy':code.includes('CYT-')?'cytometry':code.includes('GEN-')?'sequencing':code.includes('CEN-')?'centrifuge':'all'};
+ function render(){section.innerHTML='<h2 class="text-lg font-semibold mb-3">Activity &amp; completed transactions</h2>'+(db.history.length?db.history.map(h=>{const normalized=String(h.status||'').toLowerCase();const statusValue=normalized==='completed'?'returned':normalized==='declined'?'cancelled':normalized;return `<div class="py-3 border-b text-sm" data-history-row data-category="${categoryFor(h)}" data-status="${esc(statusValue)}" data-equipment="${esc(h.equipment)}" data-institution="${esc(h.institution||'')}"><strong>${esc(h.equipment)}</strong> · ${esc(h.user)} · <span class="font-semibold">${esc(h.status||'Completed')}</span> · ${new Date(h.date).toLocaleString()} · ${esc(h.duration||'Duration unavailable')}${h.reason?' · '+esc(h.reason):''}${h.institution?' · '+esc(h.institution):''}</div>`}).join(''):'<p class="text-sm text-on-surface-variant">No staff decisions or completed sessions have been recorded yet.</p>');apply();}
+ function apply(){const q=(input?.value||'').toLowerCase(),cat=category?.value||'all',st=status?.value||'all',eq=equipment?.value||'all',inst=institution?.value||'all';$$('[data-history-row]',section).forEach(row=>{const okText=!q||row.innerText.toLowerCase().includes(q);const okCat=cat==='all'||row.dataset.category===cat;const okStatus=st==='all'||row.dataset.status===st;const okEq=eq==='all'||row.dataset.equipment===eq;const okInst=inst==='all'||row.dataset.institution.toLowerCase().includes(inst.toLowerCase());row.hidden=!(okText&&okCat&&okStatus&&okEq&&okInst)});}
+ [input,category,status,equipment,institution].forEach(el=>el?.addEventListener(el===input?'input':'change',apply));
+ $('#btn-reset-filters')?.addEventListener('click',()=>{if(input)input.value='';[category,status,equipment,institution].forEach(el=>{if(el)el.value='all'});apply()});
+ render();window.refreshHistoryPage=render;
 }
 function dashboard(){
  const main=$('main');if(!main)return;
+ let live=$('#dashboardLiveStudentRequests');
+ if(!live){live=document.createElement('section');live.id='dashboardLiveStudentRequests';live.className='mt-6 rounded-xl bg-surface-container-lowest p-5';main.append(live);}
+ $$('.request-item').forEach(item=>{item.hidden=true;});
+ const pending=db.requests.filter(r=>r.source==='student-portal'&&['pending','approved','borrowed','waitlist'].includes(r.category));
+ live.innerHTML='<h2 class="text-lg font-semibold mb-3">Student portal activity</h2>'+(pending.length?pending.map(r=>`<div class="flex flex-wrap items-center justify-between gap-3 border-b py-3"><div><strong>${esc(r.title)}</strong><p class="text-sm">${esc(r.equipment)} · ${esc(r.date||'Date not specified')} · ${esc(r.category)}</p></div><div class="flex gap-2">${r.category==='pending'?`<button class="px-3 py-2 rounded bg-primary text-white" data-dash-action="approve" data-id="${esc(r.id)}">Approve</button><button class="px-3 py-2 rounded bg-error-container" data-dash-action="reject" data-id="${esc(r.id)}">Decline</button>`:''}</div></div>`).join(''):'<p class="text-sm text-on-surface-variant">No student requests are waiting for staff action.</p>');
+ live.onclick=e=>{const b=e.target.closest('[data-dash-action]');if(!b)return;const r=db.requests.find(x=>x.id===b.dataset.id);if(!r)return;r.category=b.dataset.dashAction==='approve'?'approved':'rejected';r.decisionAt=new Date().toISOString();save();dashboard();toast('Student request '+r.category+'.');};
  const counts={
   total:db.equipment.length,
   available:db.equipment.filter(e=>(e.status||'available').toLowerCase()==='available').length,
@@ -445,6 +540,8 @@ window.closeChatDrawer=()=>{$('#chatDrawerPanel')?.classList.add('translate-x-fu
 window.insertQuickChatPrompt=t=>{const el=$('#chatInputMessage');if(el)el.value=t};
 window.contactResearcher=(n)=>toast('Contact details for '+n+' are shown in the request record.');
 function matchDashboardRequest(item){
+ const explicit=item?.dataset?.requestId;
+ if(explicit){const exact=db.requests.find(r=>r.id===explicit);if(exact)return exact;}
  const text=(item?.innerText||'').toLowerCase();
  return db.requests.find(r=>{
   const title=(r.title||'').toLowerCase();
@@ -455,8 +552,8 @@ function matchDashboardRequest(item){
 function recordDecision(r,status,reason=''){
  if(!r)return;
  const duplicate=db.history.some(h=>h.requestId===r.id&&h.status===status);
- if(!duplicate)db.history.unshift({id:id(),requestId:r.id,equipment:r.equipment||r.title,user:r.title||'Researcher',date:new Date().toISOString(),duration:'—',status,reason});
- r.category=status==='Approved'?'approved':'rejected';
+ if(!duplicate)db.history.unshift({id:id(),requestId:r.id,equipment:r.equipment||r.title,user:r.title||'Researcher',institution:r.institution||r.department||'',date:new Date().toISOString(),duration:'—',status,reason});
+ r.category=({Approved:'approved',Waitlisted:'waitlist',Declined:'rejected'})[status]||'rejected';
  r.decisionAt=new Date().toISOString();
  if(reason)r.decisionReason=reason;
  save();
@@ -483,10 +580,12 @@ window.insertReason=window.insertReason;
 window.showToast=toast;
 
 init();globalNav();
+window.addEventListener('storage',e=>{if(e.key===KEY&&e.newValue){try{db=JSON.parse(e.newValue);const pg=location.pathname.split('/').pop();if(pg==='equipment.html')window.refreshEquipmentPage?.();if(pg==='dashboard.html')dashboard();if(pg==='requests.html')window.renderStudentPortalRequests?.();if(pg==='calendar.html')window.refreshCalendarPage?.();if(pg==='history.html')window.refreshHistoryPage?.();}catch(_){}}if(e.key===STUDENT_REQUESTS_KEY){syncFromStudentPortal();localStorage.setItem(KEY,JSON.stringify(db));const pg=location.pathname.split('/').pop();if(pg==='dashboard.html')dashboard();if(pg==='calendar.html')window.refreshCalendarPage?.();if(pg==='history.html')window.refreshHistoryPage?.();if(pg==='requests.html'){syncCards();window.renderStudentPortalRequests?.();}toast('Student booking data synchronized.')}});
 const page=location.pathname.split('/').pop();
 if(page==='equipment.html')equipmentPage();
 if(page==='requests.html')requestPage();
 if(page==='calendar.html')calendarPage();
 if(page==='history.html')historyPage();
 if(page==='dashboard.html')dashboard();
+loadEquipmentFromSupabase();
 })();
