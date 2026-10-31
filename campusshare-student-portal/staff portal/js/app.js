@@ -233,6 +233,8 @@ const saveEquipment = (event) => {
         toast('Please enter equipment name and location.');
         return;
     }
+ $('#publishEquipmentBtn')?.addEventListener('click', saveEquipment);
+$('#saveDraftBtn')?.addEventListener('click', saveEquipment);
 
     const existingId = editing;
     const item = {
