@@ -297,7 +297,7 @@
         </div>
         <div class="product-content">
           <div class="product-tags">
-            <span class="tag">${esc(categoryFor(item))}</span>
+            <span class="tag">${esc(categoryName(item))}</span>
             <span class="tag">${esc(item.location || "Location not recorded")}</span>
           </div>
           <h3 data-open="${esc(item.id)}">${esc(item.name || "Unnamed equipment")}</h3>
