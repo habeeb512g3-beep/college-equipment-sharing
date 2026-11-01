@@ -1,12 +1,18 @@
 (() => {
   "use strict";
 
-  // CampusShare staff portal
-  // Data source: Supabase. Browser storage is not used for inventory or bookings.
+  /*
+   * CampusShare Staff Portal
+   * Shared layout and Supabase-backed data for all staff pages.
+   * Tables used:
+   * profiles, categories, resources, booking_requests,
+   * booking_request_items, borrow_records, activity_logs.
+   */
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
-  const client = () => window.supabaseClient;
+  const db = () => window.supabaseClient;
+  const page = () => decodeURIComponent(location.pathname.split("/").pop() || "").toLowerCase();
 
   const state = {
     user: null,
@@ -15,11 +21,32 @@
     categories: [],
     requests: [],
     history: [],
-    selectedRequest: null,
-    selectedImage: null
+    selectedImage: null,
+    editingEquipmentId: null,
+    requestFilter: "all",
+    requestSearch: "",
+    errors: {}
   };
 
-  const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, char => ({
+  // Same SVG logo used in the Student Portal.
+  const logoMarkup = `
+    <span class="cs-brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M4.5 8.5h15v11h-15z"
+          stroke="currentColor" stroke-width="1.8"
+          stroke-linejoin="round"/>
+        <path d="M8 8.5V6.7A2.7 2.7 0 0 1 10.7 4h2.6A2.7 2.7 0 0 1 16 6.7v1.8"
+          stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round"/>
+        <path d="M9 13h6"
+          stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round"/>
+      </svg>
+    </span>
+    <span>Campus<span class="cs-brand-light">Share</span></span>
+  `;
+
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
@@ -27,94 +54,930 @@
     "'": "&#39;"
   })[char]);
 
-  const normalizeStatus = value =>
-    String(value || "pending").toLowerCase().replace(/[_\s]+/g, "-");
+  const norm = value =>
+    String(value || "pending")
+      .toLowerCase()
+      .replace(/[ _]+/g, "-");
 
-  const dateText = value => {
-    if (!value) return "Not specified";
-    const date = new Date(value);
-    return Number.isNaN(date.getTime())
-      ? String(value)
-      : date.toLocaleString();
-  };
-
-  const toast = message => {
-    let element = $("#appToast") || $("#toastNotification") || $("#toast-notification");
+  function toast(message) {
+    let element =
+      $("#appToast") ||
+      $("#toast-notification") ||
+      $("#toastNotification");
 
     if (!element) {
       element = document.createElement("div");
       element.id = "appToast";
-      element.style.cssText =
-        "position:fixed;bottom:22px;right:22px;z-index:99999;background:#213145;color:white;padding:12px 18px;border-radius:10px;box-shadow:0 4px 18px #0003;max-width:360px";
       document.body.append(element);
     }
 
-    const textElement = $("#toastText", element) || $("#toast-text", element);
+    element.className =
+      "fixed bottom-6 right-6 z-[99999] rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-xl";
 
-    if (textElement) {
-      textElement.textContent = message;
-    } else {
-      element.textContent = message;
-    }
-
+    element.textContent = message;
     element.hidden = false;
-    element.classList.add("show");
 
     clearTimeout(toast.timer);
 
     toast.timer = setTimeout(() => {
       element.hidden = true;
-      element.classList.remove("show");
-    }, 3200);
-  };
+    }, 3500);
+  }
 
   window.showToast = toast;
 
-  function setText(selector, value) {
-    const element = $(selector);
-    if (element) element.textContent = value;
-  }
+  function dateText(value, includeTime = true) {
+    if (!value) return "Not specified";
 
-  // --------------------------------------------------
-  // BRANDING
-  // --------------------------------------------------
+    const date = new Date(value);
 
-  function updateBranding() {
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_TEXT
-    );
-
-    const nodes = [];
-
-    while (walker.nextNode()) {
-      nodes.push(walker.currentNode);
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
     }
 
-    nodes.forEach(node => {
-      node.nodeValue = node.nodeValue
-        .replace(/ShareSpace/g, "CampusShare")
-        .replace(
-          /MIT NanoFab & Molecular Bio Lab \(Building 76\)/gi,
-          "CampusShare Equipment Portal"
-        )
-        .replace(/MIT/gi, "CampusShare")
-        .replace(/Harvard BioMed/gi, "CampusShare");
-    });
-
-    $$('img[alt*="ShareSpace"], img[alt*="MIT"]').forEach(image => {
-      image.alt = "CampusShare";
-    });
+    return date.toLocaleString(
+      [],
+      includeTime
+        ? { dateStyle: "medium", timeStyle: "short" }
+        : { dateStyle: "medium" }
+    );
   }
 
-  // --------------------------------------------------
-  // STAFF PROFILE AND LOGOUT
-  // --------------------------------------------------
+  function durationText(start, end) {
+    if (!start || !end) return "Not returned";
 
-  function updateStaffIdentity() {
+    const minutes = Math.max(
+      0,
+      Math.floor((new Date(end) - new Date(start)) / 60000)
+    );
+
+    return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+  }
+
+  function setText(selector, value) {
+    const element = $(selector);
+
+    if (element) {
+      element.textContent = String(value ?? "");
+    }
+  }
+
+  // ============================================================
+  // COMMON STAFF PORTAL THEME
+  // ============================================================
+
+  function installStyles() {
+    if ($("#campusshare-staff-theme")) return;
+
+    const style = document.createElement("style");
+    style.id = "campusshare-staff-theme";
+
+    style.textContent = `
+      :root {
+        --cs-navy: #213145;
+        --cs-teal: #00685f;
+        --cs-bg: #f6f8fc;
+        --cs-ink: #0b1c30;
+        --cs-muted: #58657b;
+        --cs-line: #e5eaf2;
+      }
+
+      body {
+        margin: 0;
+        background: var(--cs-bg);
+        color: var(--cs-ink);
+        font-family: Inter, Arial, sans-serif;
+      }
+
+      .cs-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 270px;
+        background: var(--cs-navy);
+        color: #fff;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 1px 8px #0002;
+      }
+
+      .cs-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #fff;
+        text-decoration: none;
+        font-size: 21px;
+        font-weight: 800;
+        letter-spacing: -.7px;
+        padding: 22px 18px 12px;
+      }
+
+      .cs-brand-mark {
+        width: 32px;
+        height: 32px;
+        flex: 0 0 32px;
+        display: grid;
+        place-items: center;
+        background: #102b57;
+        border-radius: 9px;
+        color: #fff;
+      }
+
+      .cs-brand-mark svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      .cs-brand-light {
+        font-weight: 600;
+      }
+
+      .cs-sidebar-tag {
+        margin: 0 18px 20px;
+        padding: 6px 9px;
+        border-radius: 5px;
+        background: #ffffff18;
+        color: #89f5e7;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        width: max-content;
+      }
+
+      .cs-nav {
+        padding: 0 12px;
+        display: grid;
+        gap: 5px;
+      }
+
+      .cs-nav-label {
+        padding: 10px 9px 7px;
+        color: #aebbc7;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+      }
+
+      .cs-nav a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 14px;
+        border-radius: 9px;
+        color: #c4d0d9;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .cs-nav a:hover {
+        background: #ffffff12;
+        color: white;
+      }
+
+      .cs-nav a.active {
+        background: #008378;
+        color: white;
+      }
+
+      .cs-nav .material-symbols-outlined {
+        font-size: 21px;
+      }
+
+      .cs-sidebar-footer {
+        margin-top: auto;
+        border-top: 1px solid #ffffff20;
+        padding: 17px 18px;
+        color: #aebbc7;
+        font-size: 12px;
+      }
+
+      .cs-shell {
+        margin-left: 270px;
+        min-height: 100vh;
+      }
+
+      .cs-header {
+        position: fixed;
+        z-index: 40;
+        top: 0;
+        left: 270px;
+        right: 0;
+        min-height: 70px;
+        padding: 12px 26px;
+        background: #ffffffed;
+        backdrop-filter: blur(14px);
+        box-shadow: 0 1px 8px #0000000a;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .cs-crumb {
+        font-size: 14px;
+        color: #58657b;
+      }
+
+      .cs-crumb strong {
+        color: #0b1c30;
+      }
+
+      .cs-profile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .cs-avatar {
+        height: 38px;
+        width: 38px;
+        flex: 0 0 38px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #89f5e7;
+        color: #00685f;
+        font-weight: 800;
+      }
+
+      .cs-profile-copy {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .cs-profile-copy strong,
+      .cs-profile-copy span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .cs-profile-copy strong {
+        font-size: 13px;
+      }
+
+      .cs-profile-copy span {
+        font-size: 11px;
+        color: #58657b;
+        margin-top: 2px;
+      }
+
+      #staffLogoutButton {
+        border: 1px solid #bcc9c6;
+        background: #fff;
+        color: #213145;
+        padding: 9px 14px;
+        border-radius: 9px;
+        font: 600 13px Inter, sans-serif;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      #staffLogoutButton:hover {
+        background: #eff4ff;
+      }
+
+      #staffLogoutButton:disabled {
+        opacity: .6;
+        cursor: wait;
+      }
+
+      .cs-main {
+        padding: 96px 26px 42px;
+        max-width: 1800px;
+        margin: 0 auto;
+      }
+
+      .cs-hero {
+        background: #fff;
+        border: 1px solid var(--cs-line);
+        border-radius: 18px;
+        padding: 25px 28px;
+        margin-bottom: 22px;
+        box-shadow: 0 1px 2px #0b1c3008;
+      }
+
+      .cs-kicker {
+        font-size: 11px;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--cs-teal);
+      }
+
+      .cs-title {
+        font-size: 28px;
+        line-height: 1.2;
+        font-weight: 750;
+        letter-spacing: -.7px;
+        margin: 8px 0 7px;
+      }
+
+      .cs-subtitle {
+        font-size: 14px;
+        line-height: 1.55;
+        color: var(--cs-muted);
+        margin: 0;
+      }
+
+      .cs-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+      }
+
+      .cs-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+      }
+
+      .cs-card {
+        background: #fff;
+        border: 1px solid var(--cs-line);
+        border-radius: 14px;
+        padding: 17px;
+        box-shadow: 0 1px 2px #0b1c3008;
+        min-width: 0;
+      }
+
+      .cs-card-label {
+        font-size: 11px;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--cs-muted);
+      }
+
+      .cs-card-value {
+        font-size: 29px;
+        font-weight: 750;
+        letter-spacing: -.8px;
+        margin-top: 11px;
+        color: var(--cs-ink);
+      }
+
+      .cs-card-note {
+        font-size: 12px;
+        color: var(--cs-muted);
+        margin-top: 5px;
+      }
+
+      .cs-panel {
+        background: #fff;
+        border: 1px solid var(--cs-line);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 1px 2px #0b1c3008;
+        margin-bottom: 18px;
+      }
+
+      .cs-panel-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+      }
+
+      .cs-muted {
+        color: var(--cs-muted);
+      }
+
+      .cs-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border-radius: 9px;
+        padding: 9px 13px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        border: 1px solid transparent;
+      }
+
+      .cs-btn-primary {
+        background: var(--cs-teal);
+        color: #fff;
+      }
+
+      .cs-btn-primary:hover {
+        background: #008378;
+      }
+
+      .cs-btn-light {
+        background: #fff;
+        color: var(--cs-ink);
+        border-color: #bcc9c6;
+      }
+
+      .cs-btn-danger {
+        background: #ffdad6;
+        color: #93000a;
+      }
+
+      .cs-input,
+      .cs-select {
+        min-height: 42px;
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 9px;
+        padding: 9px 12px;
+        background: #f8faff;
+        color: #0b1c30;
+        font: 400 14px Inter, sans-serif;
+      }
+
+      .cs-input:focus,
+      .cs-select:focus {
+        outline: 2px solid #89f5e7;
+        border-color: #00685f;
+      }
+
+      .cs-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .cs-status {
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 10px;
+        border-radius: 99px;
+        background: #eff4ff;
+        color: #213145;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .cs-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .cs-item {
+        background: #fff;
+        border: 1px solid var(--cs-line);
+        border-radius: 12px;
+        padding: 15px;
+      }
+
+      .cs-empty {
+        border: 1px dashed #bcc9c6;
+        border-radius: 12px;
+        padding: 32px 18px;
+        text-align: center;
+        color: var(--cs-muted);
+        font-size: 13px;
+        background: #fbfcff;
+      }
+
+      .cs-error {
+        padding: 12px 14px;
+        border-radius: 10px;
+        background: #fff4e5;
+        color: #704214;
+        font-size: 13px;
+        margin: 10px 0;
+      }
+
+      .cs-table-wrap {
+        overflow-x: auto;
+      }
+
+      .cs-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .cs-table th {
+        text-align: left;
+        padding: 12px;
+        background: #eff4ff;
+        color: #58657b;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+      }
+
+      .cs-table td {
+        padding: 13px 12px;
+        border-bottom: 1px solid #e5eaf2;
+        vertical-align: top;
+      }
+
+      .cs-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin: 14px 0;
+      }
+
+      .cs-tab {
+        padding: 8px 11px;
+        border: 1px solid #d5dde8;
+        background: #fff;
+        color: #58657b;
+        border-radius: 9px;
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .cs-tab.active {
+        background: #00685f;
+        border-color: #00685f;
+        color: #fff;
+      }
+
+      .cs-two-col {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .cs-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .cs-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+
+      .cs-equipment-img {
+        width: 100%;
+        height: 155px;
+        object-fit: cover;
+        background: #eff4ff;
+        border-radius: 9px;
+      }
+
+      #addEquipmentModal {
+        z-index: 1000;
+      }
+
+      #addEquipmentModal.hidden {
+        display: none !important;
+      }
+
+      #addEquipmentModal:not(.hidden) {
+        display: flex !important;
+      }
+
+      #addEquipmentModal .cs-extra-field {
+        display: grid;
+        gap: 6px;
+        margin-top: 14px;
+      }
+
+      #addEquipmentModal .cs-extra-field label {
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      #addEquipmentModal .cs-extra-field input,
+      #addEquipmentModal .cs-extra-field select {
+        width: 100%;
+        height: 42px;
+        border: 1px solid #bcc9c6;
+        border-radius: 8px;
+        padding: 8px 10px;
+        background: #f8faff;
+      }
+
+      @media (max-width: 1250px) {
+        .cs-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 850px) {
+        .cs-sidebar {
+          width: 220px;
+        }
+
+        .cs-shell {
+          margin-left: 220px;
+        }
+
+        .cs-header {
+          left: 220px;
+        }
+
+        .cs-grid,
+        .cs-grid-4 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
+        .cs-sidebar {
+          position: relative;
+          width: 100%;
+          height: auto;
+        }
+
+        .cs-nav {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .cs-sidebar-footer {
+          display: none;
+        }
+
+        .cs-shell {
+          margin-left: 0;
+        }
+
+        .cs-header {
+          position: relative;
+          left: auto;
+          flex-wrap: wrap;
+          padding: 12px 16px;
+        }
+
+        .cs-main {
+          padding: 20px 14px;
+        }
+
+        .cs-grid,
+        .cs-grid-4,
+        .cs-two-col,
+        .cs-form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .cs-title {
+          font-size: 24px;
+        }
+
+        .cs-hero {
+          padding: 20px;
+        }
+      }
+    `;
+
+    document.head.append(style);
+  }
+
+  // ============================================================
+  // NAVIGATION AND LOGOUT
+  // ============================================================
+
+  function postToParent(type, extra = {}) {
+    if (window.parent !== window) {
+      window.parent.postMessage(
+        { source: "campusshare-page", type, ...extra },
+        window.location.origin
+      );
+      return true;
+    }
+
+    return false;
+  }
+
+  async function logout() {
+    const button = $("#staffLogoutButton");
+
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Signing out…";
+    }
+
+    try {
+      const { error } = await db().auth.signOut();
+
+      if (error) throw error;
+
+      if (!postToParent("staff-logout")) {
+        location.href = "../index.html";
+      }
+
+    } catch (error) {
+      console.error("Staff logout failed:", error);
+
+      toast(error.message || "Could not log out.");
+
+      if (button) {
+        button.disabled = false;
+        button.textContent = "Log out";
+      }
+    }
+  }
+
+  function renderShell() {
+    const current = page();
+
+    const active =
+      current === "equipment.html" ? "equipment" :
+      current === "requests.html" ? "requests" :
+      current === "calendar.html" ? "calendar" :
+      current === "history.html" ? "history" :
+      "dashboard";
+
+    const aside = $("aside");
+
+    if (aside) {
+      aside.className = "cs-sidebar";
+
+      aside.innerHTML = `
+        <a class="cs-brand" href="dashboard.html" aria-label="CampusShare home">
+          ${logoMarkup}
+        </a>
+
+        <div class="cs-sidebar-tag">Staff Portal</div>
+
+        <nav class="cs-nav" aria-label="Staff navigation">
+
+          <div class="cs-nav-label">Main Menu</div>
+
+          <a href="dashboard.html" class="${active === "dashboard" ? "active" : ""}">
+            <span class="material-symbols-outlined">grid_view</span>
+            Dashboard
+          </a>
+
+          <a href="equipment.html" class="${active === "equipment" ? "active" : ""}">
+            <span class="material-symbols-outlined">inventory_2</span>
+            My Equipment
+          </a>
+
+          <a href="requests.html" class="${active === "requests" ? "active" : ""}">
+            <span class="material-symbols-outlined">event_available</span>
+            Booking Requests
+          </a>
+
+          <a href="calendar.html" class="${active === "calendar" ? "active" : ""}">
+            <span class="material-symbols-outlined">calendar_month</span>
+            Calendar
+          </a>
+
+          <a href="history.html" class="${active === "history" ? "active" : ""}">
+            <span class="material-symbols-outlined">history</span>
+            Equipment History
+          </a>
+
+        </nav>
+
+        <div class="cs-sidebar-footer">
+          CampusShare · Staff Workspace
+        </div>
+      `;
+    }
+
+    const header = $("header");
+
+    if (header) {
+      const title =
+        active === "equipment" ? "My Equipment" :
+        active === "requests" ? "Booking Requests" :
+        active === "calendar" ? "Calendar" :
+        active === "history" ? "Equipment History" :
+        "Staff Dashboard";
+
+      header.className = "cs-header";
+
+      header.innerHTML = `
+        <div class="cs-crumb">
+          CampusShare <span class="mx-2">/</span>
+          <strong>${title}</strong>
+        </div>
+
+        <div class="cs-row" style="justify-content:flex-end;flex-wrap:nowrap">
+
+          <div class="cs-profile">
+            <span class="cs-avatar" id="staffProfileInitial">—</span>
+
+            <span class="cs-profile-copy">
+              <strong id="staffDisplayName">Loading profile…</strong>
+              <span id="staffDepartment">Loading department…</span>
+              <span id="staffEmail"></span>
+            </span>
+          </div>
+
+          <button id="staffLogoutButton" type="button">
+            Log out
+          </button>
+
+        </div>
+      `;
+
+      $("#staffLogoutButton")?.addEventListener("click", logout);
+    }
+
+    const shell = $(".pl-72") || $("body > div");
+
+    if (shell) {
+      shell.className = "cs-shell";
+    }
+
+    const main = $("main");
+
+    if (main) {
+      main.className = "cs-main";
+    }
+
+    return main;
+  }
+
+  // ============================================================
+  // STAFF AUTHENTICATION AND PROFILE
+  // ============================================================
+
+  async function authenticateStaff() {
+    if (!db()) {
+      throw new Error(
+        "Supabase is not initialized. Check the Supabase script order."
+      );
+    }
+
+    const { data, error } = await db().auth.getUser();
+
+    if (error) throw error;
+
+    if (!data?.user) {
+      postToParent("navigate", { route: "login" });
+
+      if (window.parent === window) {
+        location.href = "../index.html";
+      }
+
+      throw new Error(
+        "Your session has expired. Please sign in again."
+      );
+    }
+
+    state.user = data.user;
+
+    // Temporary values from authenticated metadata while profile loads.
+    const metadata = state.user.user_metadata || {};
+
+    state.profile = {
+      id: state.user.id,
+      full_name:
+        metadata.full_name ||
+        metadata.name ||
+        state.user.email ||
+        "Staff member",
+      email: state.user.email || "",
+      department: metadata.department || "Department not provided",
+      role: state.user.app_metadata?.role || ""
+    };
+
+    renderProfile();
+
+    const {
+      data: profile,
+      error: profileError
+    } = await db()
+      .from("profiles")
+      .select("id, full_name, email, department, role")
+      .eq("id", state.user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      throw new Error(
+        `Could not load your staff profile: ${profileError.message}`
+      );
+    }
+
+    if (!profile) {
+      throw new Error("Your CampusShare profile was not found.");
+    }
+
+    const role = String(profile.role || "").toLowerCase();
+
+    if (!["owner", "admin"].includes(role)) {
+      await db().auth.signOut();
+      postToParent("staff-logout");
+
+      throw new Error(
+        "This account does not have approved staff access."
+      );
+    }
+
+    state.profile = profile;
+    renderProfile();
+  }
+
+  function renderProfile() {
     const name =
       state.profile?.full_name ||
-      state.user?.email?.split("@")[0] ||
+      state.user?.email ||
       "Staff member";
 
     const email =
@@ -124,422 +987,291 @@
 
     const department =
       state.profile?.department ||
-      "Staff";
+      "Department not provided";
 
-    const heading = $("main h1");
+    const initials = name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(part => part[0])
+      .join("")
+      .toUpperCase() || "S";
 
-    if (heading && /^Welcome back,/i.test(heading.textContent.trim())) {
-      heading.textContent = `Welcome back, ${name}`;
-    }
-
-    $$("header span, header div, header p").forEach(element => {
-      const text = element.textContent.trim();
-
-      if (
-        /^Dr\. Eleanor Vance$|^Lab Director • Biotech Research Core$|^Verified Owner$/i.test(text)
-      ) {
-        if (/^Dr\. Eleanor Vance$/i.test(text)) {
-          element.textContent = name;
-        } else if (/^Lab Director/i.test(text)) {
-          element.textContent = department;
-        } else {
-          element.textContent =
-            state.profile?.role === "owner"
-              ? "Verified Staff"
-              : "Staff";
-        }
-      }
-    });
-
-    const profileArea =
-      $("header .pl-space-xs") ||
-      $("header .flex.items-center.gap-space-sm.pl-space-xs");
-
-    if (profileArea) {
-      profileArea.title = `${name}${email ? ` · ${email}` : ""}`;
-    }
-
-    // Add logout button.
-    if (!$("#staffLogoutButton")) {
-      const header = $("header");
-
-      if (header) {
-        const button = document.createElement("button");
-
-        button.id = "staffLogoutButton";
-        button.type = "button";
-        button.className =
-          "ml-3 px-3 py-2 rounded-lg border text-sm font-semibold hover:bg-surface-container";
-        button.textContent = "Log out";
-
-        button.addEventListener("click", logout);
-
-        header.append(button);
-      }
-    }
-
-    // Hide nonfunctional links.
-    $$('a[data-path="settings"], a[data-path="help-and-support"]')
-      .forEach(link => {
-        link.hidden = true;
-      });
+    setText("#staffDisplayName", name);
+    setText("#staffDepartment", department);
+    setText("#staffEmail", email);
+    setText("#staffProfileInitial", initials);
   }
 
-  async function logout() {
-    try {
-      const { error } = await client().auth.signOut();
+  // ============================================================
+  // LOAD CATEGORIES AND EQUIPMENT
+  // ============================================================
 
-      if (error) throw error;
-
-      window.location.href = "../index.html";
-
-    } catch (error) {
-      console.error("CampusShare sign-out failed:", error);
-
-      toast(
-        error.message ||
-        "Could not log out. Please try again."
-      );
-    }
-  }
-
-  // --------------------------------------------------
-  // CHECK STAFF LOGIN
-  // --------------------------------------------------
-
-  async function requireStaffSession() {
-    if (!client()) {
-      throw new Error(
-        "Supabase is not initialized. Check the Supabase script tags."
-      );
-    }
-
-    const { data, error } = await client().auth.getUser();
+  async function loadCategories() {
+    const { data, error } = await db()
+      .from("categories")
+      .select("id, category_name")
+      .order("category_name", { ascending: true });
 
     if (error) throw error;
 
-    if (!data?.user) {
-      window.location.href = "../index.html";
-
-      throw new Error(
-        "Please sign in to access the staff portal."
-      );
-    }
-
-    state.user = data.user;
-
-    const { data: profile, error: profileError } = await client()
-      .from("profiles")
-      .select("id, full_name, email, department, role")
-      .eq("id", state.user.id)
-      .maybeSingle();
-
-    if (profileError) throw profileError;
-
-    if (
-      !profile ||
-      !["owner", "admin"].includes(
-        String(profile.role || "").toLowerCase()
-      )
-    ) {
-      toast("This account does not have approved staff access.");
-
-      await client().auth.signOut();
-
-      window.location.href = "../index.html";
-
-      throw new Error("Approved staff access is required.");
-    }
-
-    state.profile = profile;
-
-    updateStaffIdentity();
+    state.categories = data || [];
   }
-
-  // --------------------------------------------------
-  // LOAD EQUIPMENT FROM SUPABASE
-  // --------------------------------------------------
 
   async function loadEquipment() {
-    const [resources, categories] = await Promise.all([
-      window.CampusDB.get("resources", {
-        filters: {
-          owner_id: state.user.id
-        },
-        orderBy: "created_at",
-        ascending: false
-      }),
+    const { data, error } = await db()
+      .from("resources")
+      .select(
+        "id, name, description, category_id, total_quantity, available_quantity, owner_id, condition, status, created_at, location, image_url"
+      )
+      .eq("owner_id", state.user.id)
+      .order("created_at", { ascending: false });
 
-      window.CampusDB.get("categories", {
-        orderBy: "category_name",
-        ascending: true
-      })
-    ]);
+    if (error) throw error;
 
     const categoryMap = new Map(
-      (categories || []).map(category => [
-        category.id,
-        category.category_name
-      ])
+      state.categories.map(row => [row.id, row.category_name])
     );
 
-    state.categories = categories || [];
-
-    state.equipment = (resources || []).map(item => ({
-      id: item.id,
-      name: item.name || "Unnamed equipment",
-      description: item.description || "",
-      image: item.image_url || "",
-      location: item.location || "",
-      categoryId: item.category_id || null,
-      category: categoryMap.get(item.category_id) || "Other",
-      totalQuantity: Number(item.total_quantity || 0),
-      availableQuantity: Number(item.available_quantity || 0),
-      condition: item.condition || "",
-      status: item.status || "available",
-      ownerId: item.owner_id
+    state.equipment = (data || []).map(row => ({
+      id: row.id,
+      name: row.name || "Unnamed equipment",
+      description: row.description || "",
+      categoryId: row.category_id || "",
+      category: categoryMap.get(row.category_id) || "Uncategorized",
+      total: Number(row.total_quantity || 0),
+      available: Number(row.available_quantity || 0),
+      ownerId: row.owner_id,
+      condition: row.condition || "Not specified",
+      status: row.status || "available",
+      location: row.location || "",
+      image: row.image_url || ""
     }));
-
-    return state.equipment;
   }
 
-  // --------------------------------------------------
-  // CONVERT DATABASE BOOKING STATUS
-  // --------------------------------------------------
+  // ============================================================
+  // LOAD BOOKING REQUESTS
+  // ============================================================
 
-  function toDisplayStatus(value) {
-    const status = normalizeStatus(value);
+  function displayStatus(value) {
+    const key = norm(value);
 
-    if (["ready", "approved"].includes(status)) {
-      return "approved";
-    }
+    if (["approved", "ready"].includes(key)) return "approved";
 
-    if (["rejected", "declined", "cancelled"].includes(status)) {
+    if (["rejected", "declined", "cancelled"].includes(key)) {
       return "rejected";
     }
 
-    if (["waitlist", "waitlisted"].includes(status)) {
+    if (["waitlist", "waitlisted"].includes(key)) {
       return "waitlist";
     }
 
-    if (["borrowed", "in-use", "issued"].includes(status)) {
+    if (["borrowed", "issued", "in-use"].includes(key)) {
       return "borrowed";
     }
 
-    if (["returned", "completed"].includes(status)) {
+    if (["returned", "completed"].includes(key)) {
       return "returned";
     }
 
     return "pending";
   }
 
-  // --------------------------------------------------
-  // LOAD STUDENT BOOKING REQUESTS
-  // --------------------------------------------------
-
   async function loadRequests() {
     state.requests = [];
+    state.errors.students = null;
 
-    const resourceIds = state.equipment.map(item => item.id);
+    const ids = state.equipment
+      .map(item => item.id)
+      .filter(Boolean);
 
-    if (!resourceIds.length) {
-      return state.requests;
-    }
+    if (!ids.length) return;
 
-    const { data: requestItems, error: itemsError } = await client()
+    const {
+      data: items,
+      error: itemError
+    } = await db()
       .from("booking_request_items")
       .select(
         "id, request_id, resource_id, requested_quantity, approved_quantity, item_status"
       )
-      .in("resource_id", resourceIds);
+      .in("resource_id", ids);
 
-    if (itemsError) throw itemsError;
+    if (itemError) throw itemError;
 
-    if (!requestItems?.length) {
-      return state.requests;
-    }
+    if (!items?.length) return;
 
     const requestIds = [
       ...new Set(
-        requestItems
-          .map(item => item.request_id)
-          .filter(Boolean)
+        items.map(item => item.request_id).filter(Boolean)
       )
     ];
 
-    const studentIds = [];
-
     const [
-      { data: requests, error: requestsError },
-      { data: resources, error: resourcesError }
+      bookingResult,
+      resourceResult
     ] = await Promise.all([
-      client()
+      db()
         .from("booking_requests")
         .select(
           "id, student_id, request_date, start_date, due_date, status, created_at"
         )
         .in("id", requestIds),
 
-      client()
+      db()
         .from("resources")
-        .select(
-          "id, name, owner_id, location, total_quantity, available_quantity"
-        )
-        .in("id", resourceIds)
+        .select("id, name, owner_id")
+        .in("id", ids)
+        .eq("owner_id", state.user.id)
     ]);
 
-    if (requestsError) throw requestsError;
-    if (resourcesError) throw resourcesError;
+    if (bookingResult.error) throw bookingResult.error;
+    if (resourceResult.error) throw resourceResult.error;
 
-    const requestMap = new Map(
-      (requests || []).map(request => [
-        request.id,
-        request
-      ])
+    const bookingMap = new Map(
+      (bookingResult.data || []).map(row => [row.id, row])
     );
 
     const resourceMap = new Map(
-      (resources || []).map(resource => [
-        resource.id,
-        resource
-      ])
+      (resourceResult.data || []).map(row => [row.id, row])
     );
 
-    (requests || []).forEach(request => {
-      if (request.student_id) {
-        studentIds.push(request.student_id);
-      }
-    });
+    const studentIds = [
+      ...new Set(
+        (bookingResult.data || [])
+          .map(row => row.student_id)
+          .filter(Boolean)
+      )
+    ];
 
-    let profileMap = new Map();
+    let students = new Map();
 
     if (studentIds.length) {
-      const { data: students, error: studentError } = await client()
+      const profileResult = await db()
         .from("profiles")
         .select("id, full_name, email, department")
-        .in("id", [...new Set(studentIds)]);
+        .in("id", studentIds);
 
-      if (studentError) {
-        console.warn(
-          "Student profile details are not readable under the current RLS policy:",
-          studentError
-        );
+      if (profileResult.error) {
+        state.errors.students = profileResult.error.message;
       } else {
-        profileMap = new Map(
-          (students || []).map(student => [
-            student.id,
-            student
-          ])
+        students = new Map(
+          (profileResult.data || []).map(row => [row.id, row])
         );
       }
     }
 
-    state.requests = requestItems.map(item => {
-      const request = requestMap.get(item.request_id) || {};
-      const resource = resourceMap.get(item.resource_id) || {};
-      const student = profileMap.get(request.student_id) || {};
+    state.requests = items
+      .filter(item => resourceMap.has(item.resource_id))
+      .map(item => {
+        const booking = bookingMap.get(item.request_id) || {};
+        const resource = resourceMap.get(item.resource_id) || {};
+        const student = students.get(booking.student_id) || {};
 
-      return {
-        id: item.id,
-        sourceId: request.id || item.request_id,
-        studentId: request.student_id,
-        title: student.full_name || student.email || "Student",
-        studentEmail: student.email || "",
-        department: student.department || "",
-        equipmentName: resource.name || "Equipment",
-        equipment: resource.id || item.resource_id,
-        resourceId: resource.id || item.resource_id,
-        requestedQuantity: Number(item.requested_quantity || 1),
-        approvedQuantity: Number(item.approved_quantity || 0),
-        date: request.start_date || "",
-        endDate: request.due_date || "",
-        createdAt: request.created_at || request.request_date || "",
-        category: toDisplayStatus(
-          item.item_status || request.status
-        ),
-        requestStatus: request.status || "pending",
-        itemStatus: item.item_status || "pending"
-      };
-    }).sort((a, b) =>
-      new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-    );
-
-    return state.requests;
+        return {
+          id: item.id,
+          requestId: booking.id || item.request_id,
+          studentId: booking.student_id || null,
+          studentName:
+            student.full_name ||
+            "Student details restricted",
+          studentEmail: student.email || "",
+          studentDepartment: student.department || "",
+          resourceId: item.resource_id,
+          equipmentName:
+            resource.name ||
+            "Equipment details unavailable",
+          requestedQuantity: Number(item.requested_quantity || 1),
+          approvedQuantity: Number(item.approved_quantity || 0),
+          startDate: booking.start_date || "",
+          dueDate: booking.due_date || "",
+          createdAt: booking.created_at || booking.request_date || "",
+          status: displayStatus(
+            item.item_status || booking.status
+          ),
+          rawItemStatus: item.item_status || "pending"
+        };
+      })
+      .sort((a, b) =>
+        new Date(b.createdAt || 0) -
+        new Date(a.createdAt || 0)
+      );
   }
 
-  // --------------------------------------------------
+  // ============================================================
   // LOAD BORROWING AND RETURN HISTORY
-  // --------------------------------------------------
+  // ============================================================
 
   async function loadHistory() {
     state.history = [];
 
-    const itemIds = state.requests.map(request => request.id);
+    const itemIds = state.requests
+      .map(row => row.id)
+      .filter(Boolean);
 
-    if (itemIds.length) {
-      const { data: borrowRecords, error } = await client()
-        .from("borrow_records")
-        .select(
-          "id, request_item_id, quantity_borrowed, quantity_returned, borrowed_at, due_date, returned_at, return_status, handed_over_by, received_by"
-        )
-        .in("request_item_id", itemIds)
-        .order("borrowed_at", {
-          ascending: false
-        });
+    if (!itemIds.length) return;
 
-      if (error) throw error;
+    const { data, error } = await db()
+      .from("borrow_records")
+      .select(
+        "id, request_item_id, quantity_borrowed, quantity_returned, borrowed_at, due_date, returned_at, return_status, handed_over_by, received_by"
+      )
+      .in("request_item_id", itemIds)
+      .order("borrowed_at", { ascending: false });
 
-      const requestByItem = new Map(
-        state.requests.map(request => [
-          request.id,
-          request
-        ])
-      );
+    if (error) throw error;
 
-      state.history = (borrowRecords || []).map(record => {
-        const request =
-          requestByItem.get(record.request_item_id) || {};
-
-        return {
-          id: record.id,
-          requestId: request.sourceId || record.request_item_id,
-          equipment: request.equipmentName || "Equipment",
-          user: request.title || "Student",
-          institution: request.department || "",
-          date: record.returned_at || record.borrowed_at,
-          duration:
-            record.borrowed_at && record.returned_at
-              ? formatDuration(
-                  new Date(record.returned_at) -
-                  new Date(record.borrowed_at)
-                )
-              : "Not returned",
-          status: record.returned_at ? "Returned" : "Borrowed",
-          quantity: Number(record.quantity_borrowed || 0),
-          returnStatus: record.return_status || ""
-        };
-      });
-    }
-
-    return state.history;
-  }
-
-  function formatDuration(milliseconds) {
-    const minutes = Math.max(
-      0,
-      Math.floor(Number(milliseconds || 0) / 60000)
+    const requestMap = new Map(
+      state.requests.map(row => [row.id, row])
     );
 
-    return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+    state.history = (data || []).map(record => {
+      const request =
+        requestMap.get(record.request_item_id) || {};
+
+      const returned =
+        Boolean(record.returned_at) ||
+        norm(record.return_status) === "returned";
+
+      const borrowed = Number(record.quantity_borrowed || 0);
+      const returnedQuantity = Number(record.quantity_returned || 0);
+
+      return {
+        id: record.id,
+        requestItemId: record.request_item_id,
+        requestId: request.requestId || record.request_item_id,
+        resourceId: request.resourceId || null,
+        equipmentName:
+          request.equipmentName ||
+          "Equipment details unavailable",
+        studentName:
+          request.studentName ||
+          "Student details restricted",
+        borrowedAt: record.borrowed_at,
+        dueDate: record.due_date,
+        returnedAt: record.returned_at,
+        status: returned ? "Returned" : "Borrowed",
+        quantity: borrowed,
+        returnedQuantity,
+        outstandingQuantity: Math.max(
+          0,
+          borrowed - returnedQuantity
+        ),
+        duration: durationText(
+          record.borrowed_at,
+          record.returned_at
+        )
+      };
+    });
   }
 
-  // --------------------------------------------------
-  // ACTIVITY LOG
-  // --------------------------------------------------
+  // ============================================================
+  // ACTIVITY LOGS
+  // ============================================================
 
   async function logActivity(action, details) {
     try {
-      const { error } = await client()
+      const { error } = await db()
         .from("activity_logs")
         .insert({
           user_id: state.user.id,
@@ -548,387 +1280,1015 @@
         });
 
       if (error) {
-        console.warn("Activity log could not be saved:", error);
+        console.warn(
+          "Activity log not saved:",
+          error.message
+        );
       }
-
     } catch (error) {
-      console.warn("Activity log could not be saved:", error);
+      console.warn("Activity log not saved:", error);
     }
   }
 
-  // --------------------------------------------------
-  // INVENTORY COUNTS
-  // --------------------------------------------------
+  // ============================================================
+  // REFRESH ALL LIVE DATA
+  // ============================================================
 
-  function equipmentCounts() {
+  async function refreshData() {
+    state.errors = {};
+
+    try {
+      await loadCategories();
+    } catch (error) {
+      state.errors.categories = error.message;
+      console.warn(error);
+    }
+
+    try {
+      await loadEquipment();
+    } catch (error) {
+      state.errors.equipment = error.message;
+      state.equipment = [];
+      console.error(error);
+    }
+
+    try {
+      await loadRequests();
+    } catch (error) {
+      state.errors.requests = error.message;
+      state.requests = [];
+      console.error(error);
+    }
+
+    try {
+      await loadHistory();
+    } catch (error) {
+      state.errors.history = error.message;
+      state.history = [];
+      console.error(error);
+    }
+
+    ensureEquipmentFormFields();
+    renderPage();
+  }
+
+  // ============================================================
+  // REAL DATABASE COUNTS
+  // ============================================================
+
+  function counts() {
     const total = state.equipment.reduce(
-      (sum, item) => sum + item.totalQuantity,
+      (sum, row) => sum + row.total,
       0
     );
 
     const available = state.equipment.reduce(
-      (sum, item) => sum + item.availableQuantity,
+      (sum, row) => sum + row.available,
       0
     );
 
-    const inUse = Math.max(0, total - available);
+    const maintenance = state.equipment.reduce((sum, row) => {
+      if (norm(row.status) !== "maintenance") return sum;
 
-    const maintenance = state.equipment
-      .filter(item =>
-        normalizeStatus(item.status).includes("maintenance")
-      )
-      .reduce(
-        (sum, item) =>
-          sum + Math.max(0, item.totalQuantity - item.availableQuantity),
-        0
+      return sum + Math.max(
+        0,
+        row.total - row.available
       );
+    }, 0);
 
-    const overdue = state.requests.filter(request => {
-      return (
-        request.category === "borrowed" &&
-        request.endDate &&
-        new Date(request.endDate) < new Date()
-      );
-    }).length;
+    const borrowedUnits = state.history.reduce(
+      (sum, row) =>
+        sum + (
+          row.status === "Borrowed"
+            ? row.outstandingQuantity
+            : 0
+        ),
+      0
+    );
+
+    const inUse =
+      borrowedUnits ||
+      Math.max(0, total - available - maintenance);
+
+    const overdue = state.history.filter(row =>
+      row.status === "Borrowed" &&
+      row.dueDate &&
+      new Date(row.dueDate) < new Date()
+    ).length;
+
+    const returned = state.history.filter(
+      row => row.status === "Returned"
+    ).length;
+
+    const pending = state.requests.filter(
+      row => row.status === "pending"
+    ).length;
+
+    const approved = state.requests.filter(
+      row => row.status === "approved"
+    ).length;
 
     return {
       total,
       available,
-      inUse,
       maintenance,
-      overdue
+      inUse,
+      overdue,
+      returned,
+      pending,
+      approved
     };
   }
 
-  function renderEquipmentCounts() {
-    const counts = equipmentCounts();
+  const statusName = status => ({
+    pending: "Pending review",
+    approved: "Approved",
+    waitlist: "Waitlisted",
+    rejected: "Declined",
+    borrowed: "Currently borrowed",
+    returned: "Returned"
+  })[status] || status;
 
-    setText("#availableCount", `${counts.available} Units`);
-    setText("#inUseCount", `${counts.inUse} Units`);
-    setText("#maintenanceCount", `${counts.maintenance} Units`);
-    setText("#overdueCount", `${counts.overdue} Overdue`);
-    setText("#totalEquipmentCount", counts.total);
-    setText("#visibleCount", state.equipment.length);
-
-    const statusSelect = $("#statusFilter");
-
-    if (statusSelect) {
-      const labels = {
-        all: "All Statuses",
-        available: "Available",
-        "in-use": "In-Use",
-        maintenance: "Maintenance",
-        overdue: "Overdue / Delays"
-      };
-
-      const values = {
-        all: counts.total,
-        available: counts.available,
-        "in-use": counts.inUse,
-        maintenance: counts.maintenance,
-        overdue: counts.overdue
-      };
-
-      Array.from(statusSelect.options).forEach(option => {
-        if (labels[option.value] !== undefined) {
-          option.textContent =
-            `${labels[option.value]} (${values[option.value]})`;
-        }
-      });
-    }
+  function errorBlock(key) {
+    return state.errors[key]
+      ? `
+        <div class="cs-error">
+          ${esc(key[0].toUpperCase() + key.slice(1))}
+          could not be loaded:
+          ${esc(state.errors[key])}.
+          Check the relevant Supabase RLS policy.
+        </div>
+      `
+      : "";
   }
 
-  // --------------------------------------------------
-  // DISPLAY EQUIPMENT
-  // --------------------------------------------------
+  // ============================================================
+  // DASHBOARD
+  // ============================================================
 
-  function renderEquipment() {
-    const grid = $("#equipmentGridContainer");
+  function renderDashboard(main) {
+    const c = counts();
+    const recent = state.requests.slice(0, 5);
 
-    if (!grid) return;
+    main.innerHTML = `
+      <section class="cs-hero">
+        <div class="cs-kicker">Staff Workspace</div>
 
-    grid.innerHTML = "";
+        <h1 class="cs-title">
+          Welcome back,
+          ${esc(state.profile?.full_name || "Staff member")}
+        </h1>
 
-    if (!state.equipment.length) {
-      grid.innerHTML = `
-        <div class="col-span-full rounded-xl border border-dashed p-10 text-center text-sm text-on-surface-variant">
-          No equipment has been added to your inventory yet.
-        </div>
-      `;
-    } else {
-      state.equipment.forEach(item => {
-        const card = document.createElement("article");
+        <p class="cs-subtitle">
+          Manage your equipment inventory, review student booking
+          requests, and track borrowing and returns.
+        </p>
 
-        card.className =
-          "equipment-card flex flex-col rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden";
+        <p class="cs-subtitle" style="margin-top:6px">
+          ${esc(state.profile?.department || "Department not provided")}
+          ·
+          ${esc(state.profile?.email || state.user?.email || "")}
+        </p>
+      </section>
 
-        card.dataset.id = item.id;
-        card.dataset.name = item.name;
-        card.dataset.room = item.location;
-        card.dataset.status = normalizeStatus(item.status);
-        card.dataset.category = item.category;
+      <section class="cs-grid" aria-label="Staff dashboard statistics">
 
-        const image = item.image
-          ? `
-            <img
-              src="${escapeHTML(item.image)}"
-              alt="${escapeHTML(item.name)}"
-              class="w-full h-full object-cover"
-            >
-          `
-          : `
-            <div class="h-full flex items-center justify-center text-outline">
-              No image
-            </div>
-          `;
+        ${metric(
+          "Total Inventory",
+          c.total,
+          "Equipment units in your inventory",
+          "inventory_2"
+        )}
 
-        card.innerHTML = `
-          <div class="h-44 bg-surface-container overflow-hidden">
-            ${image}
-          </div>
+        ${metric(
+          "Available",
+          c.available,
+          "Units available to book",
+          "check_circle"
+        )}
 
-          <div class="p-5 flex-1">
-            <h2 class="font-title-md">
-              ${escapeHTML(item.name)}
+        ${metric(
+          "Pending Requests",
+          c.pending,
+          "Awaiting staff review",
+          "pending_actions"
+        )}
+
+        ${metric(
+          "Approved",
+          c.approved,
+          "Approved booking items",
+          "task_alt"
+        )}
+
+        ${metric(
+          "Currently Borrowed",
+          c.inUse,
+          "Units currently in use",
+          "play_circle"
+        )}
+
+        ${metric(
+          "Returned",
+          c.returned,
+          "Completed return records",
+          "assignment_turned_in"
+        )}
+
+      </section>
+
+      <section class="cs-panel">
+
+        <div class="cs-row">
+
+          <div>
+            <h2 class="cs-panel-title">
+              Recent Booking Requests
             </h2>
 
-            <p class="text-sm text-on-surface-variant mt-2">
-              ${escapeHTML(item.description)}
+            <p class="cs-muted text-sm mt-1">
+              Actual student requests for resources assigned to your account.
             </p>
-
-            <p class="text-sm mt-3">
-              Location: ${escapeHTML(item.location || "Not specified")}
-            </p>
-
-            <p class="text-sm mt-2">
-              ${escapeHTML(item.category)}
-              ·
-              ${item.availableQuantity}/${item.totalQuantity} available
-            </p>
-
-            <p class="text-sm mt-1">
-              Status: ${escapeHTML(item.status)}
-            </p>
-
-            <div class="flex gap-2 mt-5">
-              <button
-                type="button"
-                data-edit="${escapeHTML(item.id)}"
-                class="px-3 py-2 rounded bg-surface-container"
-              >
-                Edit
-              </button>
-
-              <button
-                type="button"
-                data-delete="${escapeHTML(item.id)}"
-                class="px-3 py-2 rounded bg-error-container text-error"
-              >
-                Delete
-              </button>
-            </div>
           </div>
-        `;
 
-        grid.append(card);
-      });
-    }
+          <a class="cs-btn cs-btn-primary" href="requests.html">
+            View Requests
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </a>
 
-    const tbody = $("#equipmentTableContainer tbody");
+        </div>
 
-    if (tbody) {
-      tbody.innerHTML = state.equipment.length
-        ? state.equipment.map(item => `
-          <tr class="border-b">
-            <td class="px-4 py-3">
-              <strong>${escapeHTML(item.name)}</strong>
-              <div class="text-xs">${escapeHTML(item.id)}</div>
-            </td>
+        ${errorBlock("requests")}
+        ${errorBlock("students")}
 
-            <td class="px-4 py-3">
-              ${escapeHTML(item.category)}
-            </td>
+        <div class="cs-list mt-4">
 
-            <td class="px-4 py-3">
-              ${escapeHTML(item.location)}
-            </td>
+          ${
+            recent.length
+              ? recent.map(requestCardCompact).join("")
+              : `
+                <div class="cs-empty">
+                  No booking requests have been submitted for your equipment.
+                </div>
+              `
+          }
 
-            <td class="px-4 py-3">
-              ${escapeHTML(item.status)}
-            </td>
+        </div>
 
-            <td class="px-4 py-3">
-              ${item.availableQuantity}/${item.totalQuantity}
-            </td>
+      </section>
 
-            <td class="px-4 py-3 text-right">
-              <button
-                type="button"
-                data-edit="${escapeHTML(item.id)}"
-                class="px-2 py-1 bg-surface-container rounded"
-              >
-                Edit
-              </button>
+      <section class="cs-two-col">
 
-              <button
-                type="button"
-                data-delete="${escapeHTML(item.id)}"
-                class="px-2 py-1 bg-error-container text-error rounded"
-              >
-                Delete
-              </button>
-            </td>
-          </tr>
-        `).join("")
-        : `
-          <tr>
-            <td colspan="6" class="p-6 text-center">
-              No equipment available yet.
-            </td>
-          </tr>
-        `;
-    }
+        ${quickLink(
+          "My Equipment",
+          "Add and manage the equipment assigned to your staff account.",
+          "inventory_2",
+          "equipment.html"
+        )}
 
-    renderEquipmentCounts();
-    applyEquipmentFilters();
+        ${quickLink(
+          "Booking Calendar",
+          "Review the dates of real booking requests.",
+          "calendar_month",
+          "calendar.html"
+        )}
+
+        ${quickLink(
+          "Equipment History",
+          "Review actual borrowing and return records.",
+          "history",
+          "history.html"
+        )}
+
+        ${quickLink(
+          "Booking Requests",
+          "Approve, waitlist or decline student requests.",
+          "event_available",
+          "requests.html"
+        )}
+
+      </section>
+    `;
   }
 
-  // --------------------------------------------------
-  // EQUIPMENT SEARCH AND FILTERS
-  // --------------------------------------------------
+  function metric(label, value, note, icon) {
+    return `
+      <article class="cs-card">
+        <div class="cs-row">
+          <span class="cs-card-label">${esc(label)}</span>
+          <span class="material-symbols-outlined" style="color:#00685f">
+            ${esc(icon)}
+          </span>
+        </div>
 
-  function applyEquipmentFilters() {
+        <div class="cs-card-value">
+          ${Number(value) || 0}
+        </div>
+
+        <p class="cs-card-note">
+          ${esc(note)}
+        </p>
+      </article>
+    `;
+  }
+
+  function quickLink(title, description, icon, href) {
+    return `
+      <a
+        class="cs-card"
+        href="${esc(href)}"
+        style="text-decoration:none;color:inherit"
+      >
+        <span
+          class="material-symbols-outlined"
+          style="color:#00685f;font-size:25px"
+        >
+          ${esc(icon)}
+        </span>
+
+        <h3 class="font-semibold mt-3">
+          ${esc(title)}
+        </h3>
+
+        <p class="cs-card-note">
+          ${esc(description)}
+        </p>
+      </a>
+    `;
+  }
+
+  function requestCardCompact(request) {
+    return `
+      <article class="cs-item">
+
+        <div class="cs-row">
+
+          <div>
+            <strong>${esc(request.equipmentName)}</strong>
+
+            <p class="cs-muted text-sm mt-1">
+              ${esc(request.studentName)}
+              ·
+              ${esc(dateText(request.startDate, false))}
+            </p>
+          </div>
+
+          <span class="cs-status">
+            ${esc(statusName(request.status))}
+          </span>
+
+        </div>
+
+      </article>
+    `;
+  }
+
+  // ============================================================
+  // EQUIPMENT PAGE
+  // ============================================================
+
+  function renderEquipmentPage(main) {
+    const c = counts();
+
+    main.innerHTML = `
+      <section class="cs-hero">
+
+        <div class="cs-row">
+
+          <div>
+            <div class="cs-kicker">
+              Equipment Management
+            </div>
+
+            <h1 class="cs-title">
+              My Equipment
+            </h1>
+
+            <p class="cs-subtitle">
+              Add and manage the equipment you make available to students.
+            </p>
+          </div>
+
+          <button
+            id="openAddModalBtn"
+            type="button"
+            class="cs-btn cs-btn-primary"
+          >
+            <span class="material-symbols-outlined">add</span>
+            Add Equipment
+          </button>
+
+        </div>
+
+      </section>
+
+      <section class="cs-grid-4">
+
+        ${metric(
+          "Total Equipment Units",
+          c.total,
+          "Units in your resources",
+          "inventory_2"
+        )}
+
+        ${metric(
+          "Available",
+          c.available,
+          "Units available to book",
+          "check_circle"
+        )}
+
+        ${metric(
+          "Currently In Use",
+          c.inUse,
+          "Units currently borrowed",
+          "play_circle"
+        )}
+
+        ${metric(
+          "Maintenance",
+          c.maintenance,
+          "Units under maintenance",
+          "build"
+        )}
+
+      </section>
+
+      <section class="cs-panel">
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+          <input
+            id="equipmentSearchInput"
+            class="cs-input"
+            type="search"
+            placeholder="Search equipment name, ID or location"
+          >
+
+          <select id="categoryFilter" class="cs-select">
+            <option value="all">All Categories</option>
+
+            ${
+              state.categories.map(cat => `
+                <option value="${esc(cat.category_name)}">
+                  ${esc(cat.category_name)}
+                </option>
+              `).join("")
+            }
+
+          </select>
+
+          <select id="statusFilter" class="cs-select">
+            <option value="all">All Statuses</option>
+            <option value="available">Available</option>
+            <option value="in-use">In Use</option>
+            <option value="maintenance">Maintenance</option>
+          </select>
+
+        </div>
+
+        <div class="cs-row mt-3">
+
+          <span id="visibleCount" class="text-xs cs-muted">
+            ${state.equipment.length} equipment items
+          </span>
+
+          <button
+            id="clearFiltersBtn"
+            class="text-sm font-semibold"
+            style="color:#00685f"
+            type="button"
+          >
+            Reset Filters
+          </button>
+
+          <div class="ml-auto flex gap-2">
+
+            <button
+              id="gridToggleBtn"
+              class="cs-btn cs-btn-primary"
+              type="button"
+            >
+              Grid
+            </button>
+
+            <button
+              id="tableToggleBtn"
+              class="cs-btn cs-btn-light"
+              type="button"
+            >
+              Table
+            </button>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      ${errorBlock("equipment")}
+
+      <section
+        id="equipmentGridContainer"
+        class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+      ></section>
+
+      <section
+        id="equipmentTableContainer"
+        class="cs-panel hidden"
+      >
+
+        <div class="cs-table-wrap">
+
+          <table class="cs-table">
+
+            <thead>
+              <tr>
+                <th>Equipment</th>
+                <th>Category</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Quantity</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+
+            <tbody id="equipmentTableBody"></tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+    `;
+
+    bindEquipmentMainControls(main);
+    renderEquipmentCards();
+  }
+
+  function bindEquipmentMainControls(main) {
+    if (main.dataset.equipmentEvents === "true") return;
+
+    main.dataset.equipmentEvents = "true";
+
+    main.addEventListener("input", event => {
+      if (event.target.id === "equipmentSearchInput") {
+        renderEquipmentCards();
+      }
+    });
+
+    main.addEventListener("change", event => {
+      if (
+        ["categoryFilter", "statusFilter"].includes(event.target.id)
+      ) {
+        renderEquipmentCards();
+      }
+    });
+
+    main.addEventListener("click", event => {
+      if (event.target.closest("#openAddModalBtn")) {
+        openEquipmentModal();
+      }
+
+      if (event.target.closest("#clearFiltersBtn")) {
+        if ($("#equipmentSearchInput")) {
+          $("#equipmentSearchInput").value = "";
+        }
+
+        if ($("#categoryFilter")) {
+          $("#categoryFilter").value = "all";
+        }
+
+        if ($("#statusFilter")) {
+          $("#statusFilter").value = "all";
+        }
+
+        renderEquipmentCards();
+      }
+
+      if (event.target.closest("#gridToggleBtn")) {
+        $("#equipmentGridContainer")?.classList.remove("hidden");
+        $("#equipmentTableContainer")?.classList.add("hidden");
+      }
+
+      if (event.target.closest("#tableToggleBtn")) {
+        $("#equipmentGridContainer")?.classList.add("hidden");
+        $("#equipmentTableContainer")?.classList.remove("hidden");
+      }
+
+      const edit = event.target.closest("[data-equip-edit]");
+
+      if (edit) {
+        const record = state.equipment.find(
+          item => String(item.id) === edit.dataset.equipEdit
+        );
+
+        if (record) openEquipmentModal(record);
+      }
+
+      const remove = event.target.closest("[data-equip-delete]");
+
+      if (remove) {
+        deleteEquipment(remove.dataset.equipDelete);
+      }
+    });
+  }
+
+  function renderEquipmentCards() {
     const grid = $("#equipmentGridContainer");
 
     if (!grid) return;
 
-    const search =
+    const query =
       ($("#equipmentSearchInput")?.value || "")
         .toLowerCase()
         .trim();
 
     const category = $("#categoryFilter")?.value || "all";
     const status = $("#statusFilter")?.value || "all";
-    const location = $("#locationFilter")?.value || "all";
 
-    let visible = 0;
-
-    $$(".equipment-card", grid).forEach(card => {
-      const item = state.equipment.find(
-        entry => String(entry.id) === card.dataset.id
-      );
-
-      const textMatch =
-        !search ||
-        `${card.dataset.name} ${card.dataset.id} ${card.dataset.room}`
+    const filtered = state.equipment.filter(item => {
+      const matchesText =
+        !query ||
+        `${item.name} ${item.id} ${item.location}`
           .toLowerCase()
-          .includes(search);
+          .includes(query);
 
-      const categoryMatch =
+      const matchesCategory =
         category === "all" ||
-        normalizeStatus(card.dataset.category) === normalizeStatus(category);
+        item.category === category;
 
-      const statusMatch =
+      const matchesStatus =
         status === "all" ||
-        normalizeStatus(card.dataset.status) === normalizeStatus(status);
+        norm(item.status) === norm(status);
 
-      const locationMatch =
-        location === "all" ||
-        card.dataset.room.toLowerCase().includes(location.toLowerCase());
-
-      const show =
-        Boolean(item) &&
-        textMatch &&
-        categoryMatch &&
-        statusMatch &&
-        locationMatch;
-
-      card.hidden = !show;
-
-      if (show) visible++;
+      return matchesText && matchesCategory && matchesStatus;
     });
 
-    setText("#visibleCount", visible);
+    grid.innerHTML = filtered.length
+      ? filtered.map(item => `
+          <article class="cs-card">
 
-    const empty = $("#emptySearchState");
+            ${
+              item.image
+                ? `
+                  <img
+                    class="cs-equipment-img mb-3"
+                    src="${esc(item.image)}"
+                    alt="${esc(item.name)}"
+                    loading="lazy"
+                  >
+                `
+                : `
+                  <div class="cs-equipment-img mb-3 grid place-items-center text-sm text-slate-500">
+                    No image
+                  </div>
+                `
+            }
 
-    if (empty) {
-      empty.classList.toggle("hidden", visible > 0);
+            <div class="cs-row">
+              <h2 class="font-semibold">
+                ${esc(item.name)}
+              </h2>
+
+              <span class="cs-status">
+                ${esc(item.status)}
+              </span>
+            </div>
+
+            <p class="text-sm cs-muted mt-2">
+              ${esc(item.description)}
+            </p>
+
+            <div class="text-sm mt-3">
+              Category: ${esc(item.category)}
+            </div>
+
+            <div class="text-sm mt-1">
+              Location: ${esc(item.location || "Not specified")}
+            </div>
+
+            <div class="text-sm mt-1">
+              Available: ${item.available} of ${item.total}
+            </div>
+
+            <div class="flex gap-2 mt-4">
+
+              <button
+                type="button"
+                data-equip-edit="${esc(item.id)}"
+                class="cs-btn cs-btn-light"
+              >
+                Edit
+              </button>
+
+              <button
+                type="button"
+                data-equip-delete="${esc(item.id)}"
+                class="cs-btn cs-btn-danger"
+              >
+                Delete
+              </button>
+
+            </div>
+
+          </article>
+        `).join("")
+      : `
+        <div class="cs-empty col-span-full">
+          ${
+            state.equipment.length
+              ? "No equipment matches these filters."
+              : "No equipment has been added to your inventory yet."
+          }
+        </div>
+      `;
+
+    const tbody = $("#equipmentTableBody");
+
+    if (tbody) {
+      tbody.innerHTML = filtered.length
+        ? filtered.map(item => `
+            <tr>
+
+              <td>
+                <strong>${esc(item.name)}</strong>
+                <div class="text-xs text-slate-500">
+                  ${esc(item.id)}
+                </div>
+              </td>
+
+              <td>${esc(item.category)}</td>
+              <td>${esc(item.location)}</td>
+              <td>${esc(item.status)}</td>
+              <td>${item.available}/${item.total}</td>
+
+              <td>
+                <button
+                  class="cs-btn cs-btn-light"
+                  data-equip-edit="${esc(item.id)}"
+                >
+                  Edit
+                </button>
+
+                <button
+                  class="cs-btn cs-btn-danger"
+                  data-equip-delete="${esc(item.id)}"
+                >
+                  Delete
+                </button>
+              </td>
+
+            </tr>
+          `).join("")
+        : `
+            <tr>
+              <td colspan="6">No equipment available.</td>
+            </tr>
+          `;
+    }
+
+    setText(
+      "#visibleCount",
+      `${filtered.length} equipment items`
+    );
+  }
+
+  // ============================================================
+  // ADD CATEGORY AND QUANTITY INPUTS TO THE EXISTING FORM
+  // ============================================================
+
+  function ensureEquipmentFormFields() {
+    const form = $("#equipmentFormBody");
+
+    if (!form) return;
+
+    if (!$("#equipmentCategoryField")) {
+      const wrapper = document.createElement("div");
+
+      wrapper.className = "cs-extra-field";
+
+      wrapper.innerHTML = `
+        <label for="equipmentCategoryField">
+          Equipment Category
+        </label>
+
+        <select id="equipmentCategoryField">
+          <option value="">Uncategorized</option>
+        </select>
+      `;
+
+      form.append(wrapper);
+    }
+
+    if (!$("#equipmentQuantityField")) {
+      const wrapper = document.createElement("div");
+
+      wrapper.className = "cs-extra-field";
+
+      wrapper.innerHTML = `
+        <label for="equipmentQuantityField">
+          Total Quantity
+        </label>
+
+        <input
+          id="equipmentQuantityField"
+          type="number"
+          min="1"
+          step="1"
+          value="1"
+          required
+        >
+      `;
+
+      form.append(wrapper);
+    }
+
+    const category = $("#equipmentCategoryField");
+
+    if (category) {
+      const previous = category.value;
+
+      category.innerHTML =
+        `<option value="">Uncategorized</option>` +
+        state.categories.map(item => `
+          <option value="${esc(item.id)}">
+            ${esc(item.category_name)}
+          </option>
+        `).join("");
+
+      if (
+        [...category.options].some(option =>
+          option.value === previous
+        )
+      ) {
+        category.value = previous;
+      }
     }
   }
 
-  // --------------------------------------------------
-  // EQUIPMENT PAGE: ADD, EDIT AND DELETE
-  // --------------------------------------------------
-
-  function setupEquipmentPage() {
+  function openEquipmentModal(item = null) {
     const modal = $("#addEquipmentModal");
-    const grid = $("#equipmentGridContainer");
 
-    if (!modal || !grid) return;
+    if (!modal) {
+      return toast("The equipment form is missing from equipment.html.");
+    }
 
-    const name = $("#equipmentNameField");
-    const description = $("#equipmentDescriptionField");
-    const location = $("#equipmentLocationField");
-    const file = $("#equipmentImageField");
+    ensureEquipmentFormFields();
+
+    state.editingEquipmentId = item?.id || null;
+    state.selectedImage = item?.image || null;
+
+    if ($("#equipmentNameField")) {
+      $("#equipmentNameField").value = item?.name || "";
+    }
+
+    if ($("#equipmentDescriptionField")) {
+      $("#equipmentDescriptionField").value =
+        item?.description || "";
+    }
+
+    if ($("#equipmentLocationField")) {
+      $("#equipmentLocationField").value =
+        item?.location || "";
+    }
+
+    if ($("#equipmentCategoryField")) {
+      $("#equipmentCategoryField").value =
+        item?.categoryId || "";
+    }
+
+    if ($("#equipmentQuantityField")) {
+      $("#equipmentQuantityField").value =
+        String(item?.total ?? 1);
+    }
+
     const preview = $("#equipmentImagePreview");
 
-    let editingId = null;
-
-    function openModal(item = null) {
-      editingId = item?.id || null;
-
-      name.value = item?.name || "";
-      description.value = item?.description || "";
-      location.value = item?.location || "";
-
-      state.selectedImage = item?.image || null;
-
-      if (preview) {
-        preview.src = state.selectedImage || "";
-        preview.classList.toggle("hidden", !state.selectedImage);
-      }
-
-      modal.classList.remove("hidden");
-      document.body.style.overflow = "hidden";
+    if (preview) {
+      preview.src = state.selectedImage || "";
+      preview.classList.toggle(
+        "hidden",
+        !state.selectedImage
+      );
     }
 
-    function closeModal() {
-      modal.classList.add("hidden");
-      document.body.style.overflow = "";
+    const heading = $("#addEquipmentModal h2");
+
+    if (heading) {
+      heading.textContent = item
+        ? "Edit Equipment"
+        : "Add Equipment";
     }
 
-    $("#openAddModalBtn")?.addEventListener(
-      "click",
-      () => openModal()
-    );
+    const button = $("#publishEquipmentBtn");
+
+    if (button) {
+      button.textContent = item
+        ? "Save Changes"
+        : "Save Equipment";
+    }
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeEquipmentModal() {
+    const modal = $("#addEquipmentModal");
+
+    if (!modal) return;
+
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+
+    document.body.style.overflow = "";
+
+    state.editingEquipmentId = null;
+    state.selectedImage = null;
+
+    [
+      "#equipmentNameField",
+      "#equipmentDescriptionField",
+      "#equipmentLocationField"
+    ].forEach(selector => {
+      const element = $(selector);
+
+      if (element) element.value = "";
+    });
+
+    if ($("#equipmentCategoryField")) {
+      $("#equipmentCategoryField").value = "";
+    }
+
+    if ($("#equipmentQuantityField")) {
+      $("#equipmentQuantityField").value = "1";
+    }
+
+    if ($("#equipmentImageField")) {
+      $("#equipmentImageField").value = "";
+    }
+
+    const preview = $("#equipmentImagePreview");
+
+    if (preview) {
+      preview.src = "";
+      preview.classList.add("hidden");
+    }
+  }
+
+  function bindEquipmentModal() {
+    if (
+      !$("#addEquipmentModal") ||
+      $("#addEquipmentModal").dataset.csBound === "true"
+    ) {
+      return;
+    }
+
+    const modal = $("#addEquipmentModal");
+
+    modal.dataset.csBound = "true";
+
+    ensureEquipmentFormFields();
 
     $("#closeAddModalBtn")?.addEventListener(
       "click",
-      closeModal
+      closeEquipmentModal
     );
 
     $("#cancelModalBtn")?.addEventListener(
       "click",
-      closeModal
+      closeEquipmentModal
     );
 
     $("#modalOverlay")?.addEventListener(
       "click",
-      closeModal
+      closeEquipmentModal
     );
 
-    file?.addEventListener("change", () => {
-      const selected = file.files?.[0];
+    document.addEventListener("keydown", event => {
+      if (
+        event.key === "Escape" &&
+        !modal.classList.contains("hidden")
+      ) {
+        closeEquipmentModal();
+      }
+    });
 
-      if (!selected) return;
+    $("#equipmentImageField")?.addEventListener("change", () => {
+      const file = $("#equipmentImageField").files?.[0];
 
-      if (!selected.type.startsWith("image/")) {
-        return toast("Please choose an image file.");
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        toast("Choose an image file.");
+        return;
       }
 
-      if (selected.size > 2 * 1024 * 1024) {
-        return toast("Image must be 2 MB or smaller.");
+      if (file.size > 2 * 1024 * 1024) {
+        toast("Image must be 2 MB or smaller.");
+        return;
       }
 
       const reader = new FileReader();
@@ -936,104 +2296,21 @@
       reader.onload = () => {
         state.selectedImage = String(reader.result || "");
 
+        const preview = $("#equipmentImagePreview");
+
         if (preview) {
           preview.src = state.selectedImage;
           preview.classList.remove("hidden");
         }
       };
 
-      reader.readAsDataURL(selected);
+      reader.onerror = () => {
+        toast("Could not read the selected image.");
+      };
+
+      reader.readAsDataURL(file);
     });
 
-    async function saveEquipment(event) {
-      event?.preventDefault();
-
-      const equipmentName = name?.value.trim() || "";
-      const equipmentDescription = description?.value.trim() || "";
-      const equipmentLocation = location?.value.trim() || "";
-
-      if (!equipmentName || !equipmentLocation) {
-        return toast("Enter the equipment name and location.");
-      }
-
-      const button = $("#publishEquipmentBtn");
-      const draftButton = $("#saveDraftBtn");
-
-      if (button) button.disabled = true;
-      if (draftButton) draftButton.disabled = true;
-
-      try {
-        const payload = {
-          name: equipmentName,
-          description: equipmentDescription,
-          location: equipmentLocation,
-          image_url: state.selectedImage || null,
-          condition: "good",
-          status: "available"
-        };
-
-        if (editingId) {
-          const updated = await window.CampusDB.update(
-            "resources",
-            {
-              id: editingId,
-              owner_id: state.user.id
-            },
-            payload
-          );
-
-          if (!updated?.length) {
-            throw new Error(
-              "No equipment was updated. Check that this item belongs to your account."
-            );
-          }
-
-          toast("Equipment updated.");
-
-        } else {
-          await window.CampusDB.insert(
-            "resources",
-            {
-              ...payload,
-              owner_id: state.user.id,
-              total_quantity: 1,
-              available_quantity: 1,
-              category_id: null
-            }
-          );
-
-          toast("Equipment added to your inventory.");
-        }
-
-        closeModal();
-
-        if (name) name.value = "";
-        if (description) description.value = "";
-        if (location) location.value = "";
-        if (file) file.value = "";
-
-        state.selectedImage = null;
-
-        await loadEquipment();
-        await loadRequests();
-
-        renderEquipment();
-
-      } catch (error) {
-        console.error(
-          "CampusShare equipment save failed:",
-          error
-        );
-
-        toast(error.message || "Could not save equipment.");
-
-      } finally {
-        if (button) button.disabled = false;
-        if (draftButton) draftButton.disabled = false;
-      }
-    }
-
-    // One listener per button.
     $("#publishEquipmentBtn")?.addEventListener(
       "click",
       saveEquipment
@@ -1043,2002 +2320,1408 @@
       "click",
       saveEquipment
     );
-
-    grid.addEventListener("click", async event => {
-      const edit = event.target.closest("[data-edit]");
-      const remove = event.target.closest("[data-delete]");
-
-      if (edit) {
-        const item = state.equipment.find(
-          entry => String(entry.id) === edit.dataset.edit
-        );
-
-        if (item) openModal(item);
-      }
-
-      if (remove) {
-        const itemId = remove.dataset.delete;
-
-        if (!window.confirm("Delete this equipment record?")) {
-          return;
-        }
-
-        try {
-          const deleted = await window.CampusDB.remove(
-            "resources",
-            {
-              id: itemId,
-              owner_id: state.user.id
-            }
-          );
-
-          if (!deleted?.length) {
-            throw new Error(
-              "No equipment was deleted. It may have bookings or may not belong to your account."
-            );
-          }
-
-          await loadEquipment();
-          await loadRequests();
-
-          renderEquipment();
-
-          toast("Equipment deleted.");
-
-        } catch (error) {
-          console.error(
-            "CampusShare equipment deletion failed:",
-            error
-          );
-
-          toast(error.message || "Could not delete equipment.");
-        }
-      }
-    });
-
-    $("#gridToggleBtn")?.addEventListener("click", () => {
-      grid.classList.remove("hidden");
-      $("#equipmentTableContainer")?.classList.add("hidden");
-    });
-
-    $("#tableToggleBtn")?.addEventListener("click", () => {
-      grid.classList.add("hidden");
-      $("#equipmentTableContainer")?.classList.remove("hidden");
-    });
-
-    [
-      "#equipmentSearchInput",
-      "#categoryFilter",
-      "#statusFilter",
-      "#locationFilter"
-    ].forEach(selector => {
-      const element = $(selector);
-
-      element?.addEventListener(
-        selector === "#equipmentSearchInput" ? "input" : "change",
-        applyEquipmentFilters
-      );
-    });
-
-    window.refreshEquipmentPage = renderEquipment;
-
-    renderEquipment();
   }
 
-  // --------------------------------------------------
-  // BOOKING REQUEST STATUS LABELS
-  // --------------------------------------------------
+  // ============================================================
+  // SAVE EQUIPMENT TO SUPABASE
+  // ============================================================
 
-  function requestStatusLabel(status) {
-    return ({
-      pending: "Pending review",
-      approved: "Approved",
-      waitlist: "Waitlisted",
-      rejected: "Declined",
-      borrowed: "Currently borrowed",
-      returned: "Returned"
-    })[status] || status;
-  }
+  async function saveEquipment(event) {
+    event?.preventDefault();
 
-  // --------------------------------------------------
-  // APPROVE, WAITLIST OR REJECT A REQUEST
-  // --------------------------------------------------
-
-  async function recordDecision(request, decision, reason = "") {
-    if (!request) return;
-
-    const normalized =
-      decision === "Approved"
-        ? "approved"
-        : decision === "Waitlisted"
-          ? "waitlist"
-          : decision === "Pending"
-            ? "pending"
-            : "rejected";
-
-    const itemChanges = {
-      item_status: normalized
-    };
-
-    if (normalized === "approved") {
-      itemChanges.approved_quantity = request.requestedQuantity;
+    if (!state.user) {
+      return toast("Please wait for staff authentication to finish.");
     }
 
-    const { error: itemError } = await client()
+    const name =
+      $("#equipmentNameField")?.value.trim() || "";
+
+    const description =
+      $("#equipmentDescriptionField")?.value.trim() || "";
+
+    const location =
+      $("#equipmentLocationField")?.value.trim() || "";
+
+    const categoryId =
+      $("#equipmentCategoryField")?.value || null;
+
+    const total = Number(
+      $("#equipmentQuantityField")?.value || 1
+    );
+
+    if (!name || !location) {
+      return toast("Equipment name and location are required.");
+    }
+
+    if (!Number.isInteger(total) || total < 1) {
+      return toast("Enter a whole-number quantity of at least 1.");
+    }
+
+    const button = $("#publishEquipmentBtn");
+
+    if (button) button.disabled = true;
+
+    try {
+      const existing = state.equipment.find(
+        item =>
+          String(item.id) ===
+          String(state.editingEquipmentId)
+      );
+
+      const unavailable = existing
+        ? Math.max(0, existing.total - existing.available)
+        : 0;
+
+      if (total < unavailable) {
+        throw new Error(
+          `Quantity cannot be lower than ${unavailable} units currently unavailable.`
+        );
+      }
+
+      const payload = {
+        name,
+        description,
+        category_id: categoryId,
+        total_quantity: total,
+        available_quantity: existing
+          ? total - unavailable
+          : total,
+        owner_id: state.user.id,
+        condition: existing?.condition || "good",
+        status: existing?.status || "available",
+        location,
+        image_url: state.selectedImage || null
+      };
+
+      if (existing) {
+        const { data, error } = await db()
+          .from("resources")
+          .update(payload)
+          .eq("id", existing.id)
+          .eq("owner_id", state.user.id)
+          .select("id");
+
+        if (error) throw error;
+
+        if (!data?.length) {
+          throw new Error(
+            "Equipment was not updated. Check ownership and database permissions."
+          );
+        }
+
+        toast("Equipment updated.");
+
+      } else {
+        const { error } = await db()
+          .from("resources")
+          .insert(payload);
+
+        if (error) throw error;
+
+        toast("Equipment added to your inventory.");
+      }
+
+      closeEquipmentModal();
+      await refreshData();
+
+    } catch (error) {
+      console.error("Equipment save failed:", error);
+
+      toast(error.message || "Could not save equipment.");
+
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function deleteEquipment(id) {
+    if (!state.user) {
+      return toast("Please sign in again.");
+    }
+
+    const item = state.equipment.find(
+      row => String(row.id) === String(id)
+    );
+
+    const active = state.history.some(
+      row =>
+        String(row.resourceId) === String(id) &&
+        row.status === "Borrowed"
+    );
+
+    if (active) {
+      return toast(
+        "This equipment has an active borrowing record and cannot be deleted."
+      );
+    }
+
+    if (
+      !window.confirm(
+        `Delete ${item?.name || "this equipment"}?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const { data, error } = await db()
+        .from("resources")
+        .delete()
+        .eq("id", id)
+        .eq("owner_id", state.user.id)
+        .select("id");
+
+      if (error) throw error;
+
+      if (!data?.length) {
+        throw new Error(
+          "No equipment was deleted. Check ownership and permissions."
+        );
+      }
+
+      toast("Equipment deleted.");
+      await refreshData();
+
+    } catch (error) {
+      console.error("Equipment delete failed:", error);
+
+      toast(
+        error.message ||
+        "Could not delete equipment. Existing booking records may reference it."
+      );
+    }
+  }
+
+  // ============================================================
+  // BOOKING APPROVAL, WAITLIST AND DECLINE
+  // ============================================================
+
+  async function updateDecision(request, value, reason = "") {
+    const changes = {
+      item_status: value
+    };
+
+    if (value === "approved") {
+      changes.approved_quantity = request.requestedQuantity;
+    }
+
+    const {
+      data,
+      error
+    } = await db()
       .from("booking_request_items")
-      .update(itemChanges)
-      .eq("id", request.id);
+      .update(changes)
+      .eq("id", request.id)
+      .select("id");
 
-    if (itemError) throw itemError;
+    if (error) throw error;
 
-    const requestStatus =
-      normalized === "waitlist"
-        ? "waitlist"
-        : normalized;
+    if (!data?.length) {
+      throw new Error(
+        "Booking item was not updated. Check Supabase RLS."
+      );
+    }
 
-    const { error: requestError } = await client()
+    const {
+      data: headerRows,
+      error: headerError
+    } = await db()
       .from("booking_requests")
-      .update({
-        status: requestStatus
-      })
-      .eq("id", request.sourceId);
+      .update({ status: value })
+      .eq("id", request.requestId)
+      .select("id");
 
-    if (requestError) throw requestError;
+    if (headerError || !headerRows?.length) {
+      await db()
+        .from("booking_request_items")
+        .update({
+          item_status: request.rawItemStatus || request.status,
+          approved_quantity: request.approvedQuantity || 0
+        })
+        .eq("id", request.id);
+
+      if (headerError) throw headerError;
+
+      throw new Error(
+        "The booking summary status was not updated. Check booking_requests RLS."
+      );
+    }
 
     await logActivity(
-      `Booking ${normalized}`,
+      `Booking ${value}`,
       {
-        booking_request_id: request.sourceId,
         request_item_id: request.id,
+        booking_request_id: request.requestId,
         resource_id: request.resourceId,
-        student_id: request.studentId,
         reason
       }
     );
 
-    await loadRequests();
-    await loadHistory();
-
-    renderCurrentPage();
+    await refreshData();
   }
 
-  // --------------------------------------------------
-  // START BORROWING
-  // --------------------------------------------------
+  // ============================================================
+  // CHECK OUT EQUIPMENT
+  // ============================================================
 
-  async function startBorrowing(request) {
-    const item = state.equipment.find(
-      entry => String(entry.id) === String(request.resourceId)
+  async function checkoutRequest(request) {
+    const equipment = state.equipment.find(
+      row => String(row.id) === String(request.resourceId)
     );
+
+    if (!equipment) {
+      throw new Error("Equipment record was not found.");
+    }
 
     const quantity = Math.max(
       1,
-      Number(request.approvedQuantity || request.requestedQuantity || 1)
+      Number(
+        request.approvedQuantity ||
+        request.requestedQuantity ||
+        1
+      )
     );
 
-    if (!item) {
-      throw new Error("The equipment record could not be found.");
-    }
-
-    if (item.availableQuantity < quantity) {
+    if (equipment.available < quantity) {
       throw new Error(
-        `Only ${item.availableQuantity} unit(s) are available.`
+        `Only ${equipment.available} units are available.`
       );
     }
 
-    const now = new Date().toISOString();
-
-    const { error: insertError } = await client()
+    const { data: borrow, error } = await db()
       .from("borrow_records")
       .insert({
         request_item_id: request.id,
         quantity_borrowed: quantity,
         quantity_returned: 0,
-        borrowed_at: now,
-        due_date: request.endDate || null,
+        borrowed_at: new Date().toISOString(),
+        due_date: request.dueDate || null,
         return_status: "borrowed",
         handed_over_by: state.user.id
-      });
-
-    if (insertError) throw insertError;
-
-    const newAvailable = item.availableQuantity - quantity;
-
-    const { error: resourceError } = await client()
-      .from("resources")
-      .update({
-        available_quantity: newAvailable,
-        status: newAvailable > 0 ? "available" : "in-use"
       })
-      .eq("id", item.id)
-      .eq("owner_id", state.user.id);
+      .select("id")
+      .single();
 
-    if (resourceError) throw resourceError;
+    if (error) throw error;
 
-    const { error: itemError } = await client()
-      .from("booking_request_items")
-      .update({
-        item_status: "borrowed",
-        approved_quantity: quantity
-      })
-      .eq("id", request.id);
+    try {
+      const {
+        data: changed,
+        error: resourceError
+      } = await db()
+        .from("resources")
+        .update({
+          available_quantity: equipment.available - quantity,
+          status:
+            equipment.available - quantity > 0
+              ? "available"
+              : "in-use"
+        })
+        .eq("id", equipment.id)
+        .eq("owner_id", state.user.id)
+        .select("id");
 
-    if (itemError) throw itemError;
+      if (resourceError) throw resourceError;
 
-    const { error: requestError } = await client()
-      .from("booking_requests")
-      .update({
-        status: "borrowed"
-      })
-      .eq("id", request.sourceId);
+      if (!changed?.length) {
+        throw new Error(
+          "Equipment quantity could not be updated."
+        );
+      }
 
-    if (requestError) throw requestError;
+      const {
+        data: itemRows,
+        error: itemError
+      } = await db()
+        .from("booking_request_items")
+        .update({
+          item_status: "borrowed",
+          approved_quantity: quantity
+        })
+        .eq("id", request.id)
+        .select("id");
+
+      if (itemError) throw itemError;
+
+      if (!itemRows?.length) {
+        throw new Error(
+          "Booking status could not be updated."
+        );
+      }
+
+      const {
+        data: headerRows,
+        error: headerError
+      } = await db()
+        .from("booking_requests")
+        .update({ status: "borrowed" })
+        .eq("id", request.requestId)
+        .select("id");
+
+      if (headerError) throw headerError;
+
+      if (!headerRows?.length) {
+        throw new Error(
+          "Booking summary status could not be updated."
+        );
+      }
+
+    } catch (error) {
+      // Best-effort rollback if a linked checkout update fails.
+      await db()
+        .from("resources")
+        .update({
+          available_quantity: equipment.available,
+          status: equipment.status
+        })
+        .eq("id", equipment.id)
+        .eq("owner_id", state.user.id);
+
+      await db()
+        .from("booking_request_items")
+        .update({
+          item_status: "approved",
+          approved_quantity: quantity
+        })
+        .eq("id", request.id);
+
+      await db()
+        .from("booking_requests")
+        .update({ status: "approved" })
+        .eq("id", request.requestId);
+
+      await db()
+        .from("borrow_records")
+        .delete()
+        .eq("id", borrow.id);
+
+      throw error;
+    }
 
     await logActivity(
       "Equipment checked out",
       {
-        booking_request_id: request.sourceId,
         request_item_id: request.id,
-        resource_id: item.id,
+        booking_request_id: request.requestId,
+        resource_id: equipment.id,
         quantity
       }
     );
 
-    await reloadAll();
-
-    toast("Borrowing started and saved.");
+    await refreshData();
+    toast("Borrowing started.");
   }
 
-  // --------------------------------------------------
-  // COMPLETE RETURN
-  // --------------------------------------------------
+  // ============================================================
+  // RETURN EQUIPMENT
+  // ============================================================
 
-  async function completeReturn(request) {
-    const { data: records, error: recordError } = await client()
+  async function returnRequest(request) {
+    const equipment = state.equipment.find(
+      row => String(row.id) === String(request.resourceId)
+    );
+
+    if (!equipment) {
+      throw new Error("Equipment record was not found.");
+    }
+
+    const {
+      data: records,
+      error
+    } = await db()
       .from("borrow_records")
-      .select("id, quantity_borrowed, quantity_returned")
+      .select("id,quantity_borrowed,quantity_returned")
       .eq("request_item_id", request.id)
       .is("returned_at", null)
-      .order("borrowed_at", {
-        ascending: false
-      })
+      .order("borrowed_at", { ascending: false })
       .limit(1);
 
-    if (recordError) throw recordError;
+    if (error) throw error;
 
-    const borrowRecord = records?.[0];
+    const record = records?.[0];
 
-    if (!borrowRecord) {
+    if (!record) {
       throw new Error(
-        "No active borrow record was found for this request."
+        "No active borrowing record was found."
       );
     }
 
     const quantity = Math.max(
       0,
-      Number(borrowRecord.quantity_borrowed || 0) -
-      Number(borrowRecord.quantity_returned || 0)
+      Number(record.quantity_borrowed || 0) -
+      Number(record.quantity_returned || 0)
     );
 
-    const now = new Date().toISOString();
+    const condition = window.prompt(
+      "Return condition? Enter good, damaged or maintenance:",
+      "good"
+    );
 
-    const condition =
-      $("input[name='returnCondition']:checked")?.value || "good";
+    if (condition === null) return;
 
-    const notes =
-      $("#returnInspectionNotes")?.value?.trim() || "";
+    const conditionKey = norm(condition) || "good";
 
-    const { error: returnError } = await client()
+    if (!["good", "damaged", "maintenance"].includes(conditionKey)) {
+      throw new Error(
+        "Enter one of these conditions: good, damaged or maintenance."
+      );
+    }
+
+    const good = conditionKey === "good";
+
+    const available = good
+      ? Math.min(
+          equipment.total,
+          equipment.available + quantity
+        )
+      : equipment.available;
+
+    const returnedAt = new Date().toISOString();
+
+    const {
+      data: updated,
+      error: returnError
+    } = await db()
       .from("borrow_records")
       .update({
-        quantity_returned: Number(borrowRecord.quantity_borrowed || 0),
-        returned_at: now,
+        quantity_returned: Number(record.quantity_borrowed || 0),
+        returned_at: returnedAt,
         return_status: "returned",
         received_by: state.user.id
       })
-      .eq("id", borrowRecord.id);
+      .eq("id", record.id)
+      .select("id");
 
     if (returnError) throw returnError;
 
-    const item = state.equipment.find(
-      entry => String(entry.id) === String(request.resourceId)
-    );
+    if (!updated?.length) {
+      throw new Error(
+        "Borrow record could not be marked returned."
+      );
+    }
 
-    if (item) {
-      const available =
-        condition === "good"
-          ? Math.min(
-              item.totalQuantity,
-              item.availableQuantity + quantity
-            )
-          : item.availableQuantity;
-
-      const { error: resourceError } = await client()
+    try {
+      const {
+        data: resourceRows,
+        error: resourceError
+      } = await db()
         .from("resources")
         .update({
           available_quantity: available,
-          condition: condition,
-          status:
-            condition === "maintenance" || condition === "damaged"
-              ? "maintenance"
-              : available > 0
-                ? "available"
-                : "in-use"
+          condition: conditionKey,
+          status: good
+            ? (available > 0 ? "available" : "in-use")
+            : "maintenance"
         })
-        .eq("id", item.id)
-        .eq("owner_id", state.user.id);
+        .eq("id", equipment.id)
+        .eq("owner_id", state.user.id)
+        .select("id");
 
       if (resourceError) throw resourceError;
+
+      if (!resourceRows?.length) {
+        throw new Error(
+          "Equipment availability was not updated."
+        );
+      }
+
+      const {
+        data: itemRows,
+        error: itemError
+      } = await db()
+        .from("booking_request_items")
+        .update({ item_status: "returned" })
+        .eq("id", request.id)
+        .select("id");
+
+      if (itemError) throw itemError;
+
+      if (!itemRows?.length) {
+        throw new Error(
+          "Booking item status was not updated."
+        );
+      }
+
+      const {
+        data: headerRows,
+        error: headerError
+      } = await db()
+        .from("booking_requests")
+        .update({ status: "completed" })
+        .eq("id", request.requestId)
+        .select("id");
+
+      if (headerError) throw headerError;
+
+      if (!headerRows?.length) {
+        throw new Error(
+          "Booking summary status could not be updated."
+        );
+      }
+
+    } catch (error) {
+      // Best-effort rollback keeps the records consistent.
+      await db()
+        .from("resources")
+        .update({
+          available_quantity: equipment.available,
+          condition: equipment.condition,
+          status: equipment.status
+        })
+        .eq("id", equipment.id)
+        .eq("owner_id", state.user.id);
+
+      await db()
+        .from("booking_request_items")
+        .update({ item_status: "borrowed" })
+        .eq("id", request.id);
+
+      await db()
+        .from("booking_requests")
+        .update({ status: "borrowed" })
+        .eq("id", request.requestId);
+
+      await db()
+        .from("borrow_records")
+        .update({
+          quantity_returned: Number(record.quantity_returned || 0),
+          returned_at: null,
+          return_status: "borrowed",
+          received_by: null
+        })
+        .eq("id", record.id);
+
+      throw error;
     }
-
-    const { error: itemError } = await client()
-      .from("booking_request_items")
-      .update({
-        item_status: "returned"
-      })
-      .eq("id", request.id);
-
-    if (itemError) throw itemError;
-
-    const { error: requestError } = await client()
-      .from("booking_requests")
-      .update({
-        status: "completed"
-      })
-      .eq("id", request.sourceId);
-
-    if (requestError) throw requestError;
 
     await logActivity(
       "Equipment returned",
       {
-        booking_request_id: request.sourceId,
         request_item_id: request.id,
-        resource_id: request.resourceId,
+        booking_request_id: request.requestId,
+        resource_id: equipment.id,
         quantity,
-        condition,
-        notes
+        condition: conditionKey
       }
     );
 
-    await reloadAll();
-
-    $("#returnInspectionModal")?.classList.add("hidden");
-    $("#returnInspectionModal")?.classList.remove("flex");
-
-    toast("Return completed and added to history.");
+    await refreshData();
+    toast("Return recorded.");
   }
 
-  // --------------------------------------------------
-  // REQUESTS PAGE
-  // --------------------------------------------------
+  // ============================================================
+  // BOOKING REQUESTS PAGE
+  // ============================================================
 
-  function requestPage() {
-    const container =
-      $("#requestsContainer") ||
-      $("main");
+  function renderRequests(main) {
+    const c = counts();
+    const currentFilter = state.requestFilter || "all";
+    const query = state.requestSearch || "";
 
-    if (!container) return;
+    const visibleRows = state.requests.filter(row =>
+      (currentFilter === "all" || row.status === currentFilter) &&
+      [
+        row.studentName,
+        row.studentEmail,
+        row.equipmentName,
+        row.requestId
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
 
-    $$(".request-card", container).forEach(card => {
-      card.hidden = true;
-    });
+    main.innerHTML = `
+      <section class="cs-hero">
 
-    const oldItems = $$(".request-item", container);
+        <div class="cs-kicker">
+          Student Bookings
+        </div>
 
-    oldItems.forEach(item => {
-      item.hidden = true;
-    });
+        <h1 class="cs-title">
+          Booking Requests
+        </h1>
 
-    let panel = $("#studentPortalLiveRequests");
+        <p class="cs-subtitle">
+          Review requests for equipment assigned to your staff account.
+          Student and booking information is read from CampusShare.
+        </p>
 
-    if (!panel) {
-      panel = document.createElement("section");
-      panel.id = "studentPortalLiveRequests";
-      panel.className =
-        "mt-5 rounded-xl bg-surface-container-lowest p-4 md:p-6";
+      </section>
 
-      container.prepend(panel);
-    }
+      <section class="cs-grid-4">
 
-    let filter = "all";
-    let query = "";
-    let selected = new Set();
+        ${metric(
+          "Total Requests",
+          state.requests.length,
+          "Request items for your equipment",
+          "event_available"
+        )}
 
-    function render() {
-      const statuses = [
-        "all",
-        "pending",
-        "approved",
-        "waitlist",
-        "rejected",
-        "borrowed",
-        "returned"
-      ];
+        ${metric(
+          "Pending",
+          c.pending,
+          "Awaiting review",
+          "pending_actions"
+        )}
 
-      const counts = Object.fromEntries(
-        statuses.map(status => [
-          status,
-          status === "all"
-            ? state.requests.length
-            : state.requests.filter(item => item.category === status).length
-        ])
-      );
+        ${metric(
+          "Approved",
+          c.approved,
+          "Approved request items",
+          "task_alt"
+        )}
 
-      const items = state.requests
-        .filter(item =>
-          filter === "all" || item.category === filter
-        )
-        .filter(item =>
-          !query ||
-          [
-            item.title,
-            item.studentEmail,
-            item.equipmentName,
-            item.sourceId
-          ].join(" ").toLowerCase().includes(query)
+        ${metric(
+          "Borrowed",
+          state.requests.filter(x => x.status === "borrowed").length,
+          "Currently checked out",
+          "inventory"
+        )}
+
+      </section>
+
+      <section class="cs-panel">
+
+        ${errorBlock("requests")}
+        ${errorBlock("students")}
+
+        <div class="cs-row">
+
+          <h2 class="cs-panel-title">
+            All Booking Requests
+          </h2>
+
+          <input
+            id="requestSearch"
+            class="cs-input"
+            style="max-width:340px"
+            value="${esc(query)}"
+            placeholder="Search student or equipment"
+          >
+
+        </div>
+
+        <div class="cs-tabs" id="requestTabs">
+
+          ${
+            ["all", "pending", "approved", "waitlist", "rejected", "borrowed", "returned"]
+              .map(key => `
+                <button
+                  type="button"
+                  class="cs-tab ${key === currentFilter ? "active" : ""}"
+                  data-request-filter="${key}"
+                >
+                  ${key === "all" ? "All" : statusName(key)}
+                  (${
+                    key === "all"
+                      ? state.requests.length
+                      : state.requests.filter(x => x.status === key).length
+                  })
+                </button>
+              `).join("")
+          }
+
+        </div>
+
+        <div id="requestRows" class="cs-list">
+
+          ${
+            visibleRows.length
+              ? visibleRows.map(row => `
+                <article
+                  class="cs-item"
+                  data-request-id="${esc(row.id)}"
+                >
+
+                  <div class="cs-row">
+
+                    <div>
+                      <strong>
+                        ${esc(row.studentName)}
+                      </strong>
+
+                      <p class="cs-muted text-xs mt-1">
+                        ${esc(row.studentEmail || "Student contact details unavailable")}
+                      </p>
+                    </div>
+
+                    <span class="cs-status">
+                      ${esc(statusName(row.status))}
+                    </span>
+
+                  </div>
+
+                  <div class="cs-two-col mt-3">
+
+                    <div>
+                      <span class="cs-muted text-xs">
+                        Equipment
+                      </span>
+
+                      <p class="font-semibold">
+                        ${esc(row.equipmentName)}
+                      </p>
+
+                      <span class="text-xs cs-muted">
+                        Quantity: ${row.requestedQuantity}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span class="cs-muted text-xs">
+                        Booking period
+                      </span>
+
+                      <p class="font-semibold">
+                        ${esc(dateText(row.startDate, false))}
+                        –
+                        ${esc(dateText(row.dueDate, false))}
+                      </p>
+
+                      <span class="text-xs cs-muted">
+                        Submitted ${esc(dateText(row.createdAt, false))}
+                      </span>
+                    </div>
+
+                  </div>
+
+                  <div class="flex flex-wrap gap-2 mt-3">
+
+                    ${
+                      ["pending", "waitlist"].includes(row.status)
+                        ? `
+                          <button class="cs-btn cs-btn-primary" data-request-action="approve">
+                            Approve
+                          </button>
+
+                          <button class="cs-btn cs-btn-light" data-request-action="waitlist">
+                            Waitlist
+                          </button>
+
+                          <button class="cs-btn cs-btn-danger" data-request-action="reject">
+                            Decline
+                          </button>
+                        `
+                        : ""
+                    }
+
+                    ${
+                      row.status === "approved"
+                        ? `
+                          <button class="cs-btn cs-btn-primary" data-request-action="borrow">
+                            Start borrowing
+                          </button>
+                        `
+                        : ""
+                    }
+
+                    ${
+                      row.status === "borrowed"
+                        ? `
+                          <button class="cs-btn cs-btn-primary" data-request-action="return">
+                            Complete return
+                          </button>
+                        `
+                        : ""
+                    }
+
+                    ${
+                      ["rejected", "returned"].includes(row.status)
+                        ? `
+                          <button class="cs-btn cs-btn-light" data-request-action="reopen">
+                            Reopen review
+                          </button>
+                        `
+                        : ""
+                    }
+
+                  </div>
+
+                </article>
+              `).join("")
+              : `
+                <div class="cs-empty">
+                  No booking requests match this view.
+                </div>
+              `
+          }
+
+        </div>
+
+      </section>
+    `;
+
+    if (main.dataset.requestEvents !== "true") {
+      main.dataset.requestEvents = "true";
+
+      main.addEventListener("input", event => {
+        if (event.target.id !== "requestSearch") return;
+
+        state.requestSearch =
+          event.target.value.toLowerCase().trim();
+
+        renderPage();
+
+        const input = $("#requestSearch");
+
+        input?.focus();
+
+        input?.setSelectionRange(
+          state.requestSearch.length,
+          state.requestSearch.length
+        );
+      });
+
+      main.addEventListener("click", async event => {
+        const tab = event.target.closest("[data-request-filter]");
+
+        if (tab) {
+          state.requestFilter = tab.dataset.requestFilter;
+          renderPage();
+          return;
+        }
+
+        const button = event.target.closest("[data-request-action]");
+
+        if (!button) return;
+
+        const card = button.closest("[data-request-id]");
+
+        const request = state.requests.find(
+          row => row.id === card?.dataset.requestId
         );
 
-      panel.innerHTML = `
-        <div class="flex flex-wrap justify-between gap-3 mb-4">
+        if (!request) return;
+
+        button.disabled = true;
+
+        try {
+          const action = button.dataset.requestAction;
+
+          if (action === "approve") {
+            await updateDecision(request, "approved");
+          }
+
+          if (action === "waitlist") {
+            await updateDecision(request, "waitlist");
+          }
+
+          if (action === "reject") {
+            const reason = window.prompt(
+              "Reason for declining this booking:"
+            );
+
+            if (reason === null) return;
+
+            if (!reason.trim()) {
+              return toast("A decline reason is required.");
+            }
+
+            await updateDecision(
+              request,
+              "rejected",
+              reason.trim()
+            );
+          }
+
+          if (action === "borrow") {
+            await checkoutRequest(request);
+          }
+
+          if (action === "return") {
+            await returnRequest(request);
+          }
+
+          if (action === "reopen") {
+            await updateDecision(request, "pending");
+          }
+
+        } catch (error) {
+          console.error("Booking update failed:", error);
+
+          toast(
+            error.message ||
+            "Could not update the booking."
+          );
+
+        } finally {
+          button.disabled = false;
+        }
+      });
+    }
+  }
+
+  // ============================================================
+  // CALENDAR PAGE
+  // ============================================================
+
+  function renderCalendar(main) {
+    const events = state.requests
+      .filter(row =>
+        ["pending", "approved", "borrowed", "waitlist"]
+          .includes(row.status)
+      )
+      .sort((a, b) =>
+        new Date(a.startDate || 0) -
+        new Date(b.startDate || 0)
+      );
+
+    const groups = new Map();
+
+    events.forEach(row => {
+      const key = row.startDate
+        ? new Date(row.startDate).toLocaleDateString()
+        : "Date not specified";
+
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+
+      groups.get(key).push(row);
+    });
+
+    main.innerHTML = `
+      <section class="cs-hero">
+
+        <div class="cs-kicker">
+          Equipment Schedule
+        </div>
+
+        <h1 class="cs-title">
+          Calendar
+        </h1>
+
+        <p class="cs-subtitle">
+          Booking dates and schedule information linked to your actual equipment requests.
+        </p>
+
+      </section>
+
+      <section class="cs-panel">
+
+        <div class="cs-row">
+
           <div>
-            <h2 class="text-xl font-semibold">
-              Student booking requests
+            <h2 class="cs-panel-title">
+              Upcoming and Active Bookings
             </h2>
-            <p class="text-sm text-on-surface-variant mt-1">
-              Requests loaded from Supabase for equipment in your inventory.
+
+            <p class="cs-muted text-sm mt-1">
+              No preset calendar dates or sample bookings are used.
+            </p>
+          </div>
+
+          <button id="refreshCalendar" class="cs-btn cs-btn-light">
+            Refresh
+          </button>
+
+        </div>
+
+        ${errorBlock("requests")}
+
+        ${
+          groups.size
+            ? [...groups.entries()].map(([date, rows]) => `
+              <div class="mt-5">
+
+                <h3 class="font-bold mb-2">
+                  ${esc(date)}
+                </h3>
+
+                <div class="cs-list">
+
+                  ${
+                    rows.map(row => `
+                      <article class="cs-item">
+
+                        <div class="cs-row">
+                          <strong>
+                            ${esc(row.equipmentName)}
+                          </strong>
+
+                          <span class="cs-status">
+                            ${esc(statusName(row.status))}
+                          </span>
+                        </div>
+
+                        <p class="text-sm mt-2">
+                          ${esc(row.studentName)}
+                        </p>
+
+                        <p class="text-xs cs-muted mt-1">
+                          ${esc(dateText(row.startDate))}
+                          –
+                          ${esc(dateText(row.dueDate))}
+                          · Quantity ${row.requestedQuantity}
+                        </p>
+
+                      </article>
+                    `).join("")
+                  }
+
+                </div>
+
+              </div>
+            `).join("")
+            : `
+              <div class="cs-empty mt-4">
+                No bookings are scheduled for your equipment.
+              </div>
+            `
+        }
+
+      </section>
+    `;
+
+    $("#refreshCalendar")?.addEventListener(
+      "click",
+      refreshData
+    );
+  }
+
+  // ============================================================
+  // HISTORY PAGE AND CSV EXPORT
+  // ============================================================
+
+  function exportHistoryCsv(rows) {
+    const values = [
+      [
+        "Equipment",
+        "Student",
+        "Borrowed at",
+        "Due date",
+        "Returned at",
+        "Status",
+        "Quantity borrowed",
+        "Quantity returned"
+      ],
+
+      ...rows.map(row => [
+        row.equipmentName,
+        row.studentName,
+        row.borrowedAt,
+        row.dueDate,
+        row.returnedAt,
+        row.status,
+        row.quantity,
+        row.returnedQuantity
+      ])
+    ];
+
+    const csv = values
+      .map(row =>
+        row.map(value =>
+          `"${String(value ?? "").replace(/"/g, '""')}"`
+        ).join(",")
+      )
+      .join("\n");
+
+    const url = URL.createObjectURL(
+      new Blob([csv], {
+        type: "text/csv;charset=utf-8"
+      })
+    );
+
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "campusshare-equipment-history.csv";
+    link.click();
+
+    URL.revokeObjectURL(url);
+  }
+
+  function renderHistory(main) {
+    const returned = state.history.filter(
+      row => row.status === "Returned"
+    ).length;
+
+    const borrowed = state.history.filter(
+      row => row.status === "Borrowed"
+    ).length;
+
+    const overdue = state.history.filter(
+      row =>
+        row.status === "Borrowed" &&
+        row.dueDate &&
+        new Date(row.dueDate) < new Date()
+    ).length;
+
+    main.innerHTML = `
+      <section class="cs-hero">
+
+        <div class="cs-kicker">
+          Equipment Records
+        </div>
+
+        <h1 class="cs-title">
+          Equipment History
+        </h1>
+
+        <p class="cs-subtitle">
+          Actual equipment checkout and return records from CampusShare.
+          No demonstration statistics are displayed.
+        </p>
+
+      </section>
+
+      <section class="cs-grid-4">
+
+        ${metric(
+          "Total Records",
+          state.history.length,
+          "Borrow records",
+          "history"
+        )}
+
+        ${metric(
+          "Returned",
+          returned,
+          "Completed returns",
+          "assignment_turned_in"
+        )}
+
+        ${metric(
+          "Currently Borrowed",
+          borrowed,
+          "Active borrow records",
+          "inventory"
+        )}
+
+        ${metric(
+          "Overdue",
+          overdue,
+          "Borrow records past due date",
+          "warning"
+        )}
+
+      </section>
+
+      <section class="cs-panel">
+
+        <div class="cs-row">
+
+          <div>
+            <h2 class="cs-panel-title">
+              Borrowing and Return Records
+            </h2>
+
+            <p class="cs-muted text-sm mt-1">
+              Records associated with your equipment only.
             </p>
           </div>
 
           <button
-            type="button"
-            data-refresh-requests
-            class="px-3 py-2 rounded-lg border text-sm"
-          >
-            Refresh
-          </button>
-        </div>
-
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-4">
-          ${statuses.map(key => `
-            <button
-              type="button"
-              data-filter="${key}"
-              class="rounded-lg border p-2 text-left ${
-                filter === key
-                  ? "bg-primary text-white border-primary"
-                  : "bg-surface text-on-surface"
-              }"
-            >
-              <span class="block text-xs">
-                ${key === "all" ? "All" : requestStatusLabel(key)}
-              </span>
-              <strong class="text-lg">${counts[key]}</strong>
-            </button>
-          `).join("")}
-        </div>
-
-        <div class="flex flex-col sm:flex-row gap-2 mb-4">
-          <input
-            id="liveRequestSearch"
-            value="${escapeHTML(query)}"
-            class="w-full sm:flex-1 rounded-lg border px-3 py-2"
-            placeholder="Search student, equipment or email"
-          >
-
-          <button
-            type="button"
-            data-select-visible
-            class="px-3 py-2 rounded-lg border"
-          >
-            Select visible
-          </button>
-
-          <button
-            type="button"
-            data-batch-approve
-            class="px-3 py-2 rounded-lg bg-primary text-white"
-          >
-            Approve selected
-          </button>
-
-          <span class="self-center text-sm text-on-surface-variant">
-            ${selected.size} selected
-          </span>
-        </div>
-
-        <div class="space-y-3">
-          ${
-            items.length
-              ? items.map(request => {
-                  const canReview = [
-                    "pending",
-                    "waitlist"
-                  ].includes(request.category);
-
-                  return `
-                    <article
-                      class="border rounded-xl p-4"
-                      data-live-id="${escapeHTML(request.id)}"
-                    >
-                      <div class="flex flex-wrap justify-between gap-3">
-                        <div class="flex items-start gap-2">
-                          <input
-                            type="checkbox"
-                            data-select-live="${escapeHTML(request.id)}"
-                            aria-label="Select request"
-                            ${selected.has(request.id) ? "checked" : ""}
-                          >
-
-                          <div>
-                            <div class="font-semibold">
-                              ${escapeHTML(request.title)}
-                            </div>
-
-                            <div class="text-xs text-on-surface-variant">
-                              ${escapeHTML(request.studentEmail || "Email unavailable")}
-                              · Request ${escapeHTML(request.sourceId)}
-                            </div>
-                          </div>
-                        </div>
-
-                        <span class="px-2 py-1 rounded-full text-xs font-semibold">
-                          ${escapeHTML(requestStatusLabel(request.category))}
-                        </span>
-                      </div>
-
-                      <div class="grid sm:grid-cols-2 gap-2 mt-3 text-sm">
-                        <div>
-                          <span class="text-on-surface-variant">
-                            Equipment
-                          </span>
-
-                          <div class="font-medium">
-                            ${escapeHTML(request.equipmentName)}
-                          </div>
-
-                          <div class="text-xs text-on-surface-variant">
-                            Quantity requested: ${request.requestedQuantity}
-                          </div>
-                        </div>
-
-                        <div>
-                          <span class="text-on-surface-variant">
-                            Booking period
-                          </span>
-
-                          <div class="font-medium">
-                            ${escapeHTML(dateText(request.date))}
-                            –
-                            ${escapeHTML(dateText(request.endDate))}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="flex flex-wrap gap-2 mt-4">
-                        ${
-                          canReview
-                            ? `
-                              <button
-                                data-action="approve"
-                                class="px-3 py-2 rounded-lg bg-primary text-white text-sm"
-                              >
-                                Approve
-                              </button>
-
-                              <button
-                                data-action="waitlist"
-                                class="px-3 py-2 rounded-lg border text-sm"
-                              >
-                                Waitlist
-                              </button>
-
-                              <button
-                                data-action="reject"
-                                class="px-3 py-2 rounded-lg bg-error-container text-error text-sm"
-                              >
-                                Decline
-                              </button>
-                            `
-                            : ""
-                        }
-
-                        ${
-                          request.category === "approved"
-                            ? `
-                              <button
-                                data-action="start"
-                                class="px-3 py-2 rounded-lg bg-primary text-white text-sm"
-                              >
-                                Start borrowing
-                              </button>
-                            `
-                            : ""
-                        }
-
-                        ${
-                          request.category === "borrowed"
-                            ? `
-                              <button
-                                data-action="return"
-                                class="px-3 py-2 rounded-lg bg-primary text-white text-sm"
-                              >
-                                Complete return
-                              </button>
-                            `
-                            : ""
-                        }
-
-                        ${
-                          ["rejected", "returned"].includes(request.category)
-                            ? `
-                              <button
-                                data-action="reopen"
-                                class="px-3 py-2 rounded-lg border text-sm"
-                              >
-                                Reopen review
-                              </button>
-                            `
-                            : ""
-                        }
-                      </div>
-                    </article>
-                  `;
-                }).join("")
-              : `
-                <div class="rounded-lg border border-dashed p-8 text-center text-sm text-on-surface-variant">
-                  No booking requests were found for your equipment.
-                </div>
-              `
-          }
-        </div>
-      `;
-    }
-
-    window.renderStudentPortalRequests = render;
-
-    render();
-
-    panel.addEventListener("input", event => {
-      if (event.target.id !== "liveRequestSearch") return;
-
-      query = event.target.value.toLowerCase().trim();
-
-      render();
-
-      const input = $("#liveRequestSearch");
-
-      input?.focus();
-      input?.setSelectionRange(query.length, query.length);
-    });
-
-    panel.addEventListener("change", event => {
-      const checkbox = event.target.closest("[data-select-live]");
-
-      if (!checkbox) return;
-
-      if (checkbox.checked) {
-        selected.add(checkbox.dataset.selectLive);
-      } else {
-        selected.delete(checkbox.dataset.selectLive);
-      }
-
-      const count = panel.querySelector(".self-center.text-sm");
-
-      if (count) {
-        count.textContent = `${selected.size} selected`;
-      }
-    });
-
-    panel.addEventListener("click", async event => {
-      const filterButton = event.target.closest("[data-filter]");
-
-      if (filterButton) {
-        filter = filterButton.dataset.filter;
-        selected.clear();
-        render();
-        return;
-      }
-
-      if (event.target.closest("[data-refresh-requests]")) {
-        try {
-          await reloadAll();
-          toast("Requests refreshed.");
-        } catch (error) {
-          toast(error.message);
-        }
-
-        return;
-      }
-
-      if (event.target.closest("[data-select-visible]")) {
-        state.requests
-          .filter(item =>
-            (filter === "all" || item.category === filter) &&
-            (
-              !query ||
-              [
-                item.title,
-                item.studentEmail,
-                item.equipmentName
-              ].join(" ").toLowerCase().includes(query)
-            )
-          )
-          .forEach(item => selected.add(item.id));
-
-        render();
-        return;
-      }
-
-      if (event.target.closest("[data-batch-approve]")) {
-        const targets = state.requests.filter(item =>
-          selected.has(item.id) &&
-          ["pending", "waitlist"].includes(item.category)
-        );
-
-        try {
-          for (const target of targets) {
-            await recordDecision(target, "Approved");
-          }
-
-          selected.clear();
-
-          toast(`${targets.length} request(s) approved.`);
-
-        } catch (error) {
-          toast(error.message || "Could not approve selected requests.");
-        }
-
-        return;
-      }
-
-      const button = event.target.closest("[data-action]");
-
-      if (!button) return;
-
-      const card = button.closest("[data-live-id]");
-
-      const request = state.requests.find(
-        item => item.id === card?.dataset.liveId
-      );
-
-      if (!request) return;
-
-      try {
-        const action = button.dataset.action;
-
-        if (action === "approve") {
-          await recordDecision(request, "Approved");
-
-        } else if (action === "waitlist") {
-          await recordDecision(request, "Waitlisted");
-
-        } else if (action === "reject") {
-          const reason = window.prompt(
-            "Enter the reason for declining this booking:"
-          );
-
-          if (reason === null) return;
-
-          if (!reason.trim()) {
-            return toast("A decline reason is required.");
-          }
-
-          await recordDecision(
-            request,
-            "Declined",
-            reason.trim()
-          );
-
-        } else if (action === "start") {
-          await startBorrowing(request);
-
-        } else if (action === "return") {
-          state.selectedRequest = request;
-
-          $("#returnInspectionModal")?.classList.remove("hidden");
-          $("#returnInspectionModal")?.classList.add("flex");
-
-        } else if (action === "reopen") {
-          await recordDecision(request, "Pending");
-        }
-
-      } catch (error) {
-        console.error("Booking action failed:", error);
-
-        toast(error.message || "Could not update the booking.");
-      }
-    });
-  }
-
-  // --------------------------------------------------
-  // CALENDAR PAGE
-  // --------------------------------------------------
-
-  
-function setupCalendarPage() {
-    const main = document.querySelector("#staffCalendarApp")
-        || document.querySelector("main");
-
-    if (!main) return;
-
-    main.innerHTML = `
-        <div class="max-w-7xl mx-auto">
-
-            <div class="mb-6">
-                <h1 class="text-2xl font-bold">
-                    Staff Booking Calendar
-                </h1>
-                <p class="text-gray-500 mt-1">
-                    View equipment bookings and their current status.
-                </p>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-4 mb-5">
-
-                <div class="flex flex-wrap items-center justify-between gap-3">
-
-                    <div class="flex items-center gap-2">
-                        <button id="calendarPrev"
-                            class="border rounded-lg px-4 py-2">
-                            &#10094;
-                        </button>
-
-                        <button id="calendarToday"
-                            class="border rounded-lg px-4 py-2">
-                            Today
-                        </button>
-
-                        <button id="calendarNext"
-                            class="border rounded-lg px-4 py-2">
-                            &#10095;
-                        </button>
-                    </div>
-
-                    <h2 id="calendarHeading"
-                        class="text-xl font-bold">
-                    </h2>
-
-                    <div class="flex gap-2">
-                        <button data-calendar-view="month"
-                            class="calendar-view-btn border rounded-lg px-3 py-2">
-                            Month
-                        </button>
-
-                        <button data-calendar-view="week"
-                            class="calendar-view-btn border rounded-lg px-3 py-2">
-                            Week
-                        </button>
-
-                        <button data-calendar-view="day"
-                            class="calendar-view-btn border rounded-lg px-3 py-2">
-                            Day
-                        </button>
-                    </div>
-
-                </div>
-
-                <div class="flex flex-wrap gap-3 mt-5">
-
-                    <select id="calendarStatus"
-                        class="border rounded-lg px-3 py-2">
-
-                        <option value="all">All statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="borrowed">Borrowed</option>
-                        <option value="waitlist">Waitlisted</option>
-                        <option value="rejected">Declined</option>
-                        <option value="returned">Returned</option>
-
-                    </select>
-
-                    <select id="calendarEquipment"
-                        class="border rounded-lg px-3 py-2">
-
-                        <option value="all">All equipment</option>
-
-                        ${state.equipment.map(item => `
-                            <option value="${esc(item.id)}">
-                                ${esc(item.name)}
-                            </option>
-                        `).join("")}
-
-                    </select>
-
-                </div>
-
-                <div class="flex flex-wrap gap-4 mt-5 text-sm">
-
-                    <span class="text-amber-600">● Pending</span>
-                    <span class="text-blue-600">● Approved</span>
-                    <span class="text-green-600">● Borrowed</span>
-                    <span class="text-purple-600">● Waitlisted</span>
-                    <span class="text-red-600">● Declined</span>
-                    <span class="text-gray-500">● Returned</span>
-
-                </div>
-
-            </div>
-
-            <div id="calendarGrid"
-                class="bg-white rounded-xl shadow-sm p-3">
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
-
-                <h2 class="text-lg font-bold mb-4">
-                    Booking Details
-                </h2>
-
-                <div id="calendarBookingDetails">
-                </div>
-
-            </div>
-
-        </div>
-    `;
-
-    let currentDate = new Date();
-    let currentView = "month";
-
-    const root = main;
-
-    const startOfDay = date =>
-        new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-    function parseBookingDate(value) {
-        if (!value) return null;
-
-        const datePart = String(value).split("T")[0];
-
-        const parts = datePart.split("-").map(Number);
-
-        if (parts.length !== 3 ||
-            parts.some(number => !Number.isFinite(number))) {
-            return null;
-        }
-
-        const date = new Date(parts[0], parts[1] - 1, parts[2]);
-
-        if (
-            date.getFullYear() !== parts[0] ||
-            date.getMonth() !== parts[1] - 1 ||
-            date.getDate() !== parts[2]
-        ) {
-            return null;
-        }
-
-        return date;
-    }
-
-    function addDays(date, days) {
-        const result = new Date(date);
-        result.setDate(result.getDate() + days);
-        return result;
-    }
-
-    function dateKey(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-
-        return `${year}-${month}-${day}`;
-    }
-
-    function sameDay(a, b) {
-        return dateKey(a) === dateKey(b);
-    }
-
-    function getBookings() {
-        const status =
-            root.querySelector("#calendarStatus").value;
-
-        const equipment =
-            root.querySelector("#calendarEquipment").value;
-
-        return state.requests.filter(item => {
-
-            const matchesStatus =
-                status === "all" ||
-                String(item.category).toLowerCase() === status;
-
-            const matchesEquipment =
-                equipment === "all" ||
-                String(item.resourceId) === equipment;
-
-            return matchesStatus && matchesEquipment;
-        });
-    }
-
-    function getEventDates(item) {
-        const start = parseBookingDate(item.date);
-
-        if (!start) return null;
-
-        const end = parseBookingDate(item.endDate) || start;
-
-        return {
-            start: startOfDay(start),
-            end: startOfDay(end)
-        };
-    }
-
-    function isBookingOnDate(item, date) {
-        const dates = getEventDates(item);
-
-        if (!dates) return false;
-
-        const selected = startOfDay(date);
-
-        return selected >= dates.start &&
-               selected <= dates.end;
-    }
-
-    function statusColor(status) {
-        const colors = {
-            pending: "bg-amber-100 text-amber-800",
-            approved: "bg-blue-100 text-blue-800",
-            borrowed: "bg-green-100 text-green-800",
-            waitlist: "bg-purple-100 text-purple-800",
-            rejected: "bg-red-100 text-red-800",
-            returned: "bg-gray-100 text-gray-700"
-        };
-
-        return colors[String(status).toLowerCase()]
-            || "bg-gray-100 text-gray-700";
-    }
-
-    function formatHeading() {
-        if (currentView === "month") {
-            return currentDate.toLocaleDateString("en-IN", {
-                month: "long",
-                year: "numeric"
-            });
-        }
-
-        if (currentView === "day") {
-            return currentDate.toLocaleDateString("en-IN", {
-                day: "numeric",
-                month: "long",
-                year: "numeric"
-            });
-        }
-
-        const monday = addDays(
-            currentDate,
-            -((currentDate.getDay() + 6) % 7)
-        );
-
-        const sunday = addDays(monday, 6);
-
-        return `${monday.toLocaleDateString("en-IN")}
-            - ${sunday.toLocaleDateString("en-IN")}`;
-    }
-
-    function renderBooking(item) {
-        return `
-            <div class="rounded-lg p-2 mb-1 text-sm
-                ${statusColor(item.category)}">
-
-                <div class="font-semibold">
-                    ${esc(item.equipmentName)}
-                </div>
-
-                <div>
-                    ${esc(item.title)}
-                </div>
-
-                <div class="text-xs mt-1">
-                    ${esc(requestLabel(item.category))}
-                </div>
-
-            </div>
-        `;
-    }
-
-    function renderMonth(bookings) {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-
-        const firstDay = new Date(year, month, 1);
-
-        const mondayOffset =
-            (firstDay.getDay() + 6) % 7;
-
-        const gridStart = addDays(firstDay, -mondayOffset);
-
-        const lastDay = new Date(year, month + 1, 0);
-
-        const totalDays =
-            Math.ceil((mondayOffset + lastDay.getDate()) / 7) * 7;
-
-        let html = `
-            <div class="grid grid-cols-7 text-center
-                font-semibold bg-gray-100 rounded-lg mb-2">
-
-                ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-                    .map(day => `
-                        <div class="p-3">${day}</div>
-                    `).join("")}
-
-            </div>
-
-            <div class="grid grid-cols-7 gap-1">
-        `;
-
-        for (let i = 0; i < totalDays; i++) {
-            const date = addDays(gridStart, i);
-
-            const events = bookings.filter(item =>
-                isBookingOnDate(item, date)
-            );
-
-            const isCurrentMonth =
-                date.getMonth() === month;
-
-            html += `
-                <div class="min-h-28 border rounded-lg p-2
-                    ${isCurrentMonth ? "bg-white" : "bg-gray-50 opacity-50"}">
-
-                    <div class="font-semibold text-sm mb-2">
-                        ${date.getDate()}
-                    </div>
-
-                    <div class="space-y-1">
-                        ${events.slice(0, 3).map(renderBooking).join("")}
-
-                        ${events.length > 3 ? `
-                            <div class="text-xs text-gray-500">
-                                +${events.length - 3} more
-                            </div>
-                        ` : ""}
-                    </div>
-
-                </div>
-            `;
-        }
-
-        html += "</div>";
-
-        return html;
-    }
-
-    function renderWeek(bookings) {
-        const monday = addDays(
-            currentDate,
-            -((currentDate.getDay() + 6) % 7)
-        );
-
-        let html = `
-            <div class="grid grid-cols-1 md:grid-cols-7 gap-2">
-        `;
-
-        for (let i = 0; i < 7; i++) {
-            const date = addDays(monday, i);
-
-            const events = bookings.filter(item =>
-                isBookingOnDate(item, date)
-            );
-
-            html += `
-                <div class="border rounded-lg p-3 min-h-40">
-
-                    <h3 class="font-semibold mb-3">
-                        ${date.toLocaleDateString("en-IN", {
-                            weekday: "short",
-                            day: "numeric",
-                            month: "short"
-                        })}
-                    </h3>
-
-                    ${events.length
-                        ? events.map(renderBooking).join("")
-                        : '<p class="text-sm text-gray-400">No bookings</p>'
-                    }
-
-                </div>
-            `;
-        }
-
-        return html + "</div>";
-    }
-
-    function renderDay(bookings) {
-        const events = bookings.filter(item =>
-            isBookingOnDate(item, currentDate)
-        );
-
-        return `
-            <div class="p-4">
-
-                <h3 class="font-bold text-lg mb-4">
-                    ${currentDate.toLocaleDateString("en-IN", {
-                        weekday: "long",
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric"
-                    })}
-                </h3>
-
-                ${events.length
-                    ? events.map(renderBooking).join("")
-                    : '<p class="text-gray-500">No bookings on this date.</p>'
-                }
-
-            </div>
-        `;
-    }
-
-    function renderDetails(bookings) {
-        const details =
-            root.querySelector("#calendarBookingDetails");
-
-        const sorted = [...bookings].sort((a, b) =>
-            String(a.date).localeCompare(String(b.date))
-        );
-
-        details.innerHTML = sorted.length
-            ? sorted.map(item => `
-                <div class="border-b py-4">
-
-                    <div class="flex flex-wrap justify-between gap-2">
-
-                        <strong>
-                            ${esc(item.equipmentName)}
-                        </strong>
-
-                        <span class="rounded-full px-3 py-1 text-xs
-                            ${statusColor(item.category)}">
-
-                            ${esc(requestLabel(item.category))}
-
-                        </span>
-
-                    </div>
-
-                    <p class="text-sm text-gray-600 mt-2">
-                        Student: ${esc(item.title)}
-                    </p>
-
-                    <p class="text-sm text-gray-600">
-                        Start: ${esc(item.date || "Not specified")}
-                    </p>
-
-                    <p class="text-sm text-gray-600">
-                        End: ${esc(item.endDate || "Not specified")}
-                    </p>
-
-                    <p class="text-sm text-gray-600">
-                        Quantity: ${Number(item.requestedQuantity || 0)}
-                    </p>
-
-                </div>
-            `).join("")
-            : `
-                <p class="text-gray-500">
-                    No booking records available for the selected filters.
-                </p>
-            `;
-    }
-
-    function render() {
-        const bookings = getBookings();
-
-        root.querySelector("#calendarHeading").textContent =
-            formatHeading();
-
-        root.querySelectorAll(".calendar-view-btn").forEach(button => {
-            const active =
-                button.dataset.calendarView === currentView;
-
-            button.classList.toggle("bg-blue-600", active);
-            button.classList.toggle("text-white", active);
-            button.classList.toggle("font-semibold", active);
-        });
-
-        const grid = root.querySelector("#calendarGrid");
-
-        if (currentView === "month") {
-            grid.innerHTML = renderMonth(bookings);
-        } else if (currentView === "week") {
-            grid.innerHTML = renderWeek(bookings);
-        } else {
-            grid.innerHTML = renderDay(bookings);
-        }
-
-        renderDetails(bookings);
-    }
-
-    root.querySelector("#calendarPrev").addEventListener(
-        "click", () => {
-            if (currentView === "month") {
-                currentDate = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth() - 1,
-    1
-             );
-            } else if (currentView === "week") {
-                currentDate = addDays(currentDate, -7);
-            } else {
-                currentDate = addDays(currentDate, -1);
-            }
-
-            render();
-        }
-    );
-
-    root.querySelector("#calendarNext").addEventListener(
-        "click", () => {
-            if (currentView === "month") {
-                currentDate = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth() + 1,
-    1
-             );
-            } else if (currentView === "week") {
-                currentDate = addDays(currentDate, 7);
-            } else {
-                currentDate = addDays(currentDate, 1);
-            }
-
-            render();
-        }
-    );
-
-    root.querySelector("#calendarToday").addEventListener(
-        "click", () => {
-            currentDate = new Date();
-            render();
-        }
-    );
-
-    root.querySelectorAll(".calendar-view-btn").forEach(button => {
-        button.addEventListener("click", () => {
-            currentView = button.dataset.calendarView;
-            render();
-        });
-    });
-
-    root.querySelector("#calendarStatus").addEventListener(
-        "change", render
-    );
-
-    root.querySelector("#calendarEquipment").addEventListener(
-        "change", render
-    );
-
-    render();
-
-    window.refreshCalendarPage = render;
-}
-
-
-  // --------------------------------------------------
-  // HISTORY PAGE
-  // --------------------------------------------------
-
-  function historyPage() {
-    const main = $("main");
-
-    if (!main) return;
-
-    let panel = $("#persistentCompletedHistory");
-
-    if (!panel) {
-      panel = document.createElement("section");
-      panel.id = "persistentCompletedHistory";
-      panel.className =
-        "mt-6 p-5 rounded-xl bg-surface-container-lowest";
-
-      main.append(panel);
-    }
-
-    $$("tbody tr, .history-row, [data-transaction]")
-      .forEach(row => {
-        row.hidden = true;
-      });
-
-    const search = $("#global-search-input");
-
-    function render() {
-      const query =
-        (search?.value || "").toLowerCase().trim();
-
-      const rows = state.history.filter(item =>
-        !query ||
-        [
-          item.equipment,
-          item.user,
-          item.status
-        ].join(" ").toLowerCase().includes(query)
-      );
-
-      panel.innerHTML = `
-        <div class="flex justify-between items-center gap-3 mb-3">
-          <h2 class="text-lg font-semibold">
-            Borrowing and return history
-          </h2>
-
-          <button
-            id="exportLiveHistory"
-            class="px-3 py-2 rounded border text-sm"
+            id="exportHistoryCsv"
+            class="cs-btn cs-btn-primary"
           >
             Export CSV
           </button>
+
         </div>
-      ` + (
-        rows.length
-          ? rows.map(item => `
-              <div class="py-3 border-b text-sm">
-                <strong>${escapeHTML(item.equipment)}</strong>
-                · ${escapeHTML(item.user)}
-                · ${escapeHTML(item.status)}
-                · ${escapeHTML(dateText(item.date))}
-                · Quantity: ${item.quantity || 0}
-                · ${escapeHTML(item.duration)}
-              </div>
-            `).join("")
-          : `
-            <p class="text-sm text-on-surface-variant">
-              No borrowing or return records have been recorded for your equipment.
-            </p>
-          `
+
+        ${errorBlock("history")}
+
+        <div class="mt-4">
+          <input
+            id="historySearch"
+            class="cs-input"
+            placeholder="Search equipment or student"
+          >
+        </div>
+
+        <div class="cs-table-wrap mt-4">
+
+          <table class="cs-table">
+
+            <thead>
+              <tr>
+                <th>Equipment</th>
+                <th>Student</th>
+                <th>Borrowed</th>
+                <th>Due</th>
+                <th>Returned</th>
+                <th>Quantity</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+
+            <tbody id="historyTableBody"></tbody>
+
+          </table>
+
+        </div>
+
+      </section>
+    `;
+
+    const renderRows = () => {
+      const query =
+        ($("#historySearch")?.value || "")
+          .toLowerCase()
+          .trim();
+
+      const rows = state.history.filter(row =>
+        `${row.equipmentName} ${row.studentName}`
+          .toLowerCase()
+          .includes(query)
       );
 
-      $("#exportLiveHistory")?.addEventListener(
-        "click",
-        exportCsv
-      );
-    }
+      $("#historyTableBody").innerHTML = rows.length
+        ? rows.map(row => `
+            <tr>
 
-    function exportCsv() {
-      const rows = [
-        [
-          "Equipment",
-          "User",
-          "Date",
-          "Duration",
-          "Status",
-          "Quantity"
-        ],
+              <td>
+                <strong>${esc(row.equipmentName)}</strong>
+              </td>
 
-        ...state.history.map(item => [
-          item.equipment,
-          item.user,
-          item.date,
-          item.duration,
-          item.status,
-          item.quantity
-        ])
-      ];
+              <td>${esc(row.studentName)}</td>
 
-      const csv = rows
-        .map(row =>
-          row.map(value =>
-            `"${String(value ?? "").replace(/"/g, '""')}"`
-          ).join(",")
-        )
-        .join("\n");
+              <td>${esc(dateText(row.borrowedAt))}</td>
 
-      const link = document.createElement("a");
+              <td>${esc(dateText(row.dueDate, false))}</td>
 
-      link.href = URL.createObjectURL(
-        new Blob([csv], {
-          type: "text/csv"
-        })
-      );
+              <td>${esc(dateText(row.returnedAt))}</td>
 
-      link.download = "campusshare-equipment-history.csv";
+              <td>${row.quantity}</td>
 
-      link.click();
+              <td>${esc(row.status)}</td>
 
-      URL.revokeObjectURL(link.href);
-    }
+            </tr>
+          `).join("")
+        : `
+            <tr>
+              <td colspan="7">
+                <div class="cs-empty">
+                  No borrowing or return records found.
+                </div>
+              </td>
+            </tr>
+          `;
+    };
 
-    search?.addEventListener("input", render);
-
-    $("#btn-export-csv")?.addEventListener(
-      "click",
-      exportCsv
+    $("#historySearch")?.addEventListener(
+      "input",
+      renderRows
     );
 
-    $("#btn-export-pdf")?.addEventListener(
+    $("#exportHistoryCsv")?.addEventListener(
       "click",
-      () => window.print()
+      () => exportHistoryCsv(state.history)
     );
 
-    render();
-
-    window.refreshHistoryPage = render;
+    renderRows();
   }
 
-  // --------------------------------------------------
-  // DASHBOARD
-  // --------------------------------------------------
+  // ============================================================
+  // RENDER THE CURRENT PAGE
+  // ============================================================
 
-  function dashboard() {
+  function renderPage() {
     const main = $("main");
 
     if (!main) return;
 
-    const counts = equipmentCounts();
+    const current = page();
 
-    const pending = state.requests.filter(
-      request => request.category === "pending"
-    ).length;
-
-    const approved = state.requests.filter(
-      request => request.category === "approved"
-    ).length;
-
-    const borrowed = state.requests.filter(
-      request => request.category === "borrowed"
-    ).length;
-
-    const returned = state.history.filter(
-      item => item.status === "Returned"
-    ).length;
-
-    const cards = $$("main .grid > div")
-      .filter(card =>
-        card.querySelector(".font-headline-lg")
-      )
-      .slice(0, 6);
-
-    const values = [
-      `${counts.total} Units`,
-      `${counts.available} Units`,
-      `${pending} Requests`,
-      `${approved} Active`,
-      `${borrowed} In-Use`,
-      `${returned} Returned`
-    ];
-
-    cards.forEach((card, index) => {
-      const value = card.querySelector(".font-headline-lg");
-
-      if (value) {
-        value.textContent = values[index] ?? "0";
-      }
-    });
-
-    const requestLink = $('a[data-path="booking-requests"]');
-    const badge = requestLink?.querySelector("span:last-child");
-
-    if (badge) {
-      badge.textContent = String(pending);
-    }
-
-    let panel = $("#dashboardLiveStudentRequests");
-
-    if (!panel) {
-      panel = document.createElement("section");
-      panel.id = "dashboardLiveStudentRequests";
-      panel.className =
-        "mt-6 rounded-xl bg-surface-container-lowest p-5";
-
-      main.append(panel);
-    }
-
-    $$(".request-item").forEach(item => {
-      item.hidden = true;
-    });
-
-    const recent = state.requests.slice(0, 5);
-
-    panel.innerHTML = `
-      <h2 class="text-lg font-semibold mb-3">
-        Recent booking requests
-      </h2>
-    ` + (
-      recent.length
-        ? recent.map(request => `
-            <div
-              data-live-status="${escapeHTML(request.category)}"
-              class="flex flex-wrap items-center justify-between gap-3 border-b py-3"
-            >
-              <div>
-                <strong>${escapeHTML(request.title)}</strong>
-
-                <p class="text-sm">
-                  ${escapeHTML(request.equipmentName)}
-                  · ${escapeHTML(dateText(request.date))}
-                  · ${escapeHTML(requestStatusLabel(request.category))}
-                </p>
-              </div>
-            </div>
-          `).join("")
-        : `
-          <p class="text-sm text-on-surface-variant">
-            No booking requests for your equipment yet.
-          </p>
-        `
-    );
-  }
-
-  // --------------------------------------------------
-  // REFRESH CURRENT PAGE
-  // --------------------------------------------------
-
-  function renderCurrentPage() {
-    const page = location.pathname.split("/").pop();
-
-    if (page === "equipment.html") {
-      renderEquipment();
-    }
-
-    if (page === "requests.html") {
-      window.renderStudentPortalRequests?.();
-    }
-
-    if (page === "calendar.html") {
-      window.refreshCalendarPage?.();
-    }
-
-    if (page === "history.html") {
-      window.refreshHistoryPage?.();
-    }
-
-    if (page === "dashboard.html") {
-      dashboard();
+    if (current === "equipment.html") {
+      renderEquipmentPage(main);
+    } else if (current === "requests.html") {
+      renderRequests(main);
+    } else if (current === "calendar.html") {
+      renderCalendar(main);
+    } else if (current === "history.html") {
+      renderHistory(main);
+    } else {
+      renderDashboard(main);
     }
   }
 
-  async function reloadAll() {
-    await loadEquipment();
-    await loadRequests();
-    await loadHistory();
-
-    renderCurrentPage();
-  }
-
-  // --------------------------------------------------
-  // COMPATIBILITY FUNCTIONS FOR EXISTING HTML
-  // --------------------------------------------------
-
-  window.openRejectModal = user => {
-    state.selectedRequest =
-      state.requests.find(item => item.title === user) ||
-      state.requests.find(item => item.category === "pending") ||
-      null;
-
-    $("#rejectionModal")?.classList.remove("hidden");
-    $("#rejectionModal")?.classList.add("flex");
-  };
-
-  window.closeRejectModal = () => {
-    $("#rejectionModal")?.classList.add("hidden");
-    $("#rejectionModal")?.classList.remove("flex");
-  };
-
-  window.confirmRejection = async () => {
-    const reason =
-      $("#rejectionReasonInput")?.value?.trim() ||
-      "Declined by staff";
-
-    try {
-      await recordDecision(
-        state.selectedRequest,
-        "Declined",
-        reason
-      );
-
-      window.closeRejectModal();
-
-      toast("Booking declined.");
-
-    } catch (error) {
-      toast(error.message || "Could not decline booking.");
-    }
-  };
-
-  window.openBatchRejectModal = () => window.openRejectModal();
-
-  window.confirmRejectAction = () => window.confirmRejection();
-
-  window.sendChatMessage = event => {
-    event?.preventDefault();
-
-    const input = $("#chatInputMessage");
-
-    if (input) {
-      input.value = "";
-    }
-
-    toast(
-      "Direct messaging is not connected to a messages table yet."
-    );
-  };
-
-  window.filterRequests = (filter, button) => {
-    const panel = $("#dashboardLiveStudentRequests");
-
-    const items = panel
-      ? $$("[data-live-status]", panel)
-      : [];
-
-    items.forEach(item => {
-      item.hidden =
-        filter !== "all" &&
-        item.dataset.liveStatus !== filter;
-    });
-
-    $$(".filter-btn").forEach(element => {
-      element.classList.remove("active-tab");
-    });
-
-    button?.classList.add("active-tab");
-  };
-
-  window.toggleEquipmentStatus = () => {
-    toast(
-      "Use My Equipment and booking actions to manage real equipment availability."
-    );
-  };
-
-  window.openWaitlistModal = () => {
-    $("#waitlistModal")?.classList.remove("hidden");
-    $("#waitlistModal")?.classList.add("flex");
-  };
-
-  window.closeWaitlistModal = () => {
-    $("#waitlistModal")?.classList.add("hidden");
-    $("#waitlistModal")?.classList.remove("flex");
-  };
-
-  window.confirmWaitlistAction = async () => {
-    try {
-      await recordDecision(
-        state.selectedRequest,
-        "Waitlisted"
-      );
-
-      window.closeWaitlistModal();
-
-      toast("Booking waitlisted.");
-
-    } catch (error) {
-      toast(error.message || "Could not update booking.");
-    }
-  };
-
-  window.insertReason = value => {
-    if ($("#rejectionReasonInput")) {
-      $("#rejectionReasonInput").value = value;
-    }
-  };
-
-  window.insertInspectionNotes = value => {
-    if ($("#returnInspectionNotes")) {
-      $("#returnInspectionNotes").value = value;
-    }
-  };
-
-  window.openReturnInspectionModal = () => {
-    $("#returnInspectionModal")?.classList.remove("hidden");
-    $("#returnInspectionModal")?.classList.add("flex");
-  };
-
-  window.closeReturnInspectionModal = () => {
-    $("#returnInspectionModal")?.classList.add("hidden");
-    $("#returnInspectionModal")?.classList.remove("flex");
-  };
-
-  window.confirmReturnSignOff = async () => {
-    try {
-      if (!state.selectedRequest) {
-        throw new Error(
-          "Select a borrowed request before completing a return."
-        );
-      }
-
-      await completeReturn(state.selectedRequest);
-
-    } catch (error) {
-      toast(error.message || "Could not complete return.");
-    }
-  };
-
-  window.downloadCheckinSlip = (name, requestId) => {
-    toast(
-      `Check-in details for ${name || "student"} · ${requestId || "request"}`
-    );
-  };
-
-  window.openChatDrawer = (name, equipment, id, image) => {
-    $("#chatDrawerPanel")?.classList.remove("translate-x-full");
-    $("#chatDrawerPanel")?.classList.add("translate-x-0");
-
-    $("#chatDrawerOverlay")?.classList.remove(
-      "opacity-0",
-      "pointer-events-none"
-    );
-
-    setText("#chatDrawerUserName", name || "Student");
-    setText("#chatDrawerEqId", id || equipment || "");
-
-    if (image && $("#chatAvatarImg")) {
-      $("#chatAvatarImg").src = image;
-    }
-  };
-
-  window.closeChatDrawer = () => {
-    $("#chatDrawerPanel")?.classList.add("translate-x-full");
-    $("#chatDrawerPanel")?.classList.remove("translate-x-0");
-
-    $("#chatDrawerOverlay")?.classList.add(
-      "opacity-0",
-      "pointer-events-none"
-    );
-  };
-
-  window.insertQuickChatPrompt = value => {
-    if ($("#chatInputMessage")) {
-      $("#chatInputMessage").value = value;
-    }
-  };
-
-  window.contactResearcher = name => {
-    toast(`Student contact: ${name || "not available"}`);
-  };
-
-  window.toggleDetails = (id, button) => {
-    const element = document.getElementById(id);
-
-    if (element) {
-      element.classList.toggle("hidden");
-
-      if (button) {
-        button.textContent =
-          element.classList.contains("hidden")
-            ? "View details"
-            : "Hide details";
-      }
-    }
-  };
-
-  window.filterEquipmentCards = applyEquipmentFilters;
-
-  window.handleSearch = () => {
-    $("#searchInput")?.dispatchEvent(new Event("input"));
-  };
-
-  window.switchTab = (button, category) => {
-    $$(".request-card").forEach(card => {
-      card.hidden =
-        category !== "all" &&
-        normalizeStatus(card.dataset.category) !== normalizeStatus(category);
-    });
-  };
-
-  window.filterByTab = category => {
-    window.switchTab(null, category);
-  };
-
-  window.updateBatchCounter = () => {};
-
-  window.clearBatchSelection = () => {
-    $$(".batch-checkbox").forEach(input => {
-      input.checked = false;
-    });
-  };
-
-  window.handleBatchAccept = () => {
-    toast("Use the live booking request list to approve requests.");
-  };
-
-  window.approveDirect = () => {
-    toast("Use the live booking request list to approve requests.");
-  };
-
-  window.promoteToApproved = () => {
-    toast("Use the live booking request list to approve requests.");
-  };
-
-  window.removeFromWaitlist = () => {
-    toast("Use the live booking request list to update requests.");
-  };
-
-  window.revokeAccess = () => {
-    toast("Use the live booking request list to update requests.");
-  };
-
-  window.reopenReview = () => {
-    toast("Reopen review from the live booking request list.");
-  };
-
-  window.openAuditDrawer = (
-    equipmentId,
-    userName,
-    userId,
-    institution,
-    date,
-    duration,
-    status,
-    postCondition,
-    hash
-  ) => {
-    $("#audit-drawer-backdrop")?.classList.remove(
-      "opacity-0",
-      "pointer-events-none"
-    );
-
-    $("#audit-drawer-panel")?.classList.remove("translate-x-full");
-
-    setText("#drawer-eq-id", equipmentId);
-    setText("#drawer-user-name", userName);
-
-    setText(
-      "#drawer-user-meta",
-      [userId, institution].filter(Boolean).join(" · ")
-    );
-
-    setText("#drawer-hash", hash);
-  };
-
-  window.closeAuditDrawer = () => {
-    $("#audit-drawer-backdrop")?.classList.add(
-      "opacity-0",
-      "pointer-events-none"
-    );
-
-    $("#audit-drawer-panel")?.classList.add("translate-x-full");
-  };
-
-  // --------------------------------------------------
+  // ============================================================
   // INITIALIZE STAFF PORTAL
-  // --------------------------------------------------
+  // ============================================================
 
   async function init() {
-    updateBranding();
+    installStyles();
 
-    if (!window.CampusDB) {
-      throw new Error(
-        "CampusDB is not initialized. Check ../js/database.js."
+    const main = renderShell();
+
+    // Bind equipment modal controls before database queries.
+    // A failed query therefore does not disable Cancel or Close.
+    bindEquipmentModal();
+
+    if (main) {
+      main.innerHTML = `
+        <section class="cs-hero">
+          <div class="cs-kicker">CampusShare Staff Portal</div>
+
+          <h1 class="cs-title">
+            Loading your workspace…
+          </h1>
+
+          <p class="cs-subtitle">
+            Connecting to your authenticated staff account.
+          </p>
+        </section>
+      `;
+    }
+
+    try {
+      await authenticateStaff();
+
+    } catch (error) {
+      console.error("Staff authentication failed:", error);
+
+      setText("#staffDisplayName", "Profile unavailable");
+      setText("#staffDepartment", "Please sign in again");
+      setText("#staffEmail", "");
+
+      if (main) {
+        main.innerHTML = `
+          <section class="cs-hero">
+
+            <div class="cs-kicker">
+              Sign-in required
+            </div>
+
+            <h1 class="cs-title">
+              Staff profile unavailable
+            </h1>
+
+            <p class="cs-subtitle">
+              ${esc(
+                error.message ||
+                "Please sign in again with an approved staff account."
+              )}
+            </p>
+
+          </section>
+        `;
+      }
+
+      toast(
+        error.message ||
+        "Could not authenticate staff account."
       );
+
+      return;
     }
 
-    await requireStaffSession();
-
-    await loadEquipment();
-    await loadRequests();
-    await loadHistory();
-
-    const page = location.pathname.split("/").pop();
-
-    if (page === "equipment.html") {
-      setupEquipmentPage();
-    }
-
-    if (page === "requests.html") {
-      requestPage();
-    }
-
-    if (page === "calendar.html") {
-      calendarPage();
-    }
-
-    if (page === "history.html") {
-      historyPage();
-    }
-
-    if (page === "dashboard.html") {
-      dashboard();
-    }
-
-    renderCurrentPage();
+    // Each query has its own error handling.
+    // A failed booking query does not prevent the dashboard or logout from working.
+    await refreshData();
   }
 
   init().catch(error => {
     console.error(
-      "CampusShare staff portal failed to initialize:",
+      "CampusShare Staff Portal initialization failed:",
       error
     );
 
     toast(
       error.message ||
-      "The staff portal could not load. Check the browser Console and Supabase permissions."
+      "Staff portal failed to initialize. Check the browser Console."
     );
   });
 
