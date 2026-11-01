@@ -20,19 +20,14 @@
 <div class="flex flex-wrap items-center gap-space-sm">
 <!-- View Selector -->
 <div class="flex items-center p-1 rounded-xl bg-surface-container-high text-on-surface-variant shadow-sm" role="tablist">
-<button aria-selected="true" class="px-space-md py-1.5 rounded-lg bg-surface-container-lowest text-primary font-title-sm text-title-sm shadow-sm transition-all" type="button">
-          Month View
-        </button>
-<button class="px-space-md py-1.5 rounded-lg hover:text-on-surface font-title-sm text-title-sm transition-all text-secondary" type="button">
-          Week View
-        </button>
-<button class="px-space-md py-1.5 rounded-lg hover:text-on-surface font-title-sm text-title-sm transition-all text-secondary" type="button">
-          Day View
-        </button>
+
+        <button id="monthView" type="button">Month View</button>
+<button id="weekView" type="button">Week View</button>
+<button id="dayView" type="button">Day View</button>
+        
 </div>
-<button class="flex items-center gap-space-xs px-space-md py-space-sm rounded-xl bg-inverse-surface hover:bg-on-surface text-surface-container-lowest font-title-sm text-title-sm shadow-sm transition-all" type="button">
-<span class="material-symbols-outlined text-[18px]">tune</span>
-<span class="">Filter Grid</span>
+<button id="filterGrid" type="button">
+    Filter Grid
 </button>
 </div>
 </section>
