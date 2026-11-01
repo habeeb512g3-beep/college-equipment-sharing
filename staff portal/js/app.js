@@ -1854,73 +1854,294 @@
   // --------------------------------------------------
   // CALENDAR PAGE
   // --------------------------------------------------
-
-  function calendarPage() {
+function calendarPage() {
     const main = $("main");
-
     if (!main) return;
 
-    let panel = $("#persistentCalendarBookings");
+    let currentDate = new Date();
+    let selectedDate = new Date();
+    let currentView = "month";
+    let statusFilter = "all";
+    let equipmentFilter = "";
 
-    if (!panel) {
-      panel = document.createElement("section");
-      panel.id = "persistentCalendarBookings";
-      panel.className =
-        "mt-6 p-5 rounded-xl bg-surface-container-lowest";
+    const pad = n => String(n).padStart(2, "0");
 
-      main.append(panel);
+    const dateKey = d =>
+        `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    const parseDate = value => {
+        if (!value) return null;
+        const d = new Date(String(value).slice(0, 10) + "T00:00:00");
+        return Number.isNaN(d.getTime()) ? null : d;
+    };
+
+    const sameDay = (a, b) => dateKey(a) === dateKey(b);
+
+    function getBookings() {
+        return state.requests.filter(r => {
+            const d = parseDate(r.date);
+            if (!d) return false;
+
+            const status = String(r.category || "").toLowerCase();
+
+            const statusMatch =
+                statusFilter === "all" || status === statusFilter;
+
+            const equipmentMatch =
+                !equipmentFilter ||
+                String(r.equipmentName || "")
+                    .toLowerCase()
+                    .includes(equipmentFilter);
+
+            return statusMatch && equipmentMatch;
+        });
+    }
+
+    function getBookingsForDate(date) {
+        return getBookings().filter(r => {
+            const start = parseDate(r.date);
+            const end = parseDate(r.endDate) || start;
+
+            return start && date >= start && date <= end;
+        });
     }
 
     function render() {
-      const events = state.requests.filter(request =>
-        [
-          "pending",
-          "approved",
-          "borrowed",
-          "waitlist"
-        ].includes(request.category)
-      );
+        const bookings = getBookings();
 
-      panel.innerHTML = `
-        <h2 class="text-xl font-semibold mb-3">
-          Bookings for your equipment
-        </h2>
-      ` + (
-        events.length
-          ? events.map(request => `
-              <div class="border-b py-3">
-                <div class="flex flex-wrap justify-between gap-2">
-                  <strong>
-                    ${escapeHTML(request.equipmentName)}
-                    ·
-                    ${escapeHTML(request.title)}
-                  </strong>
+        let startDate;
+        let days;
 
-                  <span>
-                    ${escapeHTML(requestStatusLabel(request.category))}
-                  </span>
+        if (currentView === "day") {
+            startDate = new Date(selectedDate);
+            days = 1;
+        } else if (currentView === "week") {
+            startDate = new Date(selectedDate);
+            const offset = (startDate.getDay() + 6) % 7;
+            startDate.setDate(startDate.getDate() - offset);
+            days = 7;
+        } else {
+            startDate = new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth(),
+                1
+            );
+            const offset = (startDate.getDay() + 6) % 7;
+            startDate.setDate(startDate.getDate() - offset);
+            days = Math.ceil(
+                (offset + new Date(
+                    currentDate.getFullYear(),
+                    currentDate.getMonth() + 1,
+                    0
+                ).getDate()) / 7
+            ) * 7;
+        }
+
+        const cells = [];
+
+        for (let i = 0; i < days; i++) {
+            const d = new Date(startDate);
+            d.setDate(startDate.getDate() + i);
+
+            const dayBookings = getBookingsForDate(d);
+            const inMonth = d.getMonth() === currentDate.getMonth();
+
+            cells.push(`
+                <button type="button"
+                    data-date="${dateKey(d)}"
+                    class="border rounded-lg p-3 min-h-24 text-left
+                    ${sameDay(d, selectedDate)
+                        ? "border-teal-600 ring-2 ring-teal-100"
+                        : "border-slate-200"}
+                    ${currentView === "month" && !inMonth
+                        ? "bg-slate-50 text-slate-400"
+                        : "bg-white"}">
+
+                    <strong>${d.getDate()}</strong>
+
+                    <span class="block text-xs text-teal-700 mt-2">
+                        ${dayBookings.length} booking(s)
+                    </span>
+                </button>
+            `);
+        }
+
+        const selectedBookings = getBookingsForDate(selectedDate);
+
+        const heading = currentView === "day"
+            ? selectedDate.toDateString()
+            : currentView === "week"
+                ? "Week of " + startDate.toDateString()
+                : currentDate.toLocaleDateString(undefined, {
+                    month: "long",
+                    year: "numeric"
+                });
+
+        const bookingHTML = selectedBookings.length
+            ? selectedBookings.map(r => `
+                <div class="border rounded-lg p-3 bg-white">
+                    <div class="font-semibold">
+                        ${escapeHTML(r.equipmentName || "Equipment")}
+                    </div>
+                    <div class="text-sm text-slate-600">
+                        ${escapeHTML(r.title || "Student")}
+                    </div>
+                    <div class="text-sm text-slate-600">
+                        Status: ${escapeHTML(requestStatusLabel(r.category))}
+                    </div>
+                    <div class="text-sm text-slate-600">
+                        Quantity: ${Number(r.requestedQuantity || 1)}
+                    </div>
+                    <div class="text-sm text-slate-600">
+                        ${escapeHTML(dateText(r.date))}
+                        - ${escapeHTML(dateText(r.endDate))}
+                    </div>
                 </div>
-
-                <div class="text-sm text-on-surface-variant">
-                  ${escapeHTML(dateText(request.date))}
-                  –
-                  ${escapeHTML(dateText(request.endDate))}
-                  · Quantity: ${request.requestedQuantity}
-                </div>
-              </div>
             `).join("")
-          : `
-            <p class="text-sm text-on-surface-variant">
-              No bookings are scheduled for your equipment.
-            </p>
-          `
-      );
+            : `<p class="text-slate-500">No bookings for this date.</p>`;
+
+        main.innerHTML = `
+            <div class="space-y-5 pb-10">
+
+                <div class="flex flex-wrap justify-between gap-3">
+                    <div>
+                        <h1 class="text-2xl font-bold">
+                            Equipment Calendar
+                        </h1>
+                        <p class="text-sm text-slate-500">
+                            Staff booking schedule
+                        </p>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button data-view="month">Month</button>
+                        <button data-view="week">Week</button>
+                        <button data-view="day">Day</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-4 space-y-4">
+
+                    <div class="flex flex-wrap items-center gap-3">
+
+                        <button id="previousPeriod">Previous</button>
+
+                        <strong>${escapeHTML(heading)}</strong>
+
+                        <button id="nextPeriod">Next</button>
+
+                        <button id="todayButton">Today</button>
+
+                        <select id="calendarStatus"
+                            class="border rounded p-2">
+                            <option value="all">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="borrowed">Borrowed</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="waitlist">Waitlisted</option>
+                        </select>
+
+                        <input id="equipmentSearch"
+                            placeholder="Search equipment..."
+                            class="border rounded p-2"
+                            value="${escapeHTML(equipmentFilter)}">
+                    </div>
+
+                    <div class="grid grid-cols-7 gap-2">
+                        ${currentView === "month"
+                            ? ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"]
+                                .map(d => `<div class="text-center font-semibold">${d}</div>`).join("")
+                            : ""}
+                        ${cells.join("")}
+                    </div>
+
+                </div>
+
+                <div class="bg-white rounded-xl p-4 space-y-3">
+
+                    <h2 class="font-bold text-lg">
+                        Bookings for ${escapeHTML(selectedDate.toDateString())}
+                    </h2>
+
+                    <p>Total: ${selectedBookings.length}</p>
+
+                    <p>Pending: ${
+                        selectedBookings.filter(r =>
+                            r.category === "pending"
+                        ).length
+                    }</p>
+
+                    <div class="space-y-3">
+                        ${bookingHTML}
+                    </div>
+
+                </div>
+            </div>
+        `;
+
+        main.querySelectorAll("[data-date]").forEach(button => {
+            button.addEventListener("click", () => {
+                selectedDate = parseDate(button.dataset.date);
+                render();
+            });
+        });
+
+        main.querySelectorAll("[data-view]").forEach(button => {
+            button.addEventListener("click", () => {
+                currentView = button.dataset.view;
+                render();
+            });
+        });
+
+        main.querySelector("#previousPeriod").onclick = () => {
+            if (currentView === "day") {
+                selectedDate.setDate(selectedDate.getDate() - 1);
+            } else if (currentView === "week") {
+                selectedDate.setDate(selectedDate.getDate() - 7);
+            } else {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+            }
+            render();
+        };
+
+        main.querySelector("#nextPeriod").onclick = () => {
+            if (currentView === "day") {
+                selectedDate.setDate(selectedDate.getDate() + 1);
+            } else if (currentView === "week") {
+                selectedDate.setDate(selectedDate.getDate() + 7);
+            } else {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+            }
+            render();
+        };
+
+        main.querySelector("#todayButton").onclick = () => {
+            currentDate = new Date();
+            selectedDate = new Date();
+            render();
+        };
+
+        main.querySelector("#calendarStatus").onchange = e => {
+            statusFilter = e.target.value;
+            render();
+        };
+
+        main.querySelector("#equipmentSearch").oninput = e => {
+            equipmentFilter = e.target.value.toLowerCase();
+            const position = e.target.selectionStart;
+            render();
+
+            const input = main.querySelector("#equipmentSearch");
+            input.focus();
+            input.setSelectionRange(position, position);
+        };
     }
 
     render();
 
     window.refreshCalendarPage = render;
-  }
+}
 
   // --------------------------------------------------
   // HISTORY PAGE
