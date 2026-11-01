@@ -865,36 +865,33 @@
   async function cancelRequest(request) {
   if (!request || !state.user) return;
 
-  if (!confirm(
-    "Cancel this equipment request? This will update its status in CampusShare."
-  )) {
-    return;
-  }
+  if (!confirm("Cancel this equipment request?")) return;
 
   try {
-    // Cancel the parent booking request.
-    const { error: requestError } = await state.client
-      .from("booking_requests")
-      .update({ status: "cancelled" })
-      .eq("id", request.id)
-      .eq("student_id", state.user.id);
+    const { data: updatedRequest, error: requestError } =
+      await state.client
+        .from("booking_requests")
+        .update({ status: "cancelled" })
+        .eq("id", request.id)
+        .eq("student_id", state.user.id)
+        .select("id")
+        .maybeSingle();
 
     if (requestError) throw requestError;
 
-    // Cancel all item records belonging to this request.
+    if (!updatedRequest) {
+      throw new Error("Request could not be cancelled.");
+    }
+
     const { error: itemError } = await state.client
       .from("booking_request_items")
       .update({ item_status: "cancelled" })
       .eq("request_id", request.id);
 
     if (itemError) {
-      console.error("Request cancelled, but item status update failed:", itemError);
-      showToast(
-        "The request was cancelled, but its item status could not be updated. Please contact the administrator.",
-        true
+      throw new Error(
+        "The request was cancelled, but its item statuses could not be updated."
       );
-      await loadRequestData();
-      return;
     }
 
     closeModal();
@@ -902,14 +899,11 @@
     await loadRequestData();
 
   } catch (error) {
-    console.error("Could not cancel request:", error);
-    showToast(
-      error.message || "The request could not be cancelled.",
-      true
-    );
+    console.error("Cancellation failed:", error);
+    showToast(error.message || "Could not cancel request.", true);
   }
 }
-
+  
   function setupEvents() {
     ui.tabs.forEach(tab => {
       tab.addEventListener("click", () => {
