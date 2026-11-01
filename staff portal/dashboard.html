@@ -1,731 +1,598 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f8f9ff">
+  <title>CampusShare | Staff Dashboard</title>
 
-    <title>CampusShare | Staff Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap" rel="stylesheet">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap" rel="stylesheet">
-
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "inverse-surface": "#213145",
-                        "on-secondary-container": "#58657b",
-                        "on-surface": "#0b1c30",
-                        "background": "#f8f9ff",
-                        "primary-container": "#008378",
-                        "primary": "#00685f",
-                        "secondary": "#525f75",
-                        "surface": "#f8f9ff",
-                        "surface-container-lowest": "#ffffff",
-                        "surface-container-low": "#eff4ff",
-                        "surface-container": "#e5eeff",
-                        "surface-container-high": "#dce9ff",
-                        "surface-container-highest": "#d3e4fe",
-                        "outline": "#6d7a77",
-                        "outline-variant": "#bcc9c6",
-                        "error": "#ba1a1a",
-                        "error-container": "#ffdad6",
-                        "on-error": "#ffffff",
-                        "on-primary": "#ffffff",
-                        "on-primary-container": "#f4fffc",
-                        "on-surface-variant": "#3d4947",
-                        "inverse-on-surface": "#eaf1ff",
-                        "primary-fixed": "#89f5e7",
-                        "primary-fixed-dim": "#6bd8cb",
-                        "secondary-container": "#d6e3fe",
-                        "tertiary": "#515c71"
-                    },
-                    borderRadius: {
-                        DEFAULT: "0.25rem",
-                        lg: "0.5rem",
-                        xl: "0.75rem",
-                        full: "9999px"
-                    },
-                    spacing: {
-                        "space-xs": "0.25rem",
-                        "space-sm": "0.5rem",
-                        "space-md": "1rem",
-                        "space-lg": "1.5rem",
-                        "space-xl": "2rem",
-                        "space-2xl": "3rem"
-                    },
-                    fontFamily: {
-                        sans: ["Inter", "sans-serif"]
-                    }
-                }
-            }
-        };
-    </script>
-
-    <link rel="stylesheet" href="css/style.css">
-
-    <style>
-        body {
-            min-height: 100vh;
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "inverse-surface": "#213145",
+            "on-surface": "#0b1c30",
+            "background": "#f8f9ff",
+            "primary-container": "#008378",
+            "primary": "#00685f",
+            "secondary": "#525f75",
+            "surface": "#f8f9ff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#eff4ff",
+            "surface-container": "#e5eeff",
+            "surface-container-high": "#dce9ff",
+            "surface-container-highest": "#d3e4fe",
+            "outline": "#6d7a77",
+            "outline-variant": "#bcc9c6",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-error": "#ffffff",
+            "on-primary": "#ffffff",
+            "on-surface-variant": "#3d4947",
+            "inverse-on-surface": "#eaf1ff",
+            "primary-fixed": "#89f5e7",
+            "secondary-container": "#d6e3fe",
+            "tertiary": "#515c71"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"]
+          },
+          fontSize: {
+            "headline-lg": ["30px", { lineHeight: "38px", fontWeight: "600" }],
+            "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+            "title-sm": ["14px", { lineHeight: "20px", fontWeight: "600" }],
+            "body-sm": ["13px", { lineHeight: "18px" }],
+            "caption": ["12px", { lineHeight: "16px" }]
+          },
+          spacing: {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem",
+            "space-2xl": "3rem"
+          }
         }
+      }
+    };
+  </script>
 
-        .dashboard-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
+  <link rel="stylesheet" href="css/style.css">
 
-        .dashboard-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-        }
-    </style>
+  <style>
+    body {
+      min-height: 100vh;
+    }
+
+    .staff-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 9px;
+      color: #fff;
+      font: 800 21px Inter, sans-serif;
+      letter-spacing: -1px;
+    }
+
+    .staff-brand-mark {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      color: #fff;
+      background: #102b57;
+      border-radius: 9px;
+      box-shadow: 0 4px 9px rgba(16,43,87,.25);
+    }
+
+    .staff-brand-mark svg {
+      width: 21px;
+      height: 21px;
+    }
+
+    .staff-brand-light {
+      font-weight: 600;
+    }
+
+    .metric-card {
+      min-height: 142px;
+    }
+
+    #staffLogoutButton {
+      white-space: nowrap;
+    }
+
+    @media (max-width: 900px) {
+      aside.staff-sidebar {
+        width: 230px;
+      }
+
+      .staff-main {
+        padding-left: 230px;
+      }
+
+      header.staff-header {
+        left: 230px;
+      }
+    }
+
+    @media (max-width: 680px) {
+      aside.staff-sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        min-height: auto;
+      }
+
+      .staff-sidebar nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+
+      .staff-main {
+        padding-left: 0;
+      }
+
+      header.staff-header {
+        position: static;
+        left: auto;
+        height: auto;
+        min-height: 64px;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 12px 16px;
+      }
+
+      main.staff-content {
+        padding: 20px 16px;
+      }
+    }
+  </style>
 </head>
 
 <body class="bg-surface font-sans text-on-surface antialiased">
 
-    <!-- SIDEBAR -->
-    <aside class="fixed left-0 top-0 h-full w-72 bg-inverse-surface text-inverse-on-surface z-50 flex flex-col shadow-lg">
-
-        <!-- BRAND -->
-        <div class="p-6">
-
-            <div class="flex items-center gap-3">
-
-                <span class="material-symbols-outlined text-3xl text-primary-fixed">
-                    inventory_2
-                </span>
-
-                <span class="text-xl font-bold text-white">
-                    CampusShare
-                </span>
-
-            </div>
-
-            <div class="inline-flex items-center px-2 py-1 mt-3 rounded bg-white/10 text-primary-fixed text-xs uppercase tracking-wider">
-                Staff Portal
-            </div>
-
-        </div>
-
-
-        <!-- NAVIGATION -->
-        <nav class="flex-1 px-4 py-2 space-y-1">
-
-            <div class="px-2 pb-2 text-xs uppercase text-outline-variant tracking-wider">
-                Main Menu
-            </div>
-
-            <a
-                href="dashboard.html"
-                data-path="dashboard"
-                aria-current="page"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-container text-white"
-            >
-                <span class="material-symbols-outlined">
-                    grid_view
-                </span>
-
-                Dashboard
-            </a>
-
-
-            <a
-                href="equipment.html"
-                data-path="my-equipment"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white"
-            >
-                <span class="material-symbols-outlined">
-                    inventory_2
-                </span>
-
-                My Equipment
-            </a>
-
-
-            <a
-                href="requests.html"
-                data-path="booking-requests"
-                class="flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white"
-            >
-
-                <span class="flex items-center gap-3">
-                    <span class="material-symbols-outlined">
-                        event_available
-                    </span>
-
-                    Booking Requests
-                </span>
-
-                <span class="px-2 py-1 rounded-full bg-error text-white text-xs font-semibold">
-                    0
-                </span>
-
-            </a>
-
-
-            <a
-                href="calendar.html"
-                data-path="calendar"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white"
-            >
-                <span class="material-symbols-outlined">
-                    calendar_month
-                </span>
-
-                Calendar
-            </a>
-
-
-            <a
-                href="history.html"
-                data-path="equipment-history"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white"
-            >
-                <span class="material-symbols-outlined">
-                    history
-                </span>
-
-                Equipment History
-            </a>
-
-        </nav>
-
-
-        <!-- SIDEBAR FOOTER -->
-        <div class="p-4 border-t border-white/10">
-
-            <div class="text-xs text-outline-variant">
-                CampusShare Equipment Sharing
-            </div>
-
-        </div>
-
-    </aside>
-
-
-    <!-- MAIN CONTENT -->
-    <div class="pl-72">
-
-        <!-- HEADER -->
-        <header class="fixed top-0 left-72 right-0 h-16 bg-white/90 backdrop-blur-xl shadow-sm z-40 px-6 flex items-center justify-between">
-
-            <div class="flex items-center gap-3">
-
-                <span class="text-sm text-on-surface-variant">
-                    CampusShare
-                </span>
-
-                <span class="text-outline">/</span>
-
-                <span class="text-sm font-semibold">
-                    Dashboard
-                </span>
-
-            </div>
-
-
-            <!-- STAFF PROFILE -->
-            <div class="flex items-center gap-3 pl-space-xs">
-
-                <div
-                    id="staffProfileInitial"
-                    class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold"
-                >
-                    S
-                </div>
-
-                <div class="hidden md:flex flex-col">
-
-                    <span
-                        id="staffDisplayName"
-                        class="text-sm font-semibold text-on-surface"
-                    >
-                        Dr. Eleanor Vance
-                    </span>
-
-                    <span
-                        id="staffDepartment"
-                        class="text-xs text-on-surface-variant"
-                    >
-                        Lab Director • Biotech Research Core
-                    </span>
-
-                </div>
-
-            </div>
-
-        </header>
-
-
-        <!-- PAGE CONTENT -->
-        <main class="w-full pt-24 px-6 pb-10 min-h-screen">
-
-            <!-- WELCOME SECTION -->
-            <section class="relative bg-white rounded-2xl p-6 md:p-8 shadow-sm mb-6 overflow-hidden">
-
-                <div class="absolute -right-20 -top-20 w-72 h-72 rounded-full bg-primary/5 blur-3xl pointer-events-none"></div>
-
-                <div class="relative z-10">
-
-                    <div class="flex flex-wrap items-center gap-2 mb-3">
-
-                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase">
-
-                            <span class="material-symbols-outlined text-sm">
-                                dashboard
-                            </span>
-
-                            Staff Dashboard
-
-                        </span>
-
-                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-xs">
-
-                            <span class="w-2 h-2 rounded-full bg-primary"></span>
-
-                            CampusShare
-                        </span>
-
-                    </div>
-
-
-                    <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-on-surface">
-                        Welcome back, Dr. Eleanor Vance
-                    </h1>
-
-
-                    <p class="mt-3 text-sm text-on-surface-variant max-w-2xl">
-                        Manage your equipment inventory, review student booking requests and track equipment borrowing and returns.
-                    </p>
-
-                </div>
-
-            </section>
-
-
-            <!-- STATISTIC CARDS -->
-            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-
-
-                <!-- TOTAL EQUIPMENT -->
-                <div class="dashboard-card bg-white rounded-xl p-5 shadow-sm">
-
-                    <div class="flex items-center justify-between mb-3">
-
-                        <span class="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
-                            Total Inventory
-                        </span>
-
-                        <div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary">
-
-                            <span class="material-symbols-outlined">
-                                inventory_2
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                    <div class="font-headline-lg text-headline-lg text-on-surface font-semibold">
-                        0
-                    </div>
-
-                    <p class="text-xs text-on-surface-variant mt-2">
-                        Equipment units
-                    </p>
-
-                </div>
-
-
-                <!-- AVAILABLE -->
-                <div class="dashboard-card bg-white rounded-xl p-5 shadow-sm">
-
-                    <div class="flex items-center justify-between mb-3">
-
-                        <span class="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
-                            Available
-                        </span>
-
-                        <div class="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-800">
-
-                            <span class="material-symbols-outlined">
-                                check_circle
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                    <div class="font-headline-lg text-headline-lg text-on-surface font-semibold">
-                        0
-                    </div>
-
-                    <p class="text-xs text-on-surface-variant mt-2">
-                        Ready for booking
-                    </p>
-
-                </div>
-
-
-                <!-- PENDING -->
-                <div class="dashboard-card bg-white rounded-xl p-5 shadow-sm">
-
-                    <div class="flex items-center justify-between mb-3">
-
-                        <span class="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
-                            Pending Requests
-                        </span>
-
-                        <div class="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center text-amber-800">
-
-                            <span class="material-symbols-outlined">
-                                pending_actions
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                    <div class="font-headline-lg text-headline-lg text-on-surface font-semibold">
-                        0
-                    </div>
-
-                    <p class="text-xs text-on-surface-variant mt-2">
-                        Awaiting review
-                    </p>
-
-                </div>
-
-
-                <!-- APPROVED -->
-                <div class="dashboard-card bg-white rounded-xl p-5 shadow-sm">
-
-                    <div class="flex items-center justify-between mb-3">
-
-                        <span class="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
-                            Approved
-                        </span>
-
-                        <div class="w-9 h-9 rounded-lg bg-secondary-container flex items-center justify-center text-secondary">
-
-                            <span class="material-symbols-outlined">
-                                task_alt
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                    <div class="font-headline-lg text-headline-lg text-on-surface font-semibold">
-                        0
-                    </div>
-
-                    <p class="text-xs text-on-surface-variant mt-2">
-                        Approved bookings
-                    </p>
-
-                </div>
-
-
-                <!-- BORROWED -->
-                <div class="dashboard-card bg-white rounded-xl p-5 shadow-sm">
-
-                    <div class="flex items-center justify-between mb-3">
-
-                        <span class="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
-                            Currently Borrowed
-                        </span>
-
-                        <div class="w-9 h-9 rounded-lg bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
-
-                            <span class="material-symbols-outlined">
-                                play_circle
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                    <div class="font-headline-lg text-headline-lg text-on-surface font-semibold">
-                        0
-                    </div>
-
-                    <p class="text-xs text-on-surface-variant mt-2">
-                        Units in use
-                    </p>
-
-                </div>
-
-
-                <!-- RETURNED -->
-                <div class="dashboard-card bg-white rounded-xl p-5 shadow-sm">
-
-                    <div class="flex items-center justify-between mb-3">
-
-                        <span class="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
-                            Returned
-                        </span>
-
-                        <div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary">
-
-                            <span class="material-symbols-outlined">
-                                assignment_turned_in
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                    <div class="font-headline-lg text-headline-lg text-on-surface font-semibold">
-                        0
-                    </div>
-
-                    <p class="text-xs text-on-surface-variant mt-2">
-                        Completed returns
-                    </p>
-
-                </div>
-
-            </section>
-
-
-            <!-- MAIN DASHBOARD GRID -->
-            <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-
-
-                <!-- BOOKING REQUESTS -->
-                <div class="bg-white rounded-xl p-6 shadow-sm">
-
-                    <div class="flex items-center justify-between mb-4">
-
-                        <div>
-
-                            <h2 class="text-lg font-semibold">
-                                Booking Requests
-                            </h2>
-
-                            <p class="text-sm text-on-surface-variant mt-1">
-                                Review requests from students.
-                            </p>
-
-                        </div>
-
-                        <span class="material-symbols-outlined text-primary text-2xl">
-                            event_available
-                        </span>
-
-                    </div>
-
-                    <p class="text-sm text-on-surface-variant mb-4">
-                        View pending bookings and take action from the Booking Requests page.
-                    </p>
-
-                    <a
-                        href="requests.html"
-                        data-path="booking-requests"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-container"
-                    >
-
-                        View Booking Requests
-
-                        <span class="material-symbols-outlined text-lg">
-                            arrow_forward
-                        </span>
-
-                    </a>
-
-                </div>
-
-
-                <!-- EQUIPMENT -->
-                <div class="bg-white rounded-xl p-6 shadow-sm">
-
-                    <div class="flex items-center justify-between mb-4">
-
-                        <div>
-
-                            <h2 class="text-lg font-semibold">
-                                Equipment Inventory
-                            </h2>
-
-                            <p class="text-sm text-on-surface-variant mt-1">
-                                Manage your available equipment.
-                            </p>
-
-                        </div>
-
-                        <span class="material-symbols-outlined text-primary text-2xl">
-                            inventory
-                        </span>
-
-                    </div>
-
-                    <p class="text-sm text-on-surface-variant mb-4">
-                        Add equipment, update existing records and check availability.
-                    </p>
-
-                    <a
-                        href="equipment.html"
-                        data-path="my-equipment"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-container"
-                    >
-
-                        Manage Equipment
-
-                        <span class="material-symbols-outlined text-lg">
-                            arrow_forward
-                        </span>
-
-                    </a>
-
-                </div>
-
-
-                <!-- CALENDAR -->
-                <div class="bg-white rounded-xl p-6 shadow-sm">
-
-                    <div class="flex items-center justify-between mb-4">
-
-                        <div>
-
-                            <h2 class="text-lg font-semibold">
-                                Booking Calendar
-                            </h2>
-
-                            <p class="text-sm text-on-surface-variant mt-1">
-                                View the booking schedule.
-                            </p>
-
-                        </div>
-
-                        <span class="material-symbols-outlined text-primary text-2xl">
-                            calendar_month
-                        </span>
-
-                    </div>
-
-                    <p class="text-sm text-on-surface-variant mb-4">
-                        Check equipment booking dates and upcoming reservations.
-                    </p>
-
-                    <a
-                        href="calendar.html"
-                        data-path="calendar"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-container"
-                    >
-
-                        Open Calendar
-
-                        <span class="material-symbols-outlined text-lg">
-                            arrow_forward
-                        </span>
-
-                    </a>
-
-                </div>
-
-
-                <!-- HISTORY -->
-                <div class="bg-white rounded-xl p-6 shadow-sm">
-
-                    <div class="flex items-center justify-between mb-4">
-
-                        <div>
-
-                            <h2 class="text-lg font-semibold">
-                                Equipment History
-                            </h2>
-
-                            <p class="text-sm text-on-surface-variant mt-1">
-                                Track borrowing and returns.
-                            </p>
-
-                        </div>
-
-                        <span class="material-symbols-outlined text-primary text-2xl">
-                            history
-                        </span>
-
-                    </div>
-
-                    <p class="text-sm text-on-surface-variant mb-4">
-                        View previous equipment transactions and return records.
-                    </p>
-
-                    <a
-                        href="history.html"
-                        data-path="equipment-history"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-container"
-                    >
-
-                        View History
-
-                        <span class="material-symbols-outlined text-lg">
-                            arrow_forward
-                        </span>
-
-                    </a>
-
-                </div>
-
-            </section>
-
-
-            <!-- SYSTEM INFORMATION -->
-            <section class="bg-white rounded-xl p-6 shadow-sm">
-
-                <div class="flex items-start gap-4">
-
-                    <div class="w-11 h-11 rounded-lg bg-primary-fixed flex items-center justify-center text-primary shrink-0">
-
-                        <span class="material-symbols-outlined text-2xl">
-                            info
-                        </span>
-
-                    </div>
-
-                    <div>
-
-                        <h2 class="font-semibold text-on-surface">
-                            CampusShare Staff Workspace
-                        </h2>
-
-                        <p class="text-sm text-on-surface-variant mt-2">
-                            Your dashboard displays equipment and booking information associated with your staff account. Add equipment to begin managing your inventory.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-        </main>
+  <!-- CAMPUSSHARE STAFF SIDEBAR -->
+  <aside class="staff-sidebar fixed left-0 top-0 h-full w-72 bg-inverse-surface text-white z-50 flex flex-col shadow-lg">
+
+    <div class="p-6">
+
+      <!-- SAME LOGO SVG AS STUDENT PORTAL -->
+      <a class="staff-brand" href="dashboard.html" aria-label="CampusShare home">
+
+        <span class="staff-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M4.5 8.5h15v11h-15z"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linejoin="round"/>
+
+            <path d="M8 8.5V6.7A2.7 2.7 0 0 1 10.7 4h2.6A2.7 2.7 0 0 1 16 6.7v1.8"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"/>
+
+            <path d="M9 13h6"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"/>
+          </svg>
+        </span>
+
+        <span>Campus<span class="staff-brand-light">Share</span></span>
+
+      </a>
+
+      <div class="inline-flex items-center px-2 py-1 mt-3 rounded bg-white/10 text-primary-fixed text-xs uppercase tracking-wider">
+        Staff Portal
+      </div>
 
     </div>
 
 
-    <!-- NOTIFICATION TOAST -->
-    <div
-        id="appToast"
-        hidden
-        class="fixed bottom-6 right-6 z-[100] p-4 rounded-xl bg-inverse-surface text-white shadow-xl"
-    >
+    <!-- NAVIGATION -->
+    <nav class="flex-1 px-4 py-2 space-y-1" aria-label="Staff navigation">
+
+      <div class="px-2 pb-2 text-xs uppercase text-outline-variant tracking-wider">
+        Main Menu
+      </div>
+
+      <a
+        href="dashboard.html"
+        data-path="dashboard"
+        aria-current="page"
+        class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-container text-white"
+      >
+        <span class="material-symbols-outlined">grid_view</span>
+        Dashboard
+      </a>
+
+      <a
+        href="equipment.html"
+        data-path="my-equipment"
+        class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white"
+      >
+        <span class="material-symbols-outlined">inventory_2</span>
+        My Equipment
+      </a>
+
+      <a
+        href="requests.html"
+        data-path="booking-requests"
+        class="flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white"
+      >
+        <span class="flex items-center gap-3">
+          <span class="material-symbols-outlined">event_available</span>
+          Booking Requests
+        </span>
+
+        <span
+          data-pending-count
+          class="px-2 py-1 rounded-full bg-error text-white text-xs font-semibold"
+        >0</span>
+      </a>
+
+      <a
+        href="calendar.html"
+        data-path="calendar"
+        class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white"
+      >
+        <span class="material-symbols-outlined">calendar_month</span>
+        Calendar
+      </a>
+
+      <a
+        href="history.html"
+        data-path="equipment-history"
+        class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white"
+      >
+        <span class="material-symbols-outlined">history</span>
+        Equipment History
+      </a>
+
+    </nav>
+
+
+    <!-- SIDEBAR FOOTER -->
+    <div class="p-4 border-t border-white/10">
+      <div class="text-xs text-outline-variant">
+        CampusShare · Staff Workspace
+      </div>
     </div>
 
+  </aside>
 
-    <!-- SCRIPTS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../js/supabase.js"></script>
-    <script src="../js/database.js"></script>
-    <script src="js/app.js"></script>
+
+  <!-- MAIN CONTENT -->
+  <div class="staff-main pl-72">
+
+    <!-- HEADER / SIGNED-IN STAFF PROFILE -->
+    <header class="staff-header fixed top-0 left-72 right-0 h-16 bg-white/90 backdrop-blur-xl shadow-sm z-40 px-6 flex items-center justify-between">
+
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-on-surface-variant">CampusShare</span>
+        <span class="text-outline">/</span>
+        <span class="text-sm font-semibold">Staff Dashboard</span>
+      </div>
+
+      <div class="flex items-center gap-3 min-w-0">
+
+        <div
+          id="staffProfileInitial"
+          class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold shrink-0"
+        >
+          —
+        </div>
+
+        <div class="min-w-0 flex flex-col">
+
+          <span
+            id="staffDisplayName"
+            class="text-sm font-semibold text-on-surface truncate"
+          >
+            Loading profile…
+          </span>
+
+          <span
+            id="staffDepartment"
+            class="text-xs text-on-surface-variant truncate"
+          >
+            Loading department…
+          </span>
+
+          <span
+            id="staffEmail"
+            class="text-xs text-on-surface-variant truncate"
+          ></span>
+
+        </div>
+
+      </div>
+    </header>
+
+
+    <!-- DASHBOARD CONTENT -->
+    <main class="staff-content pt-24 px-6 pb-10 min-h-screen">
+
+      <!-- WELCOME -->
+      <section class="relative w-full rounded-2xl bg-white p-6 md:p-8 shadow-sm overflow-hidden mb-6">
+
+        <div class="absolute -right-24 -top-24 w-96 h-96 rounded-full bg-primary/5 blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10">
+
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold">
+              <span class="material-symbols-outlined text-sm text-primary">
+                dashboard
+              </span>
+              Staff Workspace
+            </span>
+
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-fixed text-on-surface text-xs font-semibold">
+              <span class="w-2 h-2 rounded-full bg-primary"></span>
+              CampusShare
+            </span>
+
+          </div>
+
+          <h1
+            id="staffWelcomeHeading"
+            class="text-2xl md:text-3xl font-bold tracking-tight text-on-surface"
+          >
+            Welcome back
+          </h1>
+
+          <p class="mt-3 text-sm text-on-surface-variant max-w-2xl">
+            Manage your equipment inventory, review student booking requests, and track borrowing and returns.
+          </p>
+
+        </div>
+      </section>
+
+
+      <!-- LIVE SUPABASE METRICS -->
+      <section
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6"
+        aria-label="Live staff summary"
+      >
+
+        <article class="metric-card bg-white rounded-xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
+              Total Inventory
+            </span>
+            <span class="material-symbols-outlined text-primary">inventory_2</span>
+          </div>
+
+          <div id="dashboardTotalInventory" class="font-headline-lg text-headline-lg font-semibold">
+            0
+          </div>
+
+          <p class="text-xs text-on-surface-variant mt-2">
+            Units in your resources
+          </p>
+        </article>
+
+
+        <article class="metric-card bg-white rounded-xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
+              Available
+            </span>
+            <span class="material-symbols-outlined text-emerald-700">check_circle</span>
+          </div>
+
+          <div id="dashboardAvailable" class="font-headline-lg text-headline-lg font-semibold">
+            0
+          </div>
+
+          <p class="text-xs text-on-surface-variant mt-2">
+            Units available to book
+          </p>
+        </article>
+
+
+        <article class="metric-card bg-white rounded-xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
+              Pending Requests
+            </span>
+            <span class="material-symbols-outlined text-amber-700">pending_actions</span>
+          </div>
+
+          <div id="dashboardPending" class="font-headline-lg text-headline-lg font-semibold">
+            0
+          </div>
+
+          <p class="text-xs text-on-surface-variant mt-2">
+            Awaiting staff review
+          </p>
+        </article>
+
+
+        <article class="metric-card bg-white rounded-xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
+              Approved
+            </span>
+            <span class="material-symbols-outlined text-secondary">task_alt</span>
+          </div>
+
+          <div id="dashboardApproved" class="font-headline-lg text-headline-lg font-semibold">
+            0
+          </div>
+
+          <p class="text-xs text-on-surface-variant mt-2">
+            Approved bookings
+          </p>
+        </article>
+
+
+        <article class="metric-card bg-white rounded-xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
+              Currently Borrowed
+            </span>
+            <span class="material-symbols-outlined text-primary">play_circle</span>
+          </div>
+
+          <div id="dashboardBorrowed" class="font-headline-lg text-headline-lg font-semibold">
+            0
+          </div>
+
+          <p class="text-xs text-on-surface-variant mt-2">
+            Active borrowing requests
+          </p>
+        </article>
+
+
+        <article class="metric-card bg-white rounded-xl p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs uppercase tracking-wider text-on-surface-variant font-semibold">
+              Returned
+            </span>
+            <span class="material-symbols-outlined text-primary">assignment_turned_in</span>
+          </div>
+
+          <div id="dashboardReturned" class="font-headline-lg text-headline-lg font-semibold">
+            0
+          </div>
+
+          <p class="text-xs text-on-surface-variant mt-2">
+            Completed returns
+          </p>
+        </article>
+
+      </section>
+
+
+      <!-- RECENT BOOKING REQUESTS -->
+      <section class="bg-white rounded-2xl p-6 shadow-sm mb-6">
+
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+
+          <div>
+            <h2 class="text-lg font-semibold">
+              Recent Booking Requests
+            </h2>
+
+            <p class="text-sm text-on-surface-variant mt-1">
+              Latest requests for equipment assigned to your staff account.
+            </p>
+          </div>
+
+          <a
+            href="requests.html"
+            data-path="booking-requests"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-container"
+          >
+            View Requests
+
+            <span class="material-symbols-outlined text-base">
+              arrow_forward
+            </span>
+          </a>
+
+        </div>
+
+        <div id="dashboardRecentRequests">
+          <p class="py-6 text-center text-sm text-on-surface-variant">
+            Loading booking requests…
+          </p>
+        </div>
+
+      </section>
+
+
+      <!-- QUICK LINKS -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        <a
+          href="equipment.html"
+          data-path="my-equipment"
+          class="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span class="material-symbols-outlined text-primary text-2xl">
+            inventory_2
+          </span>
+
+          <h2 class="font-semibold mt-3">
+            My Equipment
+          </h2>
+
+          <p class="text-sm text-on-surface-variant mt-1">
+            Add and manage equipment in your inventory.
+          </p>
+        </a>
+
+
+        <a
+          href="calendar.html"
+          data-path="calendar"
+          class="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span class="material-symbols-outlined text-primary text-2xl">
+            calendar_month
+          </span>
+
+          <h2 class="font-semibold mt-3">
+            Calendar
+          </h2>
+
+          <p class="text-sm text-on-surface-variant mt-1">
+            Review booking dates and scheduled use.
+          </p>
+        </a>
+
+
+        <a
+          href="history.html"
+          data-path="equipment-history"
+          class="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span class="material-symbols-outlined text-primary text-2xl">
+            history
+          </span>
+
+          <h2 class="font-semibold mt-3">
+            Equipment History
+          </h2>
+
+          <p class="text-sm text-on-surface-variant mt-1">
+            Review borrowing and return records.
+          </p>
+        </a>
+
+      </section>
+
+    </main>
+  </div>
+
+
+  <!-- TOAST -->
+  <div
+    id="appToast"
+    hidden
+    class="fixed bottom-6 right-6 z-[100] p-4 rounded-xl bg-inverse-surface text-white shadow-xl"
+  ></div>
+
+
+  <!-- SCRIPTS: KEEP THIS ORDER -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase.js"></script>
+  <script src="../js/database.js"></script>
+  <script src="js/app.js"></script>
 
 </body>
 </html>
