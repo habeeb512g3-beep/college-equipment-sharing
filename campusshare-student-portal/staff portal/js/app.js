@@ -1,591 +1,2305 @@
+(() => {
+  "use strict";
 
-(function(){
-'use strict';
-const KEY='campusshare.ownerportal.v3';
-const STUDENT_REQUESTS_KEY='campusshareDemoRequests';
-const STUDENT_EQUIPMENT_KEY='campusshareDemoEquipment';
-const HAD_SHARED_INVENTORY_AT_STARTUP=localStorage.getItem(STUDENT_EQUIPMENT_KEY)!==null;
-const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('campusshare.ownerportal.v2'))||{}}catch(e){return {}}};
-let db=read();let activeFilter='all';
-function studentStatus(category){return ({pending:'review',approved:'approved',waitlist:'waitlist',rejected:'rejected',borrowed:'borrowed','in-use':'borrowed',returned:'returned',cancelled:'rejected'})[category]||'review'}
-function syncFromStudentPortal(){
- let records=[];try{records=JSON.parse(localStorage.getItem(STUDENT_REQUESTS_KEY)||'[]')}catch(_){records=[]}
- if(!Array.isArray(records))records=[];
- const imported=records.map(x=>{
-  const status=String(x.status||'review').toLowerCase();
-  const category=({review:'pending',pending:'pending',approved:'approved',waitlist:'waitlist',rejected:'rejected',cancelled:'rejected',borrowed:'borrowed','in-use':'borrowed',returned:'returned',completed:'returned'})[status]||'pending';
-  const rid=String(x.id||'REQ-'+id());
-  return {id:'STU-'+rid,sourceId:rid,source:'student-portal',category,title:x.studentName||x.userName||x.fullName||x.studentEmail||x.student_email||'Student',studentEmail:x.studentEmail||x.student_email||x.email||'',equipmentName:x.name||x.equipmentName||'Equipment',equipment:String(x.code||x.equipmentId||x.resourceId||''),date:x.start||x.startDate||x.start_date||'',endDate:x.end||x.endDate||x.end_date||'',purpose:x.purpose||'',createdAt:x.createdAt||x.created_at||x.submittedAt||'',search:[x.name,x.code,x.studentName,x.studentEmail,x.purpose].filter(Boolean).join(' '),decisionAt:x.staffDecisionAt||null,decisionReason:x.staffDecisionReason||'',startedAt:x.startedAt||null,elapsed:0};
- });
- db.requests=(db.requests||[]).filter(r=>r.source!=='student-portal'&&!String(r.id||'').startsWith('REQ-INIT-')).concat(imported);
-}
-function syncToStudentPortal(){
- let records=[];try{records=JSON.parse(localStorage.getItem(STUDENT_REQUESTS_KEY)||'[]')}catch(_){records=[]}
- if(!Array.isArray(records))records=[];
- db.requests.filter(r=>r.source==='student-portal'&&r.sourceId).forEach(r=>{
-  const rec=records.find(x=>String(x.id)===String(r.sourceId));if(!rec)return;
-  rec.status=studentStatus(r.category);
-  if(r.decisionAt)rec.staffDecisionAt=r.decisionAt;else delete rec.staffDecisionAt;
-  if(r.decisionReason)rec.staffDecisionReason=r.decisionReason;else delete rec.staffDecisionReason;
-  if(r.category==='returned')rec.returnedAt=r.returnedAt||new Date().toISOString();
- });
- localStorage.setItem(STUDENT_REQUESTS_KEY,JSON.stringify(records));
-}
-function syncEquipmentToStudentPortal(){
- const list=(db.equipment||[]).map(e=>{
-  const status=String(e.status||'available').toLowerCase().replace(/_/g,'-');
-  const category=e.category||'Other';
-  return {id:e.id,name:e.name,short:e.name,category,group:category,lab:e.location||'Campus Lab',department:e.department||'Campus',status:status==='in-use'?'borrowed':status,statusText:status==='available'?'Available':status==='in-use'?'Currently Borrowed':status.charAt(0).toUpperCase()+status.slice(1),code:String(e.id),loan:e.loan||'As approved',value:e.value||'Contact custodian',description:e.description||'No description available.',tags:[`Status: ${status}`],specs:{Condition:e.condition||'Not specified',Location:e.location||'Campus Lab',Status:status},location:e.location||'Contact custodian',handling:e.handling||'Follow custodian instructions.',images:[e.image||'https://placehold.co/800x500/e8eef7/294b78?text=CampusShare+Equipment']};
- });
- localStorage.setItem(STUDENT_EQUIPMENT_KEY,JSON.stringify(list));
-}
-function save(){localStorage.setItem(KEY,JSON.stringify(db));syncToStudentPortal();syncEquipmentToStudentPortal();}
-function id(){return 'CS-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7)}
-function init(){
- if(!Array.isArray(db.equipment)) db.equipment=[{"id": "EQ-MS-4802", "name": "Thermo Scientific Orbitrap Exploris 480", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDWYUDSWFvjbbKcxE64W8Bx2z6yF3LKoeRE-KtqK6C5HOTx9QlPbPQHtlVNRLrJvpnUbsoQ_uXSRwvpJXdByVcVrOhztAdSTH6uGDBaqHTcCQEoEML_1x2TRyhGIlndoF6MGzKw9RBR2v_gPpgQ29rcsJUCcD_30XArLru5YRClr4urR5RIPP1s3c15veNpoORH--2UpSURA14OlOu-SvUw4fpuFC3HoRdnI3n0kHQ", "location": "Bio Core Bldg 76, Room 310", "status": "available"}, {"id": "EQ-MIC-9801", "name": "Zeiss LSM 980 with Airyscan 2", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBB-nv3LngHYr5ydABjHz1AEhOovW5hIF0kEL3QysQJp_KS3stOL8Euuwxpx7FNrNgtHPyZe-hUwoYNfC1CK7cSyCcHFmmQlKBi5JQbO5lGFs4CZMcc30wUUrGl9FcIP8kSA2Po19-BJ_H8_fp0sbwbwuJQsvIqfQqX3eLpOw0omU8afrL07-1wM9SLFtWdz5AfvRtrORXZPg0rOVqc882ftgtlUa4AD7UomTcd3Og", "location": "Imaging Core, Room 104", "status": "in-use"}, {"id": "EQ-GEN-6003", "name": "Illumina NovaSeq 6000 Sequencer", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCJssts3TSdAxkTivVD6mJvxcbEpSEqIjeDhD9G4WVSCnZy8j6kNySJHdRaJIH_dv4b1mTpLibZwvT2j7VipMNTHmMxmBHpzq2mbM8ZFtUwAxV-Bz5aI1kd2E44zgnhLEVhz1eMRWelA9BEb2Eq2wzC0LhvBQGb6OLljSTP3Gsm8sNot0iJ-DS20TIbzPZ5inr-gYKgLn0GySyvbwgzpqzuDKPZdjbrya_WojgSDe4", "location": "Genomics Hub, Bay 2", "status": "available"}, {"id": "EQ-EM-2100", "name": "JEOL JEM-2100F Field Emission TEM", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCA2H6DhzJzZeUoZ9y89y22FBi6VFJfTAFFCyzJ0gkcWB-zRnJR2zVANEAWz1tf3szpO1_scfodH5PLESIkc2vB5t0E_Wsz5RcJkOjFm14nUCbhJ0auaud5SJ22zAM8VMRYXeBdkExubj5I1o04BRvv0C7kB2c17v9-b5YkUEp7uLFEI9TVLO5ev6W71Xmoin96uiRKlDaZiIqajk-pBuxPq-fbTCRvk-zDG08x930", "location": "NanoFab Suite, B12", "status": "maintenance"}, {"id": "EQ-CEN-0100", "name": "Beckman Coulter Optima XPN-100", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBAgn_E9stYBtzLWRPHctvB-B5Jbne16aLWpjnTCTRCCTtenjwNn0XwhyOppdbb7BZUIrFBUkbGUEwNktRMXwSCVu27FVpOVaYcW_hBAkiqGPgyC4Z4EcLCM7_N8SnJkkHu7rNtUMY1YvH5E5yZxFM8J7oMzwI2PPJNv-l-i85kpm-w4jI8Cqh6gRPKuJla_9wT0FSESKmI_LNwA_IktPcrVoBvtNdBsCC_J8bbrLI", "location": "Prep Lab 2A", "status": "available"}, {"id": "EQ-CYT-0003", "name": "BD FACSAria III Cell Sorter", "description": "", "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDNlgjREKEMbzREz3BF5REkn-fnX_rlTJzMjbB-330YXdmMntvszPLjwxtKCW_IR99aXcGlBcTfHa358GgJPEEnWMPZPnNCi39bsM09hglk2o7Zrq_ph3292BPBcYDg4s6-wCpIaHQJcB9Yl4V-qSZV6xfUNhPQwfTG6kXPY9Y4PBCsMbLbjQFYoQ9XUqCI0nOMlYeVxlGKjqvAakxIfLDm3QHj8leTEmRjsnsVepY", "location": "Immunology Lab, Rm 215", "status": "overdue"}];
- if(!Array.isArray(db.requests)) db.requests=[];
- if(!Array.isArray(db.history)) db.history=[];
- syncFromStudentPortal();
- save();
-}
+  // CampusShare Staff Portal - Supabase-backed application logic.
+  // Shared by dashboard.html, equipment.html, requests.html,
+  // calendar.html and history.html.
 
-async function loadEquipmentFromSupabase(){
- if(HAD_SHARED_INVENTORY_AT_STARTUP||!window.CampusDB)return;
- try{
-  const [resources,categories]=await Promise.all([CampusDB.get('resources',{orderBy:'created_at',ascending:false}),CampusDB.get('categories')]);
-  if(!Array.isArray(resources)||!resources.length)return;
-  const categoryMap=Object.fromEntries((categories||[]).map(c=>[c.id,c.category_name]));
-  db.equipment=resources.map(item=>({
-   id:String(item.id),name:item.name||'Unnamed equipment',description:item.description||'',image:item.image_url||item.image||'',location:item.location||'Campus Lab',
-   status:Number(item.available_quantity||0)>0?'available':'in-use',category:categoryMap[item.category_id]||'Other',
-   totalQuantity:Number(item.total_quantity||0),availableQuantity:Number(item.available_quantity||0),condition:item.condition||''
-  }));
-  save();window.refreshEquipmentPage?.();if(location.pathname.endsWith('dashboard.html'))dashboard();
- }catch(error){console.warn('CampusShare: Supabase inventory read unavailable; retaining local inventory.',error);}
-}
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+  const supabase = () => window.supabaseClient;
 
-function findDate(c){const t=c.innerText||'';const m=t.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4}/i);return m?new Date(m[0]).toISOString().slice(0,10):''}
-function toast(msg){let el=$('#appToast');if(!el){el=document.createElement('div');el.id='appToast';el.style.cssText='position:fixed;bottom:22px;right:22px;z-index:9999;background:#213145;color:white;padding:12px 18px;border-radius:10px;box-shadow:0 4px 18px #0003';document.body.append(el)}el.textContent=msg;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2800)}
-function addHistory(r,duration){db.history.unshift({id:id(),requestId:r.id,equipment:r.equipment||r.title,user:r.title||r.search.split(' ')[0]||'Researcher',institution:r.institution||r.department||'',date:new Date().toISOString(),duration,status:'Completed'});r.category='returned';r.returnedAt=new Date().toISOString();r.startedAt=null;r.elapsed=0;const eq=db.equipment.find(e=>String(e.id)===String(r.equipment));if(eq&&eq.status==='in-use')eq.status='available';if(eq&&r.inventoryAdjusted&&Number.isFinite(Number(eq.availableQuantity)))eq.availableQuantity=Number(eq.availableQuantity)+1;r.inventoryAdjusted=false;save()}
-function syncCards(){
- $$('.request-card').forEach((c,i)=>{let r=db.requests[i];if(!r)return;c.dataset.category=r.category;c.dataset.requestId=r.id;if(r.category==='approved'&&!$('.app-start-timer',c)){let b=document.createElement('button');b.className='app-start-timer px-3 py-2 rounded-lg bg-primary text-white';b.textContent=r.startedAt?'Stop Timer':'Start Timer';c.append(b)}else if(r.category!=='approved')$('.app-start-timer',c)?.remove();});
-}
-function equipmentPage(){
- const modal=$('#addEquipmentModal'), grid=$('#equipmentGridContainer');if(!modal||!grid)return;
- let editing=null, imageData='';
- 
-function updateEquipmentCounts() {
-    const equipment = Array.isArray(db.equipment) ? db.equipment : [];
+  const state = {
+    user: null,
+    profile: null,
+    equipment: [],
+    categories: [],
+    requests: [],
+    history: [],
+    selectedRequest: null,
+    selectedImage: null
+  };
 
-    const normalize = status =>
-        String(status || 'available')
-            .toLowerCase()
-            .replace(/_/g, '-')
-            .trim();
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
 
-    // Calculate counts BEFORE updating the HTML
-    const counts = {
-        total: equipment.length,
+  const statusKey = value =>
+    String(value || "pending").toLowerCase().replace(/[ _]+/g, "-");
 
-        available: equipment.filter(e =>
-            normalize(e.status) === 'available'
-        ).length,
+  function toast(message) {
+    let element = $("#appToast") || $("#toast-notification");
 
-        inUse: equipment.filter(e =>
-            ['in-use', 'in use', 'borrowed'].includes(normalize(e.status))
-        ).length,
-
-        maintenance: equipment.filter(e =>
-            ['maintenance', 'under-maintenance'].includes(normalize(e.status))
-        ).length,
-
-        overdue: equipment.filter(e =>
-            normalize(e.status) === 'overdue'
-        ).length
-    };
-
-    // Update summary cards
-    const setText = (selector, value) => {
-        const element = document.querySelector(selector);
-        if (element) element.textContent = value;
-    };
-
-    setText('#availableCount', `${counts.available} Units`);
-    setText('#inUseCount', `${counts.inUse} Active`);
-    setText('#maintenanceCount', `${counts.maintenance} Offline`);
-    setText('#overdueCount', `${counts.overdue} Overdue`);
-    setText('#totalEquipmentCount', counts.total);
-
-    // Update status filter counts
-    const statusFilter = $('#statusFilter');
-
-    if (statusFilter) {
-        const labels = {
-            all: 'All Statuses',
-            available: 'Available',
-            'in-use': 'In-Use',
-            maintenance: 'Maintenance',
-            overdue: 'Overdue / Delays'
-        };
-
-        const statusCounts = {
-            all: counts.total,
-            available: counts.available,
-            'in-use': counts.inUse,
-            maintenance: counts.maintenance,
-            overdue: counts.overdue
-        };
-
-        Array.from(statusFilter.options).forEach(option => {
-            if (labels[option.value] !== undefined) {
-                option.textContent =
-                    `${labels[option.value]} (${statusCounts[option.value]})`;
-            }
-        });
+    if (!element) {
+      element = document.createElement("div");
+      element.id = "appToast";
+      element.className =
+        "fixed bottom-6 right-6 z-[9999] rounded-xl bg-inverse-surface text-white p-4 shadow-xl";
+      document.body.append(element);
     }
 
-    // Update the equipment total
-    setText('#totalEquipmentCount', counts.total);
+    element.textContent = message;
+    element.hidden = false;
 
-    return counts;
-}
+    clearTimeout(toast.timer);
 
- const name=$('#equipmentNameField'),desc=$('#equipmentDescriptionField'),loc=$('#equipmentLocationField'),file=$('#equipmentImageField'),preview=$('#equipmentImagePreview');
- function open(item){editing=item?.id||null;name.value=item?.name||'';desc.value=item?.description||'';loc.value=item?.location||'';imageData=item?.image||'';preview.src=imageData;preview.classList.toggle('hidden',!imageData);modal.classList.remove('hidden');document.body.style.overflow='hidden'}
- function close(){modal.classList.add('hidden');document.body.style.overflow=''}
- $('#openAddModalBtn')?.addEventListener('click',()=>open());
- $('#closeAddModalBtn')?.addEventListener('click',close);$('#cancelModalBtn')?.addEventListener('click',close);$('#modalOverlay')?.addEventListener('click',close);
- file?.addEventListener('change',()=>{const f=file.files?.[0];if(!f)return;if(!f.type.startsWith('image/')){toast('Please choose an image file.');file.value='';return}if(f.size>2*1024*1024){toast('Image must be 2 MB or smaller.');file.value='';return}const rd=new FileReader();rd.onload=()=>{imageData=rd.result;preview.src=imageData;preview.classList.remove('hidden')};rd.readAsDataURL(f)});
+    toast.timer = setTimeout(() => {
+      element.hidden = true;
+    }, 3200);
+  }
 
- function render() {
-    grid.innerHTML = '';
+  window.showToast = toast;
 
-    db.equipment.forEach(e => {
-        const card = document.createElement('article');
+  function setText(selector, value) {
+    const element = $(selector);
+    if (element) element.textContent = String(value ?? "");
+  }
+
+  function formatDate(value) {
+    if (!value) return "Not specified";
+
+    const date = new Date(value);
+
+    return Number.isNaN(date.getTime())
+      ? String(value)
+      : date.toLocaleString();
+  }
+
+  function formatDuration(start, end) {
+    if (!start || !end) return "Not returned";
+
+    const minutes = Math.max(
+      0,
+      Math.floor((new Date(end) - new Date(start)) / 60000)
+    );
+
+    return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+  }
+
+  // ==================================================
+  // AUTHENTICATION AND STAFF PROFILE
+  // ==================================================
+
+  async function logout() {
+    try {
+      const { error } = await supabase().auth.signOut();
+
+      if (error) throw error;
+
+      window.location.href = "../index.html";
+
+    } catch (error) {
+      console.error("CampusShare logout failed:", error);
+
+      toast(error.message || "Could not log out. Please try again.");
+    }
+  }
+
+  async function loadStaffProfile() {
+    if (!supabase()) {
+      throw new Error("Supabase client is not initialized.");
+    }
+
+    const { data, error } = await supabase().auth.getUser();
+
+    if (error) throw error;
+
+    if (!data?.user) {
+      window.location.href = "../index.html";
+      throw new Error("Please sign in to open the staff portal.");
+    }
+
+    state.user = data.user;
+
+    const {
+      data: profile,
+      error: profileError
+    } = await supabase()
+      .from("profiles")
+      .select("id, full_name, email, department, role")
+      .eq("id", state.user.id)
+      .maybeSingle();
+
+    if (profileError) throw profileError;
+
+    if (
+      !profile ||
+      !["owner", "admin"].includes(
+        String(profile.role || "").toLowerCase()
+      )
+    ) {
+      await supabase().auth.signOut();
+
+      window.location.href = "../index.html";
+
+      throw new Error(
+        "This account does not have approved staff access."
+      );
+    }
+
+    state.profile = profile;
+
+    renderStaffProfile();
+  }
+
+  function renderStaffProfile() {
+    const fullName =
+      state.profile?.full_name ||
+      state.user?.email?.split("@")[0] ||
+      "Staff member";
+
+    const email =
+      state.profile?.email ||
+      state.user?.email ||
+      "";
+
+    const department =
+      state.profile?.department ||
+      "Department not provided";
+
+    const initials = fullName
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(part => part.charAt(0))
+      .join("")
+      .toUpperCase() || "S";
+
+    setText("#staffDisplayName", fullName);
+    setText("#staffDepartment", department);
+    setText("#staffEmail", email);
+    setText("#staffProfileInitial", initials);
+    setText("#staffWelcomeHeading", `Welcome back, ${fullName}`);
+
+    const oldHeading = $("main h1");
+
+    if (
+      oldHeading &&
+      /^Welcome back/i.test(oldHeading.textContent.trim())
+    ) {
+      oldHeading.textContent = `Welcome back, ${fullName}`;
+    }
+
+    if (!$("#staffLogoutButton")) {
+      const header = $("header");
+
+      if (header) {
+        const button = document.createElement("button");
+
+        button.id = "staffLogoutButton";
+        button.type = "button";
+        button.className =
+          "ml-3 px-3 py-2 rounded-lg border text-sm font-semibold hover:bg-surface-container";
+
+        button.textContent = "Log out";
+
+        button.addEventListener("click", logout);
+
+        header.append(button);
+      }
+    }
+
+    // Remove these links if an older page still contains them.
+    $$('a[data-path="settings"], a[data-path="help-and-support"]')
+      .forEach(link => link.remove());
+  }
+
+  // ==================================================
+  // LOAD EQUIPMENT FROM SUPABASE
+  // ==================================================
+
+  async function loadEquipment() {
+    const [resources, categories] = await Promise.all([
+      window.CampusDB.get("resources", {
+        filters: {
+          owner_id: state.user.id
+        },
+        orderBy: "created_at",
+        ascending: false
+      }),
+
+      window.CampusDB.get("categories", {
+        orderBy: "category_name",
+        ascending: true
+      })
+    ]);
+
+    state.categories = categories || [];
+
+    const categoryNames = new Map(
+      state.categories.map(item => [
+        item.id,
+        item.category_name
+      ])
+    );
+
+    state.equipment = (resources || []).map(item => ({
+      id: item.id,
+      name: item.name || "Unnamed equipment",
+      description: item.description || "",
+      image: item.image_url || "",
+      location: item.location || "",
+      categoryId: item.category_id || null,
+      category: categoryNames.get(item.category_id) || "Other",
+      totalQuantity: Number(item.total_quantity || 0),
+      availableQuantity: Number(item.available_quantity || 0),
+      condition: item.condition || "",
+      status: item.status || "available"
+    }));
+
+    return state.equipment;
+  }
+
+  // ==================================================
+  // BOOKING STATUS CONVERSION
+  // ==================================================
+
+  function displayStatus(value) {
+    const key = statusKey(value);
+
+    if (["approved", "ready"].includes(key)) return "approved";
+
+    if (["declined", "rejected", "cancelled"].includes(key)) {
+      return "rejected";
+    }
+
+    if (["waitlisted", "waitlist"].includes(key)) {
+      return "waitlist";
+    }
+
+    if (["borrowed", "issued", "in-use"].includes(key)) {
+      return "borrowed";
+    }
+
+    if (["returned", "completed"].includes(key)) {
+      return "returned";
+    }
+
+    return "pending";
+  }
+
+  // ==================================================
+  // LOAD STUDENT BOOKING REQUESTS
+  // ==================================================
+
+  async function loadRequests() {
+    state.requests = [];
+
+    const resourceIds = state.equipment.map(item => item.id);
+
+    if (!resourceIds.length) return state.requests;
+
+    const {
+      data: requestItems,
+      error: itemError
+    } = await supabase()
+      .from("booking_request_items")
+      .select(
+        "id, request_id, resource_id, requested_quantity, approved_quantity, item_status"
+      )
+      .in("resource_id", resourceIds);
+
+    if (itemError) throw itemError;
+
+    if (!requestItems?.length) return state.requests;
+
+    const requestIds = [
+      ...new Set(
+        requestItems
+          .map(item => item.request_id)
+          .filter(Boolean)
+      )
+    ];
+
+    const [
+      { data: bookingRequests, error: bookingError },
+      { data: resources, error: resourceError }
+    ] = await Promise.all([
+      supabase()
+        .from("booking_requests")
+        .select(
+          "id, student_id, request_date, start_date, due_date, status, created_at"
+        )
+        .in("id", requestIds),
+
+      supabase()
+        .from("resources")
+        .select("id, name, owner_id")
+        .in("id", resourceIds)
+    ]);
+
+    if (bookingError) throw bookingError;
+    if (resourceError) throw resourceError;
+
+    const bookingMap = new Map(
+      (bookingRequests || []).map(item => [
+        item.id,
+        item
+      ])
+    );
+
+    const resourceMap = new Map(
+      (resources || []).map(item => [
+        item.id,
+        item
+      ])
+    );
+
+    const studentIds = [
+      ...new Set(
+        (bookingRequests || [])
+          .map(item => item.student_id)
+          .filter(Boolean)
+      )
+    ];
+
+    let studentMap = new Map();
+
+    if (studentIds.length) {
+      const {
+        data: students,
+        error: studentError
+      } = await supabase()
+        .from("profiles")
+        .select("id, full_name, email, department")
+        .in("id", studentIds);
+
+      if (studentError) {
+        console.warn(
+          "Student profiles could not be read. Check profiles RLS policies:",
+          studentError
+        );
+      } else {
+        studentMap = new Map(
+          (students || []).map(item => [
+            item.id,
+            item
+          ])
+        );
+      }
+    }
+
+    state.requests = requestItems.map(item => {
+      const booking = bookingMap.get(item.request_id) || {};
+      const resource = resourceMap.get(item.resource_id) || {};
+      const student = studentMap.get(booking.student_id) || {};
+
+      return {
+        id: item.id,
+        sourceId: booking.id || item.request_id,
+        studentId: booking.student_id || null,
+        title: student.full_name || student.email || "Student",
+        studentEmail: student.email || "",
+        department: student.department || "",
+        equipmentName: resource.name || "Equipment",
+        resourceId: item.resource_id,
+        requestedQuantity: Number(item.requested_quantity || 1),
+        approvedQuantity: Number(item.approved_quantity || 0),
+        date: booking.start_date || "",
+        endDate: booking.due_date || "",
+        createdAt: booking.created_at || booking.request_date || "",
+        category: displayStatus(item.item_status || booking.status),
+        itemStatus: item.item_status || "pending"
+      };
+    }).sort((a, b) =>
+      new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    );
+
+    return state.requests;
+  }
+
+  // ==================================================
+  // LOAD BORROWING AND RETURN HISTORY
+  // ==================================================
+
+  async function loadHistory() {
+    state.history = [];
+
+    const itemIds = state.requests.map(item => item.id);
+
+    if (!itemIds.length) return state.history;
+
+    const {
+      data: records,
+      error
+    } = await supabase()
+      .from("borrow_records")
+      .select(
+        "id, request_item_id, quantity_borrowed, quantity_returned, borrowed_at, due_date, returned_at, return_status, handed_over_by, received_by"
+      )
+      .in("request_item_id", itemIds)
+      .order("borrowed_at", {
+        ascending: false
+      });
+
+    if (error) throw error;
+
+    const requestMap = new Map(
+      state.requests.map(item => [
+        item.id,
+        item
+      ])
+    );
+
+    state.history = (records || []).map(record => {
+      const request =
+        requestMap.get(record.request_item_id) || {};
+
+      return {
+        id: record.id,
+        requestId: request.sourceId || record.request_item_id,
+        equipment: request.equipmentName || "Equipment",
+        user: request.title || "Student",
+        date: record.returned_at || record.borrowed_at,
+        duration: formatDuration(
+          record.borrowed_at,
+          record.returned_at
+        ),
+        status: record.returned_at ? "Returned" : "Borrowed",
+        quantity: Number(record.quantity_borrowed || 0)
+      };
+    });
+
+    return state.history;
+  }
+
+  async function logActivity(action, details) {
+    try {
+      const { error } = await supabase()
+        .from("activity_logs")
+        .insert({
+          user_id: state.user.id,
+          action,
+          details: details || {}
+        });
+
+      if (error) {
+        console.warn("Activity log not saved:", error);
+      }
+
+    } catch (error) {
+      console.warn("Activity log not saved:", error);
+    }
+  }
+
+  async function reloadAll() {
+    await loadEquipment();
+    await loadRequests();
+    await loadHistory();
+    renderCurrentPage();
+  }
+
+  // ==================================================
+  // EQUIPMENT COUNTS
+  // ==================================================
+
+  function equipmentCounts() {
+    const total = state.equipment.reduce(
+      (sum, item) => sum + item.totalQuantity,
+      0
+    );
+
+    const available = state.equipment.reduce(
+      (sum, item) => sum + item.availableQuantity,
+      0
+    );
+
+    const maintenance = state.equipment
+      .filter(item => statusKey(item.status).includes("maintenance"))
+      .reduce(
+        (sum, item) =>
+          sum + Math.max(
+            0,
+            item.totalQuantity - item.availableQuantity
+          ),
+        0
+      );
+
+    const inUse = Math.max(
+      0,
+      total - available - maintenance
+    );
+
+    return {
+      total,
+      available,
+      inUse,
+      maintenance
+    };
+  }
+
+  function renderEquipmentCounts() {
+    const counts = equipmentCounts();
+
+    setText("#totalEquipmentCount", counts.total);
+    setText("#availableCount", `${counts.available} Units`);
+    setText("#inUseCount", `${counts.inUse} Units`);
+    setText("#maintenanceCount", `${counts.maintenance} Units`);
+    setText("#visibleCount", state.equipment.length);
+  }
+
+  // ==================================================
+  // CATEGORY FILTER
+  // ==================================================
+
+  function populateCategoryFilter() {
+    const select = $("#categoryFilter");
+
+    if (!select) return;
+
+    const previous = select.value || "all";
+
+    select.innerHTML =
+      '<option value="all">All Categories</option>' +
+      state.categories.map(category =>
+        `<option value="${esc(category.category_name)}">${esc(category.category_name)}</option>`
+      ).join("");
+
+    if (
+      [...select.options].some(option => option.value === previous)
+    ) {
+      select.value = previous;
+    }
+  }
+
+  // ==================================================
+  // EQUIPMENT SEARCH AND FILTER
+  // ==================================================
+
+  function applyEquipmentFilters() {
+    const grid = $("#equipmentGridContainer");
+
+    if (!grid) return;
+
+    const query =
+      ($("#equipmentSearchInput")?.value || "")
+        .toLowerCase()
+        .trim();
+
+    const category = $("#categoryFilter")?.value || "all";
+    const status = $("#statusFilter")?.value || "all";
+    const location = $("#locationFilter")?.value || "all";
+
+    let visible = 0;
+
+    $$(".equipment-card", grid).forEach(card => {
+      const textMatch =
+        !query ||
+        `${card.dataset.name} ${card.dataset.id} ${card.dataset.room}`
+          .toLowerCase()
+          .includes(query);
+
+      const categoryMatch =
+        category === "all" ||
+        card.dataset.category === category;
+
+      const statusMatch =
+        status === "all" ||
+        statusKey(card.dataset.status) === statusKey(status);
+
+      const locationMatch =
+        location === "all" ||
+        (card.dataset.room || "")
+          .toLowerCase()
+          .includes(location.toLowerCase());
+
+      const show =
+        textMatch &&
+        categoryMatch &&
+        statusMatch &&
+        locationMatch;
+
+      card.hidden = !show;
+
+      if (show) visible++;
+    });
+
+    setText("#visibleCount", visible);
+
+    const empty = $("#emptySearchState");
+
+    if (empty) {
+      empty.classList.toggle("hidden", visible > 0);
+    }
+  }
+
+  window.filterEquipmentCards = applyEquipmentFilters;
+
+  // ==================================================
+  // DISPLAY EQUIPMENT
+  // ==================================================
+
+  function renderEquipment() {
+    const grid = $("#equipmentGridContainer");
+
+    if (!grid) return;
+
+    grid.innerHTML = "";
+
+    if (!state.equipment.length) {
+      grid.innerHTML = `
+        <div class="col-span-full rounded-xl border border-dashed p-10 text-center text-sm text-on-surface-variant">
+          No equipment has been added to your inventory yet.
+        </div>
+      `;
+    } else {
+      state.equipment.forEach(item => {
+        const card = document.createElement("article");
 
         card.className =
-            'equipment-card flex flex-col rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden';
+          "equipment-card flex flex-col rounded-xl bg-surface-container-lowest shadow-sm overflow-hidden";
 
-        card.dataset.id = e.id;
-        card.dataset.name = e.name || '';
-        card.dataset.room = e.location || '';
-        card.dataset.status = e.status || 'available';
+        card.dataset.id = item.id;
+        card.dataset.name = item.name;
+        card.dataset.room = item.location;
+        card.dataset.status = statusKey(item.status);
+        card.dataset.category = item.category;
 
-        card.dataset.category = e.category || (
-            (e.id || '').includes('MS') ? 'mass-spec' :
-            (e.id || '').includes('MIC') ? 'microscopy' :
-            (e.id || '').includes('GEN') ? 'genomics' :
-            (e.id || '').includes('EM') ? 'em' :
-            (e.id || '').includes('CEN') ? 'centrifugation' :
-            (e.id || '').includes('CYT') ? 'flow-cytometry' : 'other'
-        );
+        const image = item.image
+          ? `
+            <img
+              src="${esc(item.image)}"
+              alt="${esc(item.name)}"
+              class="w-full h-full object-cover"
+            >
+          `
+          : `
+            <div class="h-full flex items-center justify-center text-outline">
+              No image
+            </div>
+          `;
 
         card.innerHTML = `
-            <div class="h-44 bg-surface-container overflow-hidden">
-                ${e.image
-                    ? `<img src="${esc(e.image)}" alt="${esc(e.name)}"
-                        class="w-full h-full object-cover">`
-                    : `<div class="h-full flex items-center justify-center text-outline">
-                        No image
-                       </div>`
-                }
+          <div class="h-44 bg-surface-container overflow-hidden">
+            ${image}
+          </div>
+
+          <div class="p-5 flex-1">
+
+            <h2 class="font-title-md">
+              ${esc(item.name)}
+            </h2>
+
+            <p class="text-sm text-on-surface-variant mt-2">
+              ${esc(item.description)}
+            </p>
+
+            <p class="text-sm mt-3">
+              Location: ${esc(item.location || "Not specified")}
+            </p>
+
+            <p class="text-sm mt-2">
+              ${esc(item.category)}
+              · ${item.availableQuantity}/${item.totalQuantity} available
+            </p>
+
+            <p class="text-sm mt-1">
+              Status: ${esc(item.status)}
+            </p>
+
+            <div class="flex gap-2 mt-5">
+
+              <button
+                type="button"
+                data-edit="${esc(item.id)}"
+                class="px-3 py-2 rounded bg-surface-container"
+              >
+                Edit
+              </button>
+
+              <button
+                type="button"
+                data-delete="${esc(item.id)}"
+                class="px-3 py-2 rounded bg-error-container text-error"
+              >
+                Delete
+              </button>
+
             </div>
-
-            <div class="p-5 flex-1">
-                <h2 class="font-title-md">${esc(e.name)}</h2>
-
-                <p class="text-sm text-on-surface-variant mt-2">
-                    ${esc(e.description || '')}
-                </p>
-
-                <p class="text-sm mt-3">
-                    📍 ${esc(e.location || '')}
-                </p>
-
-                <p class="text-sm mt-2">
-                    Status: ${esc(e.status || 'available')}
-                </p>
-
-                <div class="flex gap-2 mt-5">
-                    <button type="button"
-                        data-edit="${esc(e.id)}"
-                        class="px-3 py-2 rounded bg-surface-container">
-                        Edit
-                    </button>
-
-                    <button type="button"
-                        data-delete="${esc(e.id)}"
-                        class="px-3 py-2 rounded bg-error-container text-error">
-                        Delete
-                    </button>
-                </div>
-            </div>
+          </div>
         `;
 
-        grid.appendChild(card);
-    });
+        grid.append(card);
+      });
+    }
 
-    // Update counts only AFTER all equipment cards are rendered
-    updateEquipmentCounts();
-
-    // Update equipment table
-    const tbody = $('#equipmentTableContainer tbody');
+    const tbody = $("#equipmentTableContainer tbody");
 
     if (tbody) {
-        tbody.innerHTML = db.equipment.map(e => `
-            <tr class="border-b">
-                <td class="px-4 py-3">
-                    <strong>${esc(e.name)}</strong>
-                    <div class="text-xs">${esc(e.id)}</div>
-                </td>
+      tbody.innerHTML = state.equipment.length
+        ? state.equipment.map(item => `
+          <tr class="border-b">
 
-                <td class="px-4 py-3">—</td>
-                <td class="px-4 py-3">${esc(e.location || '')}</td>
-                <td class="px-4 py-3">${esc(e.status || 'available')}</td>
-                <td class="px-4 py-3">—</td>
+            <td class="px-4 py-3">
+              <strong>${esc(item.name)}</strong>
+              <div class="text-xs">${esc(item.id)}</div>
+            </td>
 
-                <td class="px-4 py-3 text-right">
-                    <button type="button"
-                        data-edit="${esc(e.id)}"
-                        class="px-2 py-1 bg-surface-container rounded">
-                        Edit
-                    </button>
+            <td class="px-4 py-3">
+              ${esc(item.category)}
+            </td>
 
-                    <button type="button"
-                        data-delete="${esc(e.id)}"
-                        class="px-2 py-1 bg-error-container text-error rounded">
-                        Delete
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+            <td class="px-4 py-3">
+              ${esc(item.location)}
+            </td>
+
+            <td class="px-4 py-3">
+              ${esc(item.status)}
+            </td>
+
+            <td class="px-4 py-3">
+              ${item.availableQuantity}/${item.totalQuantity}
+            </td>
+
+            <td class="px-4 py-3 text-right">
+              <button
+                type="button"
+                data-edit="${esc(item.id)}"
+                class="px-2 py-1 bg-surface-container rounded"
+              >
+                Edit
+              </button>
+
+              <button
+                type="button"
+                data-delete="${esc(item.id)}"
+                class="px-2 py-1 bg-error-container text-error rounded"
+              >
+                Delete
+              </button>
+            </td>
+
+          </tr>
+        `).join("")
+        : `
+          <tr>
+            <td colspan="6" class="p-6 text-center">
+              No equipment available yet.
+            </td>
+          </tr>
+        `;
     }
 
-    // Initial visible count
-    const visibleCount = $('#visibleCount');
-    if (visibleCount) {
-        visibleCount.textContent = db.equipment.length;
+    populateCategoryFilter();
+    renderEquipmentCounts();
+    applyEquipmentFilters();
+  }
+
+  // ==================================================
+  // EQUIPMENT PAGE: ADD, EDIT AND DELETE
+  // ==================================================
+
+  function setupEquipmentPage() {
+    const modal = $("#addEquipmentModal");
+    const grid = $("#equipmentGridContainer");
+
+    if (!modal || !grid) return;
+
+    const name = $("#equipmentNameField");
+    const description = $("#equipmentDescriptionField");
+    const location = $("#equipmentLocationField");
+    const file = $("#equipmentImageField");
+    const preview = $("#equipmentImagePreview");
+
+    let editingId = null;
+
+    function openModal(item = null) {
+      editingId = item?.id || null;
+
+      name.value = item?.name || "";
+      description.value = item?.description || "";
+      location.value = item?.location || "";
+
+      state.selectedImage = item?.image || null;
+
+      if (preview) {
+        preview.src = state.selectedImage || "";
+        preview.classList.toggle("hidden", !state.selectedImage);
+      }
+
+      const heading = $("#addEquipmentModal h2");
+
+      if (heading) {
+        heading.textContent = editingId
+          ? "Edit Equipment"
+          : "Add Equipment";
+      }
+
+      modal.classList.remove("hidden");
+      document.body.style.overflow = "hidden";
     }
 
-    const totalCount = $('#totalEquipmentCount');
-    if (totalCount) {
-        totalCount.textContent = db.equipment.length;
-    }
-}
- 
-const saveEquipment = (event) => {
-    event?.preventDefault();
-
-    const equipmentName = name.value.trim();
-    const equipmentLocation = loc.value.trim();
-
-    if (!equipmentName || !equipmentLocation) {
-        toast('Please enter equipment name and location.');
-        return;
-    }
- $('#publishEquipmentBtn')?.addEventListener('click', saveEquipment);
-$('#saveDraftBtn')?.addEventListener('click', saveEquipment);
-
-    const existingId = editing;
-    const item = {
-        id: existingId || id(),
-        name: equipmentName,
-        description: desc.value.trim(),
-        location: equipmentLocation,
-        image: imageData,
-        status: existingId
-            ? (db.equipment.find(x => x.id === existingId)?.status || 'available')
-            : 'available'
-    };
-
-    if (existingId) {
-        const index = db.equipment.findIndex(x => x.id === existingId);
-        if (index !== -1) {
-            db.equipment[index] = item;
-        }
-    } else {
-        db.equipment.push(item);
+    function closeModal() {
+      modal.classList.add("hidden");
+      document.body.style.overflow = "";
+      editingId = null;
     }
 
-    save();
-    render();
-    close();
+    $("#openAddModalBtn")?.addEventListener(
+      "click",
+      () => openModal()
+    );
 
-    // Clear the form
-    name.value = '';
-    desc.value = '';
-    loc.value = '';
-    file.value = '';
-    imageData = '';
-    editing = null;
+    $("#headerAddEquipmentBtn")?.addEventListener(
+      "click",
+      () => openModal()
+    );
 
-    updateEquipmentCounts?.();
+    $("#closeAddModalBtn")?.addEventListener(
+      "click",
+      closeModal
+    );
 
-    toast(existingId
-        ? 'Equipment updated successfully.'
-        : 'Equipment added successfully.');
-};
+    $("#cancelModalBtn")?.addEventListener(
+      "click",
+      closeModal
+    );
 
-$('#publishEquipmentBtn')?.addEventListener('click', saveEquipment);
-$('#saveDraftBtn')?.addEventListener('click', saveEquipment);
+    $("#modalOverlay")?.addEventListener(
+      "click",
+      closeModal
+    );
 
- grid.addEventListener('click',e=>{const eb=e.target.closest('[data-edit]'),dbtn=e.target.closest('[data-delete]');if(eb){const item=db.equipment.find(x=>x.id===eb.dataset.edit);open(item)}if(dbtn&&confirm('Delete this equipment?')){db.equipment=db.equipment.filter(x=>x.id!==dbtn.dataset.delete);save();render();toast('Equipment deleted.')}});
- render();
- $('#gridToggleBtn')?.addEventListener('click',()=>{grid.classList.remove('hidden');$('#equipmentTableContainer')?.classList.add('hidden')});
- $('#tableToggleBtn')?.addEventListener('click',()=>{grid.classList.add('hidden');$('#equipmentTableContainer')?.classList.remove('hidden')});
- const search=$('#equipmentSearchInput'),cat=$('#categoryFilter'),status=$('#statusFilter'),location=$('#locationFilter');
+    $("#clearFiltersBtn")?.addEventListener("click", () => {
+      if ($("#equipmentSearchInput")) {
+        $("#equipmentSearchInput").value = "";
+      }
 
- 
-function filterEq() {
-    const q = (search?.value || '').toLowerCase().trim();
-    const selectedCategory = cat?.value || 'all';
-    const selectedStatus = status?.value || 'all';
-    const selectedLocation = location?.value || 'all';
+      if ($("#categoryFilter")) {
+        $("#categoryFilter").value = "all";
+      }
 
-    let matched = 0;
+      if ($("#statusFilter")) {
+        $("#statusFilter").value = "all";
+      }
 
-    $$('.equipment-card', grid).forEach(card => {
-        const category = card.dataset.category || 'other';
-        const cardStatus = (card.dataset.status || 'available').toLowerCase();
-        const room = (card.dataset.room || '').toLowerCase();
-        const name = (card.dataset.name || '').toLowerCase();
-        const id = (card.dataset.id || '').toLowerCase();
+      if ($("#locationFilter")) {
+        $("#locationFilter").value = "all";
+      }
 
-        const matchesSearch =
-            !q || `${name} ${id} ${room}`.toLowerCase().includes(q);
-
-        const matchesCategory =
-            selectedCategory === 'all' || category === selectedCategory;
-
-        const matchesStatus =
-            selectedStatus === 'all' || cardStatus === selectedStatus;
-
-        const matchesLocation =
-            selectedLocation === 'all' ||
-            room.includes(selectedLocation.toLowerCase());
-
-        const visible =
-            matchesSearch && matchesCategory &&
-            matchesStatus && matchesLocation;
-
-        card.style.display = visible ? '' : 'none';
-
-        if (visible) matched++;
+      applyEquipmentFilters();
     });
 
-    const visibleCount = $('#visibleCount');
-    if (visibleCount) visibleCount.textContent = matched;
+    file?.addEventListener("change", () => {
+      const selected = file.files?.[0];
 
-    const emptyState = $('#emptySearchState');
-    if (emptyState) {
-        emptyState.classList.toggle('hidden', matched > 0);
-        emptyState.classList.toggle('flex', matched === 0);
+      if (!selected) return;
+
+      if (!selected.type.startsWith("image/")) {
+        toast("Please select an image file.");
+        file.value = "";
+        return;
+      }
+
+      if (selected.size > 2 * 1024 * 1024) {
+        toast("Image must be 2 MB or smaller.");
+        file.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        state.selectedImage = String(reader.result || "");
+
+        if (preview) {
+          preview.src = state.selectedImage;
+          preview.classList.remove("hidden");
+        }
+      };
+
+      reader.readAsDataURL(selected);
+    });
+
+    async function saveEquipment(event) {
+      event?.preventDefault();
+
+      const itemName = name?.value.trim() || "";
+      const itemDescription = description?.value.trim() || "";
+      const itemLocation = location?.value.trim() || "";
+
+      if (!itemName || !itemLocation) {
+        return toast("Equipment name and location are required.");
+      }
+
+      const saveButton = $("#publishEquipmentBtn");
+
+      if (saveButton) saveButton.disabled = true;
+
+      try {
+        const changes = {
+          name: itemName,
+          description: itemDescription,
+          location: itemLocation,
+          image_url: state.selectedImage || null,
+          condition: "good",
+          status: "available"
+        };
+
+        if (editingId) {
+          const result = await window.CampusDB.update(
+            "resources",
+            {
+              id: editingId,
+              owner_id: state.user.id
+            },
+            changes
+          );
+
+          if (!result?.length) {
+            throw new Error(
+              "Equipment was not updated. Check ownership and database permissions."
+            );
+          }
+
+          toast("Equipment updated successfully.");
+
+        } else {
+          await window.CampusDB.insert(
+            "resources",
+            {
+              ...changes,
+              owner_id: state.user.id,
+              total_quantity: 1,
+              available_quantity: 1,
+              category_id: null
+            }
+          );
+
+          toast("Equipment added successfully.");
+        }
+
+        closeModal();
+
+        if (name) name.value = "";
+        if (description) description.value = "";
+        if (location) location.value = "";
+        if (file) file.value = "";
+
+        state.selectedImage = null;
+
+        await reloadAll();
+
+      } catch (error) {
+        console.error("Equipment save failed:", error);
+
+        toast(error.message || "Could not save equipment.");
+
+      } finally {
+        if (saveButton) saveButton.disabled = false;
+      }
     }
-}
-search?.addEventListener('input',filterEq);cat?.addEventListener('change',filterEq);status?.addEventListener('change',filterEq);location?.addEventListener('change',filterEq);
-window.refreshEquipmentPage=render;
-filterEq();
-}
 
-function requestPage(){
- const container=$('#requestsContainer')||$('main');if(!container)return;
- // Replace static sample cards with records from the shared student request store.
- const oldCards=$$('.request-card',container);oldCards.forEach(card=>{card.hidden=true;card.style.display='none';});
- let panel=$('#studentPortalLiveRequests');
- if(!panel){panel=document.createElement('section');panel.id='studentPortalLiveRequests';panel.className='mt-5 rounded-xl bg-surface-container-lowest p-4 md:p-6';container.prepend(panel);}
- let filter='all';let query='';let selected=new Set();
- const statusLabel={pending:'Pending review',approved:'Approved',waitlist:'Waitlisted',rejected:'Declined',borrowed:'Currently borrowed',returned:'Returned'};
- const dateText=v=>{if(!v)return 'Not specified';const d=new Date(v);return Number.isNaN(d.getTime())?esc(v):d.toLocaleDateString()};
- function visibleItems(){return db.requests.filter(r=>r.source==='student-portal').filter(r=>filter==='all'||r.category===filter).filter(r=>!query||[r.title,r.studentEmail,r.equipment,r.purpose,r.sourceId].join(' ').toLowerCase().includes(query));}
- function render(){
-  const all=db.requests.filter(r=>r.source==='student-portal');
-  const counts={all:all.length,pending:all.filter(r=>r.category==='pending').length,approved:all.filter(r=>r.category==='approved').length,waitlist:all.filter(r=>r.category==='waitlist').length,rejected:all.filter(r=>r.category==='rejected').length,borrowed:all.filter(r=>r.category==='borrowed').length,returned:all.filter(r=>r.category==='returned').length};
-  const items=visibleItems();
-  panel.innerHTML=`<div class="flex flex-wrap items-start justify-between gap-3 mb-4"><div><h2 class="text-xl font-semibold text-on-surface">Student booking requests</h2><p class="text-sm text-on-surface-variant mt-1">Live requests submitted through the student portal on this browser profile.</p></div><button type="button" data-refresh-requests class="px-3 py-2 rounded-lg border text-sm">Refresh</button></div>
-  <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-4">${['all','pending','approved','waitlist','rejected','borrowed','returned'].map(k=>`<button type="button" data-filter="${k}" class="rounded-lg border p-2 text-left ${filter===k?'bg-primary text-white border-primary':'bg-surface text-on-surface'}"><span class="block text-xs">${k==='all'?'All':statusLabel[k]||k}</span><strong class="text-lg">${counts[k]}</strong></button>`).join('')}</div>
-  <div class="flex flex-col sm:flex-row gap-2 mb-4"><input id="liveRequestSearch" value="${esc(query)}" class="w-full sm:flex-1 rounded-lg border px-3 py-2" placeholder="Search student, equipment, email or purpose"><button type="button" data-select-visible class="px-3 py-2 rounded-lg border">Select visible</button><button type="button" data-batch-approve class="px-3 py-2 rounded-lg bg-primary text-white">Approve selected</button><span class="self-center text-sm text-on-surface-variant">${selected.size} selected</span></div>
-  <div class="space-y-3">${items.length?items.map(r=>{const status=r.category||'pending';const canReview=['pending','waitlist'].includes(status);return `<article class="border rounded-xl p-4" data-live-id="${esc(r.id)}"><div class="flex flex-wrap justify-between gap-3"><div class="flex gap-3 min-w-0"><input type="checkbox" data-select-request="${esc(r.id)}" ${selected.has(r.id)?'checked':''} aria-label="Select request"><div class="min-w-0"><div class="font-semibold">${esc(r.title||'Student')}</div><div class="text-xs text-on-surface-variant">${esc(r.studentEmail||'Email not provided')} · Request ${esc(r.sourceId||r.id)}</div></div></div><span class="px-2 py-1 rounded-full text-xs font-semibold ${status==='approved'||status==='returned'?'bg-emerald-100 text-emerald-800':status==='rejected'?'bg-red-100 text-red-800':'bg-amber-100 text-amber-900'}">${esc(statusLabel[status]||status)}</span></div>
-  <div class="grid sm:grid-cols-2 gap-2 mt-3 text-sm"><div><span class="text-on-surface-variant">Equipment</span><div class="font-medium">${esc(r.equipmentName||r.equipment||'Equipment')}</div><div class="text-xs text-on-surface-variant">ID: ${esc(r.equipment||'Not linked')}</div></div><div><span class="text-on-surface-variant">Booking period</span><div class="font-medium">${dateText(r.date)} – ${dateText(r.endDate)}</div></div></div>
-  ${r.purpose?`<p class="text-sm mt-3"><span class="text-on-surface-variant">Purpose:</span> ${esc(r.purpose)}</p>`:''}${r.decisionReason?`<p class="text-sm mt-2 text-error">Decision note: ${esc(r.decisionReason)}</p>`:''}
-  <div class="flex flex-wrap gap-2 mt-4">${canReview?`<button data-action="approve" class="px-3 py-2 rounded-lg bg-primary text-white text-sm">Approve</button><button data-action="waitlist" class="px-3 py-2 rounded-lg border text-sm">Waitlist</button><button data-action="reject" class="px-3 py-2 rounded-lg bg-error-container text-error text-sm">Decline</button>`:''}${status==='approved'?'<button data-action="start" class="px-3 py-2 rounded-lg bg-primary text-white text-sm">Start borrowing</button>':''}${status==='borrowed'?'<button data-action="return" class="px-3 py-2 rounded-lg bg-primary text-white text-sm">Complete return</button>':''}${status==='waitlist'?'<button data-action="approve" class="px-3 py-2 rounded-lg bg-primary text-white text-sm">Promote / approve</button>':''}${['rejected','returned'].includes(status)?'<button data-action="reopen" class="px-3 py-2 rounded-lg border text-sm">Reopen review</button>':''}<button data-action="details" class="px-3 py-2 rounded-lg border text-sm">Details</button></div><div data-details class="hidden mt-3 rounded-lg bg-surface-container-low p-3 text-xs text-on-surface-variant">Submitted: ${dateText(r.createdAt||r.submittedAt)} · Student record: ${esc(r.sourceId||'—')} · Current status: ${esc(statusLabel[status]||status)}${r.startedAt?` · Started: ${dateText(new Date(r.startedAt).toISOString())}`:''}</div></article>`}).join(''):'<div class="rounded-lg border border-dashed p-8 text-center text-sm text-on-surface-variant">No student booking requests match this filter. Submit a booking from the student portal to see it here.</div>'}</div>`;
- }
- window.renderStudentPortalRequests=render;
- render();
- panel.addEventListener('input',e=>{if(e.target.id==='liveRequestSearch'){query=e.target.value.toLowerCase().trim();render();const input=$('#liveRequestSearch');input?.focus();input?.setSelectionRange(query.length,query.length);}});
- panel.addEventListener('change',e=>{const id=e.target.dataset.selectRequest;if(id){if(e.target.checked)selected.add(id);else selected.delete(id);render();}});
- panel.addEventListener('click',e=>{
-  const filterBtn=e.target.closest('[data-filter]');if(filterBtn){filter=filterBtn.dataset.filter;selected.clear();render();return;}
-  if(e.target.closest('[data-refresh-requests]')){syncFromStudentPortal();render();toast('Booking requests refreshed.');return;}
-  if(e.target.closest('[data-select-visible]')){visibleItems().forEach(r=>selected.add(r.id));render();return;}
-  if(e.target.closest('[data-batch-approve]')){const targets=db.requests.filter(r=>selected.has(r.id)&&r.source==='student-portal'&&['pending','waitlist'].includes(r.category));if(!targets.length){toast('Select pending or waitlisted requests first.');return;}targets.forEach(r=>recordDecision(r,'Approved'));selected.clear();render();toast(`${targets.length} request(s) approved.`);return;}
-  const button=e.target.closest('[data-action]');if(!button)return;const card=button.closest('[data-live-id]');const r=db.requests.find(x=>x.id===card?.dataset.liveId);if(!r)return;const action=button.dataset.action;
-  if(action==='details'){card.querySelector('[data-details]')?.classList.toggle('hidden');button.textContent=card.querySelector('[data-details]')?.classList.contains('hidden')?'Details':'Hide details';return;}
-  if(action==='approve'){recordDecision(r,'Approved');toast('Request approved and student status updated.');}
-  else if(action==='waitlist'){recordDecision(r,'Waitlisted');toast('Request moved to the waitlist.');}
-  else if(action==='reject'){const reason=prompt('Enter the reason for declining this booking:');if(reason===null)return;if(!reason.trim()){toast('A decline reason is required.');return;}recordDecision(r,'Declined',reason.trim());toast('Request declined and reason recorded.');}
-  else if(action==='reopen'){r.category='pending';r.decisionAt=null;r.decisionReason='';db.history.unshift({id:id(),requestId:r.id,equipment:r.equipment||r.equipmentName,user:r.title||'Student',date:new Date().toISOString(),duration:'—',status:'Reopened'});save();toast('Request reopened for review.');}
-  else if(action==='start'){r.category='borrowed';r.startedAt=Date.now();r.inventoryAdjusted=true;const eq=db.equipment.find(x=>String(x.id)===String(r.equipment));if(eq){eq.status='in-use';if(Number.isFinite(Number(eq.availableQuantity))&&eq.availableQuantity>0)eq.availableQuantity--;}save();toast('Borrowing started and equipment marked in use.');}
-  else if(action==='return'){const duration=r.startedAt?formatDuration(Date.now()-r.startedAt):'Not recorded';addHistory(r,duration);toast('Return completed and recorded in Equipment History.');}
-  render();
- });
-}
-function formatDuration(ms){const m=Math.floor(ms/60000);return `${Math.floor(m/60)}h ${m%60}m`}
-function calendarPage(){
- const main=$('main');if(!main)return;
- let wrap=$('#persistentCalendarBookings');if(!wrap){wrap=document.createElement('section');wrap.id='persistentCalendarBookings';wrap.className='mt-6 p-5 rounded-xl bg-surface-container-lowest';main.append(wrap)}
- function renderApproved(){const items=db.requests.filter(r=>r.source==='student-portal'&&['pending','approved','borrowed','waitlist'].includes(r.category));wrap.innerHTML='<h2 class="text-xl font-semibold mb-3">Student booking schedule</h2>'+(items.length?items.map(r=>`<div class="border-b py-3" data-calendar-id="${esc(r.id)}"><div class="flex flex-wrap justify-between gap-2"><strong>${esc(r.title)}</strong><span>${esc(r.category)}</span></div><div class="text-sm text-on-surface-variant">${esc(r.equipment)} · ${esc(r.date||'Date not specified')} ${r.endDate?' – '+esc(r.endDate):''}</div>${r.category==='pending'?`<div class="flex gap-2 mt-2"><button data-cal-action="approve" class="px-3 py-2 rounded bg-primary text-white">Approve</button><button data-cal-action="reject" class="px-3 py-2 rounded bg-error-container">Decline</button></div>`:''}</div>`).join(''):'<p class="text-sm text-on-surface-variant">No student bookings are scheduled.</p>')}
- renderApproved();window.refreshCalendarPage=renderApproved;
- wrap.onclick=e=>{const b=e.target.closest('[data-cal-action]');if(!b)return;const r=db.requests.find(x=>x.id===b.closest('[data-calendar-id]')?.dataset.calendarId);if(!r)return;recordDecision(r,b.dataset.calAction==='approve'?'Approved':'Declined');renderApproved();toast('Booking '+r.category+'.');};
- main.querySelectorAll('button').forEach(b=>{const label=b.innerText.trim().toLowerCase();if(label==='accept'||label==='approve'||label==='decline')b.hidden=true;});
- const cells=$$('.grid-cols-7 > div');cells.forEach(cell=>cell.addEventListener('click',()=>{if(cell.classList.contains('opacity-50'))return;cells.forEach(x=>x.classList.remove('ring-2','ring-primary'));cell.classList.add('ring-2','ring-primary');}));
-}
-function historyPage(){
- const exportCsv=()=>{const rows=[['Equipment','User','Date','Duration','Status','Institution'],...db.history.map(h=>[h.equipment,h.user,h.date,h.duration,h.status,h.institution||''])];const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='campusshare-history.csv';a.click();URL.revokeObjectURL(a.href)};
- $('#btn-export-csv')?.addEventListener('click',exportCsv);$('#btn-export-pdf')?.addEventListener('click',()=>window.print());
- const input=$('#global-search-input'),category=$('#filter-category'),status=$('#filter-status'),equipment=$('#filter-equipment'),institution=$('#filter-institution');
- const section=$('#persistentCompletedHistory')||document.createElement('section');section.id='persistentCompletedHistory';section.className='mt-6 p-5 rounded-xl bg-surface-container-lowest';if(!section.isConnected)$('main')?.append(section);
- // Original HTML contains illustrative transactions. The shared record store is authoritative.
- $$('tbody tr, .history-row, [data-transaction]').forEach(row=>{row.hidden=true});
- const categoryFor=h=>{const code=String(h.equipment||'').toUpperCase();return code.includes('MS-')?'mass-spec':code.includes('MIC-')?'microscopy':code.includes('CYT-')?'cytometry':code.includes('GEN-')?'sequencing':code.includes('CEN-')?'centrifuge':'all'};
- function render(){section.innerHTML='<h2 class="text-lg font-semibold mb-3">Activity &amp; completed transactions</h2>'+(db.history.length?db.history.map(h=>{const normalized=String(h.status||'').toLowerCase();const statusValue=normalized==='completed'?'returned':normalized==='declined'?'cancelled':normalized;return `<div class="py-3 border-b text-sm" data-history-row data-category="${categoryFor(h)}" data-status="${esc(statusValue)}" data-equipment="${esc(h.equipment)}" data-institution="${esc(h.institution||'')}"><strong>${esc(h.equipment)}</strong> · ${esc(h.user)} · <span class="font-semibold">${esc(h.status||'Completed')}</span> · ${new Date(h.date).toLocaleString()} · ${esc(h.duration||'Duration unavailable')}${h.reason?' · '+esc(h.reason):''}${h.institution?' · '+esc(h.institution):''}</div>`}).join(''):'<p class="text-sm text-on-surface-variant">No staff decisions or completed sessions have been recorded yet.</p>');apply();}
- function apply(){const q=(input?.value||'').toLowerCase(),cat=category?.value||'all',st=status?.value||'all',eq=equipment?.value||'all',inst=institution?.value||'all';$$('[data-history-row]',section).forEach(row=>{const okText=!q||row.innerText.toLowerCase().includes(q);const okCat=cat==='all'||row.dataset.category===cat;const okStatus=st==='all'||row.dataset.status===st;const okEq=eq==='all'||row.dataset.equipment===eq;const okInst=inst==='all'||row.dataset.institution.toLowerCase().includes(inst.toLowerCase());row.hidden=!(okText&&okCat&&okStatus&&okEq&&okInst)});}
- [input,category,status,equipment,institution].forEach(el=>el?.addEventListener(el===input?'input':'change',apply));
- $('#btn-reset-filters')?.addEventListener('click',()=>{if(input)input.value='';[category,status,equipment,institution].forEach(el=>{if(el)el.value='all'});apply()});
- render();window.refreshHistoryPage=render;
-}
-function dashboard(){
- const main=$('main');if(!main)return;
- let live=$('#dashboardLiveStudentRequests');
- if(!live){live=document.createElement('section');live.id='dashboardLiveStudentRequests';live.className='mt-6 rounded-xl bg-surface-container-lowest p-5';main.append(live);}
- $$('.request-item').forEach(item=>{item.hidden=true;});
- const pending=db.requests.filter(r=>r.source==='student-portal'&&['pending','approved','borrowed','waitlist'].includes(r.category));
- live.innerHTML='<h2 class="text-lg font-semibold mb-3">Student portal activity</h2>'+(pending.length?pending.map(r=>`<div class="flex flex-wrap items-center justify-between gap-3 border-b py-3"><div><strong>${esc(r.title)}</strong><p class="text-sm">${esc(r.equipment)} · ${esc(r.date||'Date not specified')} · ${esc(r.category)}</p></div><div class="flex gap-2">${r.category==='pending'?`<button class="px-3 py-2 rounded bg-primary text-white" data-dash-action="approve" data-id="${esc(r.id)}">Approve</button><button class="px-3 py-2 rounded bg-error-container" data-dash-action="reject" data-id="${esc(r.id)}">Decline</button>`:''}</div></div>`).join(''):'<p class="text-sm text-on-surface-variant">No student requests are waiting for staff action.</p>');
- live.onclick=e=>{const b=e.target.closest('[data-dash-action]');if(!b)return;const r=db.requests.find(x=>x.id===b.dataset.id);if(!r)return;r.category=b.dataset.dashAction==='approve'?'approved':'rejected';r.decisionAt=new Date().toISOString();save();dashboard();toast('Student request '+r.category+'.');};
- const counts={
-  total:db.equipment.length,
-  available:db.equipment.filter(e=>(e.status||'available').toLowerCase()==='available').length,
-  pending:db.requests.filter(r=>r.category==='pending').length,
-  approved:db.requests.filter(r=>r.category==='approved').length,
-  inUse:db.requests.filter(r=>r.category==='borrowed'||r.category==='in-use').length,
-  completed:db.history.filter(h=>h.status==='Completed').length
- };
- const cards=$$('main .grid > div').slice(0,6);
- const vals=[`${counts.total} Units`,`${counts.available} Units`,`${counts.pending} Requests`,`${counts.approved} Active`,`${counts.inUse} In-Use`,`${counts.completed} Completed`];
- cards.forEach((card,i)=>{const value=card.querySelector('.font-headline-lg');if(value)value.textContent=vals[i]||'0'});
- // Update the request badge in the sidebar from the same shared request store.
- const requestLink=$('a[data-path="booking-requests"]');
- const badge=requestLink?.querySelector('span:last-child');
- if(badge)badge.textContent=String(counts.pending);
- // Reflect current status on the dashboard's request rows after actions.
- $$('.request-item').forEach(item=>{
-   const text=(item.innerText||'').toLowerCase();
-   const r=db.requests.find(x=>{
-     const search=(x.search||'').toLowerCase(),title=(x.title||'').toLowerCase();
-     return (title&&text.includes(title.split(',')[0].toLowerCase())) ||
-       (search&&search.split(' ').some(w=>w.length>4&&text.includes(w)));
-   });
-   if(r){item.dataset.requestId=r.id;item.dataset.status=r.category;
-     const actionArea=item.querySelector('.flex.items-center.gap-space-sm:last-child');
-     if(['approved','rejected','waitlist','returned'].includes(r.category)&&actionArea){
-       actionArea.querySelectorAll('button').forEach(b=>{b.disabled=true;b.classList.add('opacity-50','cursor-not-allowed')});
-     }
-   }
- });
-}
-function globalNav(){document.querySelectorAll('a[href="#"]').forEach(a=>{const t=a.innerText.trim().toLowerCase();a.addEventListener('click',e=>{e.preventDefault();toast(t.includes('settings')?'Settings are not configured in this offline portal.':t.includes('help')?'Help: contact your portal administrator.':(a.innerText.trim()||'This option')+' is not available in this offline demo.')})})}
+    $("#publishEquipmentBtn")?.addEventListener(
+      "click",
+      saveEquipment
+    );
 
-// Inline-action compatibility retained from the original portal markup.
-function setRequestStatus(status, card){const c=card||document.querySelector('.request-card');if(!c)return;const idx=$$('.request-card').indexOf(c),r=db.requests[idx];if(r){r.category=status;save();syncCards();}}
-window.showToast=toast;
-window.filterEquipmentCards=()=>{$('#equipmentSearchInput')?.dispatchEvent(new Event('input'))};
-window.toggleDetails=(id,btn)=>{const el=$('#'+id);if(el){el.classList.toggle('hidden');if(btn)btn.textContent=el.classList.contains('hidden')?'View details':'Hide details'}};
-window.switchTab=(btn,category)=>{activeFilter=category;$$('.request-card').forEach((c,i)=>{const r=db.requests[i];c.style.display=category==='all'||r?.category===category?'':'none'});$$('.tab-btn').forEach(x=>x.classList.remove('bg-surface-container-lowest'));btn?.classList.add('bg-surface-container-lowest')};
-window.filterByTab=category=>window.switchTab(null,category);
-window.handleSearch=()=>$('#searchInput')?.dispatchEvent(new Event('input'));
-window.updateBatchCounter=()=>{const n=$$('.batch-checkbox:checked').length;$('#selectedCount')&&($('#selectedCount').textContent=n);$('#batchBar')?.classList.toggle('hidden',!n)};
-window.clearBatchSelection=()=>{$$('.batch-checkbox').forEach(x=>x.checked=false);window.updateBatchCounter()};
-window.handleBatchAccept=()=>{$$('.batch-checkbox:checked').forEach(x=>setRequestStatus('approved',x.closest('.request-card')));window.clearBatchSelection();toast('Selected requests approved.')};
-window.approveDirect=(btn)=>setRequestStatus('approved',btn?.closest('.request-card'));
-window.promoteToApproved=(btn)=>setRequestStatus('approved',btn?.closest('.request-card'));
-window.removeFromWaitlist=btn=>setRequestStatus('rejected',btn?.closest('.request-card'));
-window.revokeAccess=btn=>{if(confirm('Revoke this booking?'))setRequestStatus('rejected',btn?.closest('.request-card'))};
-window.reopenReview=btn=>setRequestStatus('pending',btn?.closest('.request-card'));
-window.downloadCheckinSlip=(name,id)=>toast('Check-in slip prepared for '+name+' ('+id+').');
-let modalTarget=null;window.openRejectModal=(user)=>{modalTarget=user||null;$('#rejectionModal')?.classList.remove('hidden');$('#rejectionModal')?.classList.add('flex')};
-window.closeRejectModal=()=>{$('#rejectionModal')?.classList.add('hidden');$('#rejectionModal')?.classList.remove('flex')};
-window.insertReason=t=>{if($('#rejectionReasonInput'))$('#rejectionReasonInput').value=t};
-window.confirmRejectAction=()=>{
- const reason=$('#rejectionReasonInput')?.value?.trim()||'Declined by owner';
- const item=$('.request-item[data-request-id]')||null;
- const wanted=String(modalTarget||'').toLowerCase();
- const r=(item&&db.requests.find(x=>x.id===item.dataset.requestId))||
-   db.requests.find(x=>x.category==='pending'&&wanted&&(x.title||'').toLowerCase().includes(wanted.split(' ')[0]))||
-   db.requests.find(x=>x.category==='pending');
- if(r)recordDecision(r,'Declined',reason);
- if(item){item.dataset.status='rejected';item.querySelectorAll('button').forEach(b=>b.disabled=true);}
- window.closeRejectModal();dashboard();toast('Request declined and recorded in History.');
-};
-window.openWaitlistModal=()=>{$('#waitlistModal')?.classList.remove('hidden');$('#waitlistModal')?.classList.add('flex')};
-window.closeWaitlistModal=()=>{$('#waitlistModal')?.classList.add('hidden');$('#waitlistModal')?.classList.remove('flex')};
-window.confirmWaitlistAction=()=>{setRequestStatus('waitlist');window.closeWaitlistModal();toast('Request moved to waiting list.')};
-window.openBatchRejectModal=()=>window.openRejectModal();
-window.openReturnInspectionModal=()=>{$('#returnInspectionModal')?.classList.remove('hidden');$('#returnInspectionModal')?.classList.add('flex')};
-window.closeReturnInspectionModal=()=>{$('#returnInspectionModal')?.classList.add('hidden');$('#returnInspectionModal')?.classList.remove('flex')};
-window.confirmReturnSignOff=()=>{const c=$('.request-card[data-category="borrowed"]');const r=db.requests.find(x=>x.category==='borrowed');if(r){addHistory(r,'Recorded at return');save()}window.closeReturnInspectionModal();toast('Return completed and saved to History.')};
-window.insertInspectionNotes=t=>{const el=$('#returnInspectionNotes');if(el)el.value=t};
-window.openChatDrawer=(name,equipment,eqId,img)=>{const p=$('#chatDrawerPanel');p?.classList.remove('translate-x-full');p?.classList.add('translate-x-0');$('#chatDrawerOverlay')?.classList.remove('opacity-0','pointer-events-none');const n=$('#chatDrawerUserName');if(n)n.textContent=name||'Researcher';const e=$('#chatDrawerEqId');if(e)e.textContent=eqId||equipment||'';const im=$('#chatAvatarImg');if(im&&img)im.src=img};
-window.closeChatDrawer=()=>{$('#chatDrawerPanel')?.classList.add('translate-x-full');$('#chatDrawerPanel')?.classList.remove('translate-x-0');$('#chatDrawerOverlay')?.classList.add('opacity-0','pointer-events-none')};
-window.insertQuickChatPrompt=t=>{const el=$('#chatInputMessage');if(el)el.value=t};
-window.contactResearcher=(n)=>toast('Contact details for '+n+' are shown in the request record.');
-function matchDashboardRequest(item){
- const explicit=item?.dataset?.requestId;
- if(explicit){const exact=db.requests.find(r=>r.id===explicit);if(exact)return exact;}
- const text=(item?.innerText||'').toLowerCase();
- return db.requests.find(r=>{
-  const title=(r.title||'').toLowerCase();
-  const words=(r.search||'').toLowerCase().split(/\s+/).filter(w=>w.length>4);
-  return (title&&text.includes(title.split(',')[0])) || words.some(w=>text.includes(w));
- })||db.requests.find(r=>r.category==='pending');
-}
-function recordDecision(r,status,reason=''){
- if(!r)return;
- const duplicate=db.history.some(h=>h.requestId===r.id&&h.status===status);
- if(!duplicate)db.history.unshift({id:id(),requestId:r.id,equipment:r.equipment||r.title,user:r.title||'Researcher',institution:r.institution||r.department||'',date:new Date().toISOString(),duration:'—',status,reason});
- r.category=({Approved:'approved',Waitlisted:'waitlist',Declined:'rejected'})[status]||'rejected';
- r.decisionAt=new Date().toISOString();
- if(reason)r.decisionReason=reason;
- save();
-}
-window.confirmAction=(btn,label)=>{
- const c=btn?.closest('.request-item');
- const r=matchDashboardRequest(c);
- if(r){
-  const status=String(label).toLowerCase().includes('reject')?'Declined':'Approved';
-  recordDecision(r,status);
- }
- if(c){c.dataset.status=String(label).toLowerCase().includes('reject')?'rejected':'approved';c.querySelectorAll('button').forEach(b=>{b.disabled=true;b.classList.add('opacity-50','cursor-not-allowed')});}
- dashboard();toast('Request '+(String(label).toLowerCase().includes('reject')?'declined':'approved')+' and recorded in History.');
-};
-window.filterRequests=(filter,btn)=>{$$('.request-item').forEach(c=>{c.style.display=filter==='all'||(filter==='urgent'&&c.classList.contains('urgent'))||(filter==='expiring'&&c.classList.contains('expiring'))?'':'none'});$$('.filter-btn').forEach(b=>b.classList.remove('active-tab'));btn?.classList.add('active-tab')};
-window.openAuditDrawer=(eqId,userName,userId,inst,date,duration,status,postCond,hash)=>{const back=$('#audit-drawer-backdrop'),panel=$('#audit-drawer-panel');if(back){back.classList.remove('opacity-0','pointer-events-none');back.classList.add('opacity-100')}if(panel){panel.classList.remove('translate-x-full');panel.classList.add('translate-x-0')}const set=(id,v)=>{const e=$('#'+id);if(e)e.textContent=v||''};set('drawer-eq-id',eqId);set('drawer-user-name',userName);set('drawer-user-meta',userId+' • '+inst);set('drawer-hash',hash);};
-window.closeAuditDrawer=()=>{const b=$('#audit-drawer-backdrop'),p=$('#audit-drawer-panel');b?.classList.add('opacity-0','pointer-events-none');p?.classList.add('translate-x-full')};
-window.openRejectModal=window.openRejectModal;
-window.confirmRejection=()=>window.confirmRejectAction();
-window.closeAuditDrawer=window.closeAuditDrawer;
-window.openChatDrawer=window.openChatDrawer;
-window.closeChatDrawer=window.closeChatDrawer;
-window.insertReason=window.insertReason;
-window.showToast=toast;
+    grid.addEventListener("click", async event => {
+      const editButton = event.target.closest("[data-edit]");
+      const deleteButton = event.target.closest("[data-delete]");
 
-init();globalNav();
-window.addEventListener('storage',e=>{if(e.key===KEY&&e.newValue){try{db=JSON.parse(e.newValue);const pg=location.pathname.split('/').pop();if(pg==='equipment.html')window.refreshEquipmentPage?.();if(pg==='dashboard.html')dashboard();if(pg==='requests.html')window.renderStudentPortalRequests?.();if(pg==='calendar.html')window.refreshCalendarPage?.();if(pg==='history.html')window.refreshHistoryPage?.();}catch(_){}}if(e.key===STUDENT_REQUESTS_KEY){syncFromStudentPortal();localStorage.setItem(KEY,JSON.stringify(db));const pg=location.pathname.split('/').pop();if(pg==='dashboard.html')dashboard();if(pg==='calendar.html')window.refreshCalendarPage?.();if(pg==='history.html')window.refreshHistoryPage?.();if(pg==='requests.html'){syncCards();window.renderStudentPortalRequests?.();}toast('Student booking data synchronized.')}});
-const page=location.pathname.split('/').pop();
-if(page==='equipment.html')equipmentPage();
-if(page==='requests.html')requestPage();
-if(page==='calendar.html')calendarPage();
-if(page==='history.html')historyPage();
-if(page==='dashboard.html')dashboard();
-loadEquipmentFromSupabase();
+      if (editButton) {
+        const item = state.equipment.find(
+          record => String(record.id) === editButton.dataset.edit
+        );
+
+        if (item) openModal(item);
+
+        return;
+      }
+
+      if (deleteButton) {
+        const itemId = deleteButton.dataset.delete;
+
+        if (!window.confirm("Delete this equipment record?")) {
+          return;
+        }
+
+        try {
+          const result = await window.CampusDB.remove(
+            "resources",
+            {
+              id: itemId,
+              owner_id: state.user.id
+            }
+          );
+
+          if (!result?.length) {
+            throw new Error(
+              "No equipment was deleted. It may have related bookings or may not belong to your account."
+            );
+          }
+
+          toast("Equipment deleted.");
+
+          await reloadAll();
+
+        } catch (error) {
+          console.error("Equipment delete failed:", error);
+
+          toast(error.message || "Could not delete equipment.");
+        }
+      }
+    });
+
+    [
+      "#equipmentSearchInput",
+      "#categoryFilter",
+      "#statusFilter",
+      "#locationFilter"
+    ].forEach(selector => {
+      const element = $(selector);
+
+      element?.addEventListener(
+        selector === "#equipmentSearchInput" ? "input" : "change",
+        applyEquipmentFilters
+      );
+    });
+
+    $("#gridToggleBtn")?.addEventListener("click", () => {
+      grid.classList.remove("hidden");
+      $("#equipmentTableContainer")?.classList.add("hidden");
+    });
+
+    $("#tableToggleBtn")?.addEventListener("click", () => {
+      grid.classList.add("hidden");
+      $("#equipmentTableContainer")?.classList.remove("hidden");
+    });
+
+    window.refreshEquipmentPage = renderEquipment;
+
+    renderEquipment();
+  }
+
+  // ==================================================
+  // BOOKING REQUESTS
+  // ==================================================
+
+  function requestLabel(status) {
+    return ({
+      pending: "Pending review",
+      approved: "Approved",
+      waitlist: "Waitlisted",
+      rejected: "Declined",
+      borrowed: "Currently borrowed",
+      returned: "Returned"
+    })[status] || status;
+  }
+
+  async function recordDecision(request, status, reason = "") {
+    if (!request) {
+      throw new Error("The booking request could not be found.");
+    }
+
+    const normalized =
+      status === "Approved" ? "approved"
+      : status === "Waitlisted" ? "waitlist"
+      : status === "Pending" ? "pending"
+      : "rejected";
+
+    const changes = {
+      item_status: normalized
+    };
+
+    if (normalized === "approved") {
+      changes.approved_quantity = request.requestedQuantity;
+    }
+
+    const { data, error } = await supabase()
+      .from("booking_request_items")
+      .update(changes)
+      .eq("id", request.id)
+      .select();
+
+    if (error) throw error;
+
+    if (!data?.length) {
+      throw new Error(
+        "Request status was not changed. Check Supabase permissions."
+      );
+    }
+
+    await logActivity(
+      `Booking ${normalized}`,
+      {
+        booking_request_id: request.sourceId,
+        request_item_id: request.id,
+        resource_id: request.resourceId,
+        student_id: request.studentId,
+        reason
+      }
+    );
+
+    await reloadAll();
+  }
+
+  // ==================================================
+  // START BORROWING
+  // ==================================================
+
+  async function startBorrowing(request) {
+    const item = state.equipment.find(
+      record => String(record.id) === String(request.resourceId)
+    );
+
+    if (!item) {
+      throw new Error("The equipment record was not found.");
+    }
+
+    const quantity = Math.max(
+      1,
+      Number(request.approvedQuantity || request.requestedQuantity || 1)
+    );
+
+    if (item.availableQuantity < quantity) {
+      throw new Error(
+        `Only ${item.availableQuantity} unit(s) are available.`
+      );
+    }
+
+    const now = new Date().toISOString();
+
+    const { error: insertError } = await supabase()
+      .from("borrow_records")
+      .insert({
+        request_item_id: request.id,
+        quantity_borrowed: quantity,
+        quantity_returned: 0,
+        borrowed_at: now,
+        due_date: request.endDate || null,
+        return_status: "borrowed",
+        handed_over_by: state.user.id
+      });
+
+    if (insertError) throw insertError;
+
+    const nextAvailable = item.availableQuantity - quantity;
+
+    const { error: resourceError } = await supabase()
+      .from("resources")
+      .update({
+        available_quantity: nextAvailable,
+        status: nextAvailable > 0 ? "available" : "in-use"
+      })
+      .eq("id", item.id)
+      .eq("owner_id", state.user.id);
+
+    if (resourceError) throw resourceError;
+
+    const { error: itemError } = await supabase()
+      .from("booking_request_items")
+      .update({
+        item_status: "borrowed",
+        approved_quantity: quantity
+      })
+      .eq("id", request.id);
+
+    if (itemError) throw itemError;
+
+    await logActivity("Equipment checked out", {
+      booking_request_id: request.sourceId,
+      request_item_id: request.id,
+      resource_id: item.id,
+      quantity
+    });
+
+    await reloadAll();
+
+    toast("Borrowing started and recorded.");
+  }
+
+  // ==================================================
+  // COMPLETE RETURN
+  // ==================================================
+
+  async function completeReturn(request) {
+    if (!request) {
+      throw new Error("Select a borrowed request first.");
+    }
+
+    const {
+      data: records,
+      error: findError
+    } = await supabase()
+      .from("borrow_records")
+      .select("id, quantity_borrowed, quantity_returned")
+      .eq("request_item_id", request.id)
+      .is("returned_at", null)
+      .order("borrowed_at", {
+        ascending: false
+      })
+      .limit(1);
+
+    if (findError) throw findError;
+
+    const record = records?.[0];
+
+    if (!record) {
+      throw new Error("No active borrowing record was found.");
+    }
+
+    const quantity = Math.max(
+      0,
+      Number(record.quantity_borrowed || 0) -
+      Number(record.quantity_returned || 0)
+    );
+
+    const condition =
+      $("input[name='returnCondition']:checked")?.value ||
+      "good";
+
+    const returnedAt = new Date().toISOString();
+
+    const { error: returnError } = await supabase()
+      .from("borrow_records")
+      .update({
+        quantity_returned: Number(record.quantity_borrowed || 0),
+        returned_at: returnedAt,
+        return_status: "returned",
+        received_by: state.user.id
+      })
+      .eq("id", record.id);
+
+    if (returnError) throw returnError;
+
+    const item = state.equipment.find(
+      recordItem => String(recordItem.id) === String(request.resourceId)
+    );
+
+    if (item) {
+      const isGood =
+        !["damaged", "maintenance"].includes(statusKey(condition));
+
+      const available = isGood
+        ? Math.min(
+            item.totalQuantity,
+            item.availableQuantity + quantity
+          )
+        : item.availableQuantity;
+
+      const { error: resourceError } = await supabase()
+        .from("resources")
+        .update({
+          available_quantity: available,
+          condition,
+          status: isGood
+            ? (available > 0 ? "available" : "in-use")
+            : "maintenance"
+        })
+        .eq("id", item.id)
+        .eq("owner_id", state.user.id);
+
+      if (resourceError) throw resourceError;
+    }
+
+    const { error: itemError } = await supabase()
+      .from("booking_request_items")
+      .update({
+        item_status: "returned"
+      })
+      .eq("id", request.id);
+
+    if (itemError) throw itemError;
+
+    await logActivity("Equipment returned", {
+      booking_request_id: request.sourceId,
+      request_item_id: request.id,
+      resource_id: request.resourceId,
+      quantity,
+      condition,
+      notes: $("#returnInspectionNotes")?.value?.trim() || ""
+    });
+
+    state.selectedRequest = null;
+
+    $("#returnInspectionModal")?.classList.add("hidden");
+    $("#returnInspectionModal")?.classList.remove("flex");
+
+    await reloadAll();
+
+    toast("Return recorded successfully.");
+  }
+
+  // ==================================================
+  // REQUESTS PAGE DISPLAY AND ACTIONS
+  // ==================================================
+
+  function setupRequestsPage() {
+    const container =
+      $("#requestsContainer") ||
+      $("main");
+
+    if (!container) return;
+
+    $$(".request-card, .request-item", container).forEach(card => {
+      card.hidden = true;
+    });
+
+    let panel = $("#studentPortalLiveRequests");
+
+    if (!panel) {
+      panel = document.createElement("section");
+      panel.id = "studentPortalLiveRequests";
+      panel.className =
+        "mt-5 rounded-xl bg-surface-container-lowest p-4 md:p-6";
+
+      container.prepend(panel);
+    }
+
+    let filter = "all";
+    let query = "";
+
+    const selected = new Set();
+
+    function render() {
+      const statuses = [
+        "all",
+        "pending",
+        "approved",
+        "waitlist",
+        "rejected",
+        "borrowed",
+        "returned"
+      ];
+
+      const counts = Object.fromEntries(
+        statuses.map(status => [
+          status,
+          status === "all"
+            ? state.requests.length
+            : state.requests.filter(item => item.category === status).length
+        ])
+      );
+
+      const items = state.requests.filter(item =>
+        (filter === "all" || item.category === filter) &&
+        (
+          !query ||
+          [
+            item.title,
+            item.studentEmail,
+            item.equipmentName,
+            item.sourceId
+          ].join(" ").toLowerCase().includes(query)
+        )
+      );
+
+      panel.innerHTML = `
+        <div class="flex flex-wrap justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-xl font-semibold">
+              Student booking requests
+            </h2>
+
+            <p class="text-sm text-on-surface-variant mt-1">
+              Requests loaded from Supabase for equipment in your inventory.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            data-refresh-requests
+            class="px-3 py-2 rounded-lg border text-sm"
+          >
+            Refresh
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-4">
+
+          ${statuses.map(key => `
+            <button
+              type="button"
+              data-filter="${key}"
+              class="rounded-lg border p-2 text-left ${
+                filter === key
+                  ? "bg-primary text-white border-primary"
+                  : "bg-surface text-on-surface"
+              }"
+            >
+              <span class="block text-xs">
+                ${key === "all" ? "All" : requestLabel(key)}
+              </span>
+
+              <strong class="text-lg">${counts[key]}</strong>
+            </button>
+          `).join("")}
+
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2 mb-4">
+
+          <input
+            id="liveRequestSearch"
+            value="${esc(query)}"
+            class="w-full sm:flex-1 rounded-lg border px-3 py-2"
+            placeholder="Search student, equipment or email"
+          >
+
+          <button
+            type="button"
+            data-select-visible
+            class="px-3 py-2 rounded-lg border"
+          >
+            Select visible
+          </button>
+
+          <button
+            type="button"
+            data-batch-approve
+            class="px-3 py-2 rounded-lg bg-primary text-white"
+          >
+            Approve selected
+          </button>
+
+          <span class="self-center text-sm text-on-surface-variant">
+            ${selected.size} selected
+          </span>
+
+        </div>
+
+        <div class="space-y-3">
+
+          ${
+            items.length
+              ? items.map(request => `
+                <article
+                  class="border rounded-xl p-4"
+                  data-live-id="${esc(request.id)}"
+                >
+
+                  <div class="flex flex-wrap justify-between gap-3">
+
+                    <div class="flex items-start gap-2">
+
+                      <input
+                        type="checkbox"
+                        data-select-live="${esc(request.id)}"
+                        ${selected.has(request.id) ? "checked" : ""}
+                        aria-label="Select request"
+                      >
+
+                      <div>
+                        <div class="font-semibold">
+                          ${esc(request.title)}
+                        </div>
+
+                        <div class="text-xs text-on-surface-variant">
+                          ${esc(request.studentEmail || "Email unavailable")}
+                          · Request ${esc(request.sourceId)}
+                        </div>
+                      </div>
+
+                    </div>
+
+                    <span class="px-2 py-1 rounded-full text-xs font-semibold">
+                      ${esc(requestLabel(request.category))}
+                    </span>
+
+                  </div>
+
+                  <div class="grid sm:grid-cols-2 gap-2 mt-3 text-sm">
+
+                    <div>
+                      <span class="text-on-surface-variant">
+                        Equipment
+                      </span>
+
+                      <div class="font-medium">
+                        ${esc(request.equipmentName)}
+                      </div>
+
+                      <div class="text-xs text-on-surface-variant">
+                        Quantity requested: ${request.requestedQuantity}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span class="text-on-surface-variant">
+                        Booking period
+                      </span>
+
+                      <div class="font-medium">
+                        ${esc(formatDate(request.date))}
+                        –
+                        ${esc(formatDate(request.endDate))}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <div class="flex flex-wrap gap-2 mt-4">
+
+                    ${
+                      ["pending", "waitlist"].includes(request.category)
+                        ? `
+                          <button
+                            data-action="approve"
+                            class="px-3 py-2 rounded-lg bg-primary text-white text-sm"
+                          >
+                            Approve
+                          </button>
+
+                          <button
+                            data-action="waitlist"
+                            class="px-3 py-2 rounded-lg border text-sm"
+                          >
+                            Waitlist
+                          </button>
+
+                          <button
+                            data-action="reject"
+                            class="px-3 py-2 rounded-lg bg-error-container text-error text-sm"
+                          >
+                            Decline
+                          </button>
+                        `
+                        : ""
+                    }
+
+                    ${
+                      request.category === "approved"
+                        ? `
+                          <button
+                            data-action="start"
+                            class="px-3 py-2 rounded-lg bg-primary text-white text-sm"
+                          >
+                            Start borrowing
+                          </button>
+                        `
+                        : ""
+                    }
+
+                    ${
+                      request.category === "borrowed"
+                        ? `
+                          <button
+                            data-action="return"
+                            class="px-3 py-2 rounded-lg bg-primary text-white text-sm"
+                          >
+                            Complete return
+                          </button>
+                        `
+                        : ""
+                    }
+
+                    ${
+                      ["rejected", "returned"].includes(request.category)
+                        ? `
+                          <button
+                            data-action="reopen"
+                            class="px-3 py-2 rounded-lg border text-sm"
+                          >
+                            Reopen review
+                          </button>
+                        `
+                        : ""
+                    }
+
+                  </div>
+
+                </article>
+              `).join("")
+              : `
+                <div class="rounded-lg border border-dashed p-8 text-center text-sm text-on-surface-variant">
+                  No booking requests were found for your equipment.
+                </div>
+              `
+          }
+
+        </div>
+      `;
+    }
+
+    window.renderStudentPortalRequests = render;
+
+    render();
+
+    panel.addEventListener("input", event => {
+      if (event.target.id !== "liveRequestSearch") return;
+
+      query = event.target.value.toLowerCase().trim();
+
+      render();
+
+      const input = $("#liveRequestSearch");
+
+      input?.focus();
+      input?.setSelectionRange(query.length, query.length);
+    });
+
+    panel.addEventListener("change", event => {
+      const checkbox = event.target.closest("[data-select-live]");
+
+      if (!checkbox) return;
+
+      if (checkbox.checked) {
+        selected.add(checkbox.dataset.selectLive);
+      } else {
+        selected.delete(checkbox.dataset.selectLive);
+      }
+
+      const count = panel.querySelector(".self-center.text-sm");
+
+      if (count) {
+        count.textContent = `${selected.size} selected`;
+      }
+    });
+
+    panel.addEventListener("click", async event => {
+      const filterButton = event.target.closest("[data-filter]");
+
+      if (filterButton) {
+        filter = filterButton.dataset.filter;
+        selected.clear();
+        render();
+        return;
+      }
+
+      if (event.target.closest("[data-refresh-requests]")) {
+        try {
+          await reloadAll();
+          toast("Booking requests refreshed.");
+        } catch (error) {
+          toast(error.message || "Could not refresh requests.");
+        }
+
+        return;
+      }
+
+      if (event.target.closest("[data-select-visible]")) {
+        state.requests
+          .filter(item =>
+            (filter === "all" || item.category === filter) &&
+            (
+              !query ||
+              [item.title, item.studentEmail, item.equipmentName]
+                .join(" ")
+                .toLowerCase()
+                .includes(query)
+            )
+          )
+          .forEach(item => selected.add(item.id));
+
+        render();
+        return;
+      }
+
+      if (event.target.closest("[data-batch-approve]")) {
+        const targets = state.requests.filter(item =>
+          selected.has(item.id) &&
+          ["pending", "waitlist"].includes(item.category)
+        );
+
+        try {
+          for (const item of targets) {
+            await recordDecision(item, "Approved");
+          }
+
+          selected.clear();
+
+          toast(`${targets.length} request(s) approved.`);
+
+        } catch (error) {
+          toast(error.message || "Could not approve selected requests.");
+        }
+
+        return;
+      }
+
+      const button = event.target.closest("[data-action]");
+
+      if (!button) return;
+
+      const card = button.closest("[data-live-id]");
+
+      const request = state.requests.find(
+        item => item.id === card?.dataset.liveId
+      );
+
+      if (!request) return;
+
+      try {
+        const action = button.dataset.action;
+
+        if (action === "approve") {
+          await recordDecision(request, "Approved");
+        }
+
+        if (action === "waitlist") {
+          await recordDecision(request, "Waitlisted");
+        }
+
+        if (action === "reject") {
+          const reason = window.prompt(
+            "Enter the reason for declining this booking:"
+          );
+
+          if (reason === null) return;
+
+          if (!reason.trim()) {
+            return toast("A reason is required.");
+          }
+
+          await recordDecision(
+            request,
+            "Declined",
+            reason.trim()
+          );
+        }
+
+        if (action === "start") {
+          await startBorrowing(request);
+        }
+
+        if (action === "return") {
+          state.selectedRequest = request;
+
+          $("#returnInspectionModal")?.classList.remove("hidden");
+          $("#returnInspectionModal")?.classList.add("flex");
+
+          if (!$("#returnInspectionModal")) {
+            if (
+              window.confirm(
+                `Complete the return for ${request.equipmentName}?`
+              )
+            ) {
+              await completeReturn(request);
+            }
+          }
+        }
+
+        if (action === "reopen") {
+          await recordDecision(request, "Pending");
+        }
+
+      } catch (error) {
+        console.error("Booking action failed:", error);
+
+        toast(error.message || "Could not update booking.");
+      }
+    });
+  }
+
+  // ==================================================
+  // CALENDAR PAGE
+  // ==================================================
+
+  function setupCalendarPage() {
+    const main = $("main");
+
+    if (!main) return;
+
+    let panel = $("#persistentCalendarBookings");
+
+    if (!panel) {
+      panel = document.createElement("section");
+      panel.id = "persistentCalendarBookings";
+      panel.className = "mt-6 rounded-xl bg-white p-5 shadow-sm";
+      main.append(panel);
+    }
+
+    function render() {
+      const bookings = state.requests.filter(item =>
+        ["pending", "approved", "borrowed", "waitlist"]
+          .includes(item.category)
+      );
+
+      panel.innerHTML = `
+        <h2 class="text-xl font-semibold mb-3">
+          Bookings for your equipment
+        </h2>
+      ` + (
+        bookings.length
+          ? bookings.map(item => `
+            <div class="border-b py-3">
+
+              <div class="flex flex-wrap justify-between gap-2">
+                <strong>
+                  ${esc(item.equipmentName)} · ${esc(item.title)}
+                </strong>
+
+                <span>
+                  ${esc(requestLabel(item.category))}
+                </span>
+              </div>
+
+              <div class="text-sm text-on-surface-variant">
+                ${esc(formatDate(item.date))}
+                –
+                ${esc(formatDate(item.endDate))}
+                · Quantity: ${item.requestedQuantity}
+              </div>
+
+            </div>
+          `).join("")
+          : `
+            <p class="text-sm text-on-surface-variant">
+              No bookings are scheduled for your equipment.
+            </p>
+          `
+      );
+    }
+
+    $$(".sample-booking").forEach(node => node.remove());
+
+    render();
+
+    window.refreshCalendarPage = render;
+  }
+
+  // ==================================================
+  // HISTORY PAGE
+  // ==================================================
+
+  function setupHistoryPage() {
+    const main = $("main");
+
+    if (!main) return;
+
+    let panel = $("#persistentCompletedHistory");
+
+    if (!panel) {
+      panel = document.createElement("section");
+      panel.id = "persistentCompletedHistory";
+      panel.className = "mt-6 rounded-xl bg-white p-5 shadow-sm";
+      main.append(panel);
+    }
+
+    $$("tbody tr, .history-row, [data-transaction]")
+      .forEach(row => {
+        row.hidden = true;
+      });
+
+    const search = $("#global-search-input");
+
+    function exportCsv() {
+      const rows = [
+        [
+          "Equipment",
+          "Student",
+          "Date",
+          "Duration",
+          "Status",
+          "Quantity"
+        ],
+        ...state.history.map(item => [
+          item.equipment,
+          item.user,
+          item.date,
+          item.duration,
+          item.status,
+          item.quantity
+        ])
+      ];
+
+      const csv = rows
+        .map(row =>
+          row.map(value =>
+            `"${String(value ?? "").replace(/"/g, '""')}"`
+          ).join(",")
+        )
+        .join("\n");
+
+      const url = URL.createObjectURL(
+        new Blob([csv], { type: "text/csv" })
+      );
+
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = "campusshare-equipment-history.csv";
+      link.click();
+
+      URL.revokeObjectURL(url);
+    }
+
+    function render() {
+      const query =
+        (search?.value || "").toLowerCase().trim();
+
+      const rows = state.history.filter(item =>
+        !query ||
+        [item.equipment, item.user, item.status]
+          .join(" ")
+          .toLowerCase()
+          .includes(query)
+      );
+
+      panel.innerHTML = `
+        <div class="flex flex-wrap justify-between gap-3 mb-3">
+          <h2 class="text-lg font-semibold">
+            Borrowing and return history
+          </h2>
+
+          <button
+            id="exportLiveHistory"
+            class="px-3 py-2 rounded border text-sm"
+          >
+            Export CSV
+          </button>
+        </div>
+      ` + (
+        rows.length
+          ? rows.map(item => `
+            <div class="py-3 border-b text-sm">
+              <strong>${esc(item.equipment)}</strong>
+              · ${esc(item.user)}
+              · ${esc(item.status)}
+              · ${esc(formatDate(item.date))}
+              · Quantity: ${item.quantity}
+              · ${esc(item.duration)}
+            </div>
+          `).join("")
+          : `
+            <p class="text-sm text-on-surface-variant">
+              No borrowing or return records have been recorded for your equipment.
+            </p>
+          `
+      );
+
+      $("#exportLiveHistory")?.addEventListener(
+        "click",
+        exportCsv
+      );
+    }
+
+    search?.addEventListener("input", render);
+
+    $("#btn-export-csv")?.addEventListener(
+      "click",
+      exportCsv
+    );
+
+    $("#btn-export-pdf")?.addEventListener(
+      "click",
+      () => window.print()
+    );
+
+    render();
+
+    window.refreshHistoryPage = render;
+  }
+
+  // ==================================================
+  // DASHBOARD
+  // ==================================================
+
+  function renderDashboard() {
+    const counts = equipmentCounts();
+
+    const pending = state.requests.filter(
+      item => item.category === "pending"
+    ).length;
+
+    const approved = state.requests.filter(
+      item => item.category === "approved"
+    ).length;
+
+    const borrowed = state.requests.filter(
+      item => item.category === "borrowed"
+    ).length;
+
+    const returned = state.history.filter(
+      item => item.status === "Returned"
+    ).length;
+
+    // Dashboard IDs from the updated dashboard.html.
+    setText("#dashboardTotalInventory", counts.total);
+    setText("#dashboardAvailable", counts.available);
+    setText("#dashboardPending", pending);
+    setText("#dashboardApproved", approved);
+    setText("#dashboardBorrowed", borrowed);
+    setText("#dashboardReturned", returned);
+
+    const badge = $(
+      'a[data-path="booking-requests"] [data-pending-count]'
+    );
+
+    if (badge) {
+      badge.textContent = String(pending);
+    }
+
+    const recent = $("#dashboardRecentRequests");
+
+    if (recent) {
+      const requests = state.requests.slice(0, 5);
+
+      recent.innerHTML = requests.length
+        ? requests.map(item => `
+          <article class="flex flex-wrap items-center justify-between gap-3 border-b border-outline-variant/30 py-3">
+
+            <div class="min-w-0">
+              <p class="font-semibold">
+                ${esc(item.equipmentName)}
+              </p>
+
+              <p class="text-sm text-on-surface-variant">
+                ${esc(item.title)}
+                · ${esc(formatDate(item.date))}
+              </p>
+            </div>
+
+            <span class="rounded-full bg-surface-container px-3 py-1 text-xs font-semibold">
+              ${esc(requestLabel(item.category))}
+            </span>
+
+          </article>
+        `).join("")
+        : `
+          <p class="py-6 text-center text-sm text-on-surface-variant">
+            No booking requests have been submitted for your equipment yet.
+          </p>
+        `;
+    }
+  }
+
+  // ==================================================
+  // REFRESH CURRENT PAGE
+  // ==================================================
+
+  function renderCurrentPage() {
+    const page = location.pathname.split("/").pop().toLowerCase();
+
+    if (page === "dashboard.html") {
+      renderDashboard();
+    }
+
+    if (page === "equipment.html") {
+      renderEquipment();
+    }
+
+    if (page === "requests.html") {
+      window.renderStudentPortalRequests?.();
+    }
+
+    if (page === "calendar.html") {
+      window.refreshCalendarPage?.();
+    }
+
+    if (page === "history.html") {
+      window.refreshHistoryPage?.();
+    }
+  }
+
+  // ==================================================
+  // COMPATIBILITY WITH EXISTING HTML BUTTONS
+  // ==================================================
+
+  window.filterRequests = (filter, button) => {
+    const panel = $("#dashboardRecentRequests");
+
+    if (!panel) return;
+
+    $$("[data-live-status]", panel).forEach(item => {
+      item.hidden =
+        filter !== "all" &&
+        item.dataset.liveStatus !== filter;
+    });
+
+    $$(".filter-btn").forEach(item => {
+      item.classList.remove("active-tab");
+    });
+
+    button?.classList.add("active-tab");
+  };
+
+  window.toggleEquipmentStatus = () => {
+    toast(
+      "Manage equipment availability from My Equipment and booking actions."
+    );
+  };
+
+  window.openRejectModal = () => {
+    toast("Decline requests from the live Booking Requests list.");
+  };
+
+  window.closeRejectModal = () => {
+    $("#reject-modal")?.classList.add("hidden");
+  };
+
+  window.confirmRejection = () => {
+    toast("Decline requests from the live Booking Requests list.");
+  };
+
+  window.confirmRejectAction = () => {
+    window.confirmRejection();
+  };
+
+  window.openWaitlistModal = () => {
+    $("#waitlistModal")?.classList.remove("hidden");
+  };
+
+  window.closeWaitlistModal = () => {
+    $("#waitlistModal")?.classList.add("hidden");
+  };
+
+  window.openReturnInspectionModal = () => {
+    $("#returnInspectionModal")?.classList.remove("hidden");
+  };
+
+  window.closeReturnInspectionModal = () => {
+    $("#returnInspectionModal")?.classList.add("hidden");
+  };
+
+  window.confirmReturnSignOff = async () => {
+    try {
+      await completeReturn(state.selectedRequest);
+    } catch (error) {
+      toast(error.message || "Could not complete return.");
+    }
+  };
+
+  window.insertReason = value => {
+    if ($("#rejectionReasonInput")) {
+      $("#rejectionReasonInput").value = value;
+    }
+  };
+
+  window.insertInspectionNotes = value => {
+    if ($("#returnInspectionNotes")) {
+      $("#returnInspectionNotes").value = value;
+    }
+  };
+
+  window.openChatDrawer = (name, equipment, id) => {
+    $("#chatDrawerPanel")?.classList.remove("translate-x-full");
+
+    $("#chatDrawerOverlay")?.classList.remove(
+      "opacity-0",
+      "pointer-events-none"
+    );
+
+    setText("#chatDrawerUserName", name || "Student");
+    setText("#chatDrawerEqId", id || equipment || "");
+  };
+
+  window.closeChatDrawer = () => {
+    $("#chatDrawerPanel")?.classList.add("translate-x-full");
+
+    $("#chatDrawerOverlay")?.classList.add(
+      "opacity-0",
+      "pointer-events-none"
+    );
+  };
+
+  window.insertQuickChatPrompt = value => {
+    if ($("#chatInputMessage")) {
+      $("#chatInputMessage").value = value;
+    }
+  };
+
+  window.toggleDetails = (id, button) => {
+    const element = document.getElementById(id);
+
+    if (!element) return;
+
+    element.classList.toggle("hidden");
+
+    if (button) {
+      button.textContent =
+        element.classList.contains("hidden")
+          ? "View details"
+          : "Hide details";
+    }
+  };
+
+  window.downloadCheckinSlip = (name, requestId) => {
+    toast(
+      `Check-in: ${name || "Student"} · ${requestId || "Request"}`
+    );
+  };
+
+  window.openAuditDrawer = (
+    equipmentId,
+    userName,
+    userId,
+    institution,
+    date,
+    duration,
+    status,
+    condition,
+    hash
+  ) => {
+    $("#audit-drawer-backdrop")?.classList.remove(
+      "opacity-0",
+      "pointer-events-none"
+    );
+
+    $("#audit-drawer-panel")?.classList.remove("translate-x-full");
+
+    setText("#drawer-eq-id", equipmentId);
+    setText("#drawer-user-name", userName);
+
+    setText(
+      "#drawer-user-meta",
+      [userId, institution].filter(Boolean).join(" · ")
+    );
+
+    setText("#drawer-hash", hash);
+  };
+
+  window.closeAuditDrawer = () => {
+    $("#audit-drawer-backdrop")?.classList.add(
+      "opacity-0",
+      "pointer-events-none"
+    );
+
+    $("#audit-drawer-panel")?.classList.add("translate-x-full");
+  };
+
+  // ==================================================
+  // INITIALIZE
+  // ==================================================
+
+  async function init() {
+    if (!window.CampusDB) {
+      throw new Error(
+        "CampusDB is not initialized. Check the Supabase script tags."
+      );
+    }
+
+    await loadStaffProfile();
+    await loadEquipment();
+    await loadRequests();
+    await loadHistory();
+
+    const page = location.pathname.split("/").pop().toLowerCase();
+
+    if (page === "equipment.html") {
+      setupEquipmentPage();
+    }
+
+    if (page === "requests.html") {
+      setupRequestsPage();
+    }
+
+    if (page === "calendar.html") {
+      setupCalendarPage();
+    }
+
+    if (page === "history.html") {
+      setupHistoryPage();
+    }
+
+    renderCurrentPage();
+  }
+
+  init().catch(error => {
+    console.error(
+      "CampusShare staff portal initialization failed:",
+      error
+    );
+
+    toast(
+      error.message ||
+      "Could not load staff portal. Check the browser Console and Supabase permissions."
+    );
+  });
+
 })();
