@@ -640,16 +640,28 @@
     <script src="../js/database.js"></script>
     <script src="js/app.js"></script>
 
-    <!-- PAGE-SPECIFIC BUTTONS -->
-    <script>
-        // Make both Add Equipment buttons open the same modal.
-        document
-            .getElementById("headerAddEquipmentBtn")
-            ?.addEventListener("click", () => {
-                document
-                    .getElementById("openAddModalBtn")
-                    ?.click();
-            });
+<!-- PAGE-SPECIFIC BUTTONS -->
+<script>
+    // Make both Add Equipment buttons open the modal directly.
+    function openEquipmentModal() {
+        const modal = document.getElementById("addEquipmentModal");
+
+        if (modal) {
+            modal.classList.remove("hidden");
+            document.body.style.overflow = "hidden";
+        } else {
+            console.error("Add Equipment modal was not found.");
+        }
+    }
+
+    document
+        .getElementById("headerAddEquipmentBtn")
+        ?.addEventListener("click", openEquipmentModal);
+
+    document
+        .getElementById("openAddModalBtn")
+        ?.addEventListener("click", openEquipmentModal);
+</script>
 
         // Reset search and filter fields.
         document
