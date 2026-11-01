@@ -585,9 +585,6 @@
   });
 
 if (requestError) throw requestError;
-          .delete().eq("id", request.id).eq("student_id", state.user.id);
-        throw itemError;
-      }
 
       closeRequestModal();
       el.form?.reset();
