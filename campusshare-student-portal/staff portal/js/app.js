@@ -1855,72 +1855,556 @@
   // CALENDAR PAGE
   // --------------------------------------------------
 
-  function calendarPage() {
-    const main = $("main");
+  
+function setupCalendarPage() {
+    const main = document.querySelector("#staffCalendarApp")
+        || document.querySelector("main");
 
     if (!main) return;
 
-    let panel = $("#persistentCalendarBookings");
+    main.innerHTML = `
+        <div class="max-w-7xl mx-auto">
 
-    if (!panel) {
-      panel = document.createElement("section");
-      panel.id = "persistentCalendarBookings";
-      panel.className =
-        "mt-6 p-5 rounded-xl bg-surface-container-lowest";
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold">
+                    Staff Booking Calendar
+                </h1>
+                <p class="text-gray-500 mt-1">
+                    View equipment bookings and their current status.
+                </p>
+            </div>
 
-      main.append(panel);
+            <div class="bg-white rounded-xl shadow-sm p-4 mb-5">
+
+                <div class="flex flex-wrap items-center justify-between gap-3">
+
+                    <div class="flex items-center gap-2">
+                        <button id="calendarPrev"
+                            class="border rounded-lg px-4 py-2">
+                            &#10094;
+                        </button>
+
+                        <button id="calendarToday"
+                            class="border rounded-lg px-4 py-2">
+                            Today
+                        </button>
+
+                        <button id="calendarNext"
+                            class="border rounded-lg px-4 py-2">
+                            &#10095;
+                        </button>
+                    </div>
+
+                    <h2 id="calendarHeading"
+                        class="text-xl font-bold">
+                    </h2>
+
+                    <div class="flex gap-2">
+                        <button data-calendar-view="month"
+                            class="calendar-view-btn border rounded-lg px-3 py-2">
+                            Month
+                        </button>
+
+                        <button data-calendar-view="week"
+                            class="calendar-view-btn border rounded-lg px-3 py-2">
+                            Week
+                        </button>
+
+                        <button data-calendar-view="day"
+                            class="calendar-view-btn border rounded-lg px-3 py-2">
+                            Day
+                        </button>
+                    </div>
+
+                </div>
+
+                <div class="flex flex-wrap gap-3 mt-5">
+
+                    <select id="calendarStatus"
+                        class="border rounded-lg px-3 py-2">
+
+                        <option value="all">All statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="borrowed">Borrowed</option>
+                        <option value="waitlist">Waitlisted</option>
+                        <option value="rejected">Declined</option>
+                        <option value="returned">Returned</option>
+
+                    </select>
+
+                    <select id="calendarEquipment"
+                        class="border rounded-lg px-3 py-2">
+
+                        <option value="all">All equipment</option>
+
+                        ${state.equipment.map(item => `
+                            <option value="${esc(item.id)}">
+                                ${esc(item.name)}
+                            </option>
+                        `).join("")}
+
+                    </select>
+
+                </div>
+
+                <div class="flex flex-wrap gap-4 mt-5 text-sm">
+
+                    <span class="text-amber-600">● Pending</span>
+                    <span class="text-blue-600">● Approved</span>
+                    <span class="text-green-600">● Borrowed</span>
+                    <span class="text-purple-600">● Waitlisted</span>
+                    <span class="text-red-600">● Declined</span>
+                    <span class="text-gray-500">● Returned</span>
+
+                </div>
+
+            </div>
+
+            <div id="calendarGrid"
+                class="bg-white rounded-xl shadow-sm p-3">
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
+
+                <h2 class="text-lg font-bold mb-4">
+                    Booking Details
+                </h2>
+
+                <div id="calendarBookingDetails">
+                </div>
+
+            </div>
+
+        </div>
+    `;
+
+    let currentDate = new Date();
+    let currentView = "month";
+
+    const root = main;
+
+    const startOfDay = date =>
+        new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    function parseBookingDate(value) {
+        if (!value) return null;
+
+        const datePart = String(value).split("T")[0];
+
+        const parts = datePart.split("-").map(Number);
+
+        if (parts.length !== 3 ||
+            parts.some(number => !Number.isFinite(number))) {
+            return null;
+        }
+
+        const date = new Date(parts[0], parts[1] - 1, parts[2]);
+
+        if (
+            date.getFullYear() !== parts[0] ||
+            date.getMonth() !== parts[1] - 1 ||
+            date.getDate() !== parts[2]
+        ) {
+            return null;
+        }
+
+        return date;
+    }
+
+    function addDays(date, days) {
+        const result = new Date(date);
+        result.setDate(result.getDate() + days);
+        return result;
+    }
+
+    function dateKey(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
+    }
+
+    function sameDay(a, b) {
+        return dateKey(a) === dateKey(b);
+    }
+
+    function getBookings() {
+        const status =
+            root.querySelector("#calendarStatus").value;
+
+        const equipment =
+            root.querySelector("#calendarEquipment").value;
+
+        return state.requests.filter(item => {
+
+            const matchesStatus =
+                status === "all" ||
+                String(item.category).toLowerCase() === status;
+
+            const matchesEquipment =
+                equipment === "all" ||
+                String(item.resourceId) === equipment;
+
+            return matchesStatus && matchesEquipment;
+        });
+    }
+
+    function getEventDates(item) {
+        const start = parseBookingDate(item.date);
+
+        if (!start) return null;
+
+        const end = parseBookingDate(item.endDate) || start;
+
+        return {
+            start: startOfDay(start),
+            end: startOfDay(end)
+        };
+    }
+
+    function isBookingOnDate(item, date) {
+        const dates = getEventDates(item);
+
+        if (!dates) return false;
+
+        const selected = startOfDay(date);
+
+        return selected >= dates.start &&
+               selected <= dates.end;
+    }
+
+    function statusColor(status) {
+        const colors = {
+            pending: "bg-amber-100 text-amber-800",
+            approved: "bg-blue-100 text-blue-800",
+            borrowed: "bg-green-100 text-green-800",
+            waitlist: "bg-purple-100 text-purple-800",
+            rejected: "bg-red-100 text-red-800",
+            returned: "bg-gray-100 text-gray-700"
+        };
+
+        return colors[String(status).toLowerCase()]
+            || "bg-gray-100 text-gray-700";
+    }
+
+    function formatHeading() {
+        if (currentView === "month") {
+            return currentDate.toLocaleDateString("en-IN", {
+                month: "long",
+                year: "numeric"
+            });
+        }
+
+        if (currentView === "day") {
+            return currentDate.toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "long",
+                year: "numeric"
+            });
+        }
+
+        const monday = addDays(
+            currentDate,
+            -((currentDate.getDay() + 6) % 7)
+        );
+
+        const sunday = addDays(monday, 6);
+
+        return `${monday.toLocaleDateString("en-IN")}
+            - ${sunday.toLocaleDateString("en-IN")}`;
+    }
+
+    function renderBooking(item) {
+        return `
+            <div class="rounded-lg p-2 mb-1 text-sm
+                ${statusColor(item.category)}">
+
+                <div class="font-semibold">
+                    ${esc(item.equipmentName)}
+                </div>
+
+                <div>
+                    ${esc(item.title)}
+                </div>
+
+                <div class="text-xs mt-1">
+                    ${esc(requestLabel(item.category))}
+                </div>
+
+            </div>
+        `;
+    }
+
+    function renderMonth(bookings) {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        const firstDay = new Date(year, month, 1);
+
+        const mondayOffset =
+            (firstDay.getDay() + 6) % 7;
+
+        const gridStart = addDays(firstDay, -mondayOffset);
+
+        const lastDay = new Date(year, month + 1, 0);
+
+        const totalDays =
+            Math.ceil((mondayOffset + lastDay.getDate()) / 7) * 7;
+
+        let html = `
+            <div class="grid grid-cols-7 text-center
+                font-semibold bg-gray-100 rounded-lg mb-2">
+
+                ${["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                    .map(day => `
+                        <div class="p-3">${day}</div>
+                    `).join("")}
+
+            </div>
+
+            <div class="grid grid-cols-7 gap-1">
+        `;
+
+        for (let i = 0; i < totalDays; i++) {
+            const date = addDays(gridStart, i);
+
+            const events = bookings.filter(item =>
+                isBookingOnDate(item, date)
+            );
+
+            const isCurrentMonth =
+                date.getMonth() === month;
+
+            html += `
+                <div class="min-h-28 border rounded-lg p-2
+                    ${isCurrentMonth ? "bg-white" : "bg-gray-50 opacity-50"}">
+
+                    <div class="font-semibold text-sm mb-2">
+                        ${date.getDate()}
+                    </div>
+
+                    <div class="space-y-1">
+                        ${events.slice(0, 3).map(renderBooking).join("")}
+
+                        ${events.length > 3 ? `
+                            <div class="text-xs text-gray-500">
+                                +${events.length - 3} more
+                            </div>
+                        ` : ""}
+                    </div>
+
+                </div>
+            `;
+        }
+
+        html += "</div>";
+
+        return html;
+    }
+
+    function renderWeek(bookings) {
+        const monday = addDays(
+            currentDate,
+            -((currentDate.getDay() + 6) % 7)
+        );
+
+        let html = `
+            <div class="grid grid-cols-1 md:grid-cols-7 gap-2">
+        `;
+
+        for (let i = 0; i < 7; i++) {
+            const date = addDays(monday, i);
+
+            const events = bookings.filter(item =>
+                isBookingOnDate(item, date)
+            );
+
+            html += `
+                <div class="border rounded-lg p-3 min-h-40">
+
+                    <h3 class="font-semibold mb-3">
+                        ${date.toLocaleDateString("en-IN", {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "short"
+                        })}
+                    </h3>
+
+                    ${events.length
+                        ? events.map(renderBooking).join("")
+                        : '<p class="text-sm text-gray-400">No bookings</p>'
+                    }
+
+                </div>
+            `;
+        }
+
+        return html + "</div>";
+    }
+
+    function renderDay(bookings) {
+        const events = bookings.filter(item =>
+            isBookingOnDate(item, currentDate)
+        );
+
+        return `
+            <div class="p-4">
+
+                <h3 class="font-bold text-lg mb-4">
+                    ${currentDate.toLocaleDateString("en-IN", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric"
+                    })}
+                </h3>
+
+                ${events.length
+                    ? events.map(renderBooking).join("")
+                    : '<p class="text-gray-500">No bookings on this date.</p>'
+                }
+
+            </div>
+        `;
+    }
+
+    function renderDetails(bookings) {
+        const details =
+            root.querySelector("#calendarBookingDetails");
+
+        const sorted = [...bookings].sort((a, b) =>
+            String(a.date).localeCompare(String(b.date))
+        );
+
+        details.innerHTML = sorted.length
+            ? sorted.map(item => `
+                <div class="border-b py-4">
+
+                    <div class="flex flex-wrap justify-between gap-2">
+
+                        <strong>
+                            ${esc(item.equipmentName)}
+                        </strong>
+
+                        <span class="rounded-full px-3 py-1 text-xs
+                            ${statusColor(item.category)}">
+
+                            ${esc(requestLabel(item.category))}
+
+                        </span>
+
+                    </div>
+
+                    <p class="text-sm text-gray-600 mt-2">
+                        Student: ${esc(item.title)}
+                    </p>
+
+                    <p class="text-sm text-gray-600">
+                        Start: ${esc(item.date || "Not specified")}
+                    </p>
+
+                    <p class="text-sm text-gray-600">
+                        End: ${esc(item.endDate || "Not specified")}
+                    </p>
+
+                    <p class="text-sm text-gray-600">
+                        Quantity: ${Number(item.requestedQuantity || 0)}
+                    </p>
+
+                </div>
+            `).join("")
+            : `
+                <p class="text-gray-500">
+                    No booking records available for the selected filters.
+                </p>
+            `;
     }
 
     function render() {
-      const events = state.requests.filter(request =>
-        [
-          "pending",
-          "approved",
-          "borrowed",
-          "waitlist"
-        ].includes(request.category)
-      );
+        const bookings = getBookings();
 
-      panel.innerHTML = `
-        <h2 class="text-xl font-semibold mb-3">
-          Bookings for your equipment
-        </h2>
-      ` + (
-        events.length
-          ? events.map(request => `
-              <div class="border-b py-3">
-                <div class="flex flex-wrap justify-between gap-2">
-                  <strong>
-                    ${escapeHTML(request.equipmentName)}
-                    ·
-                    ${escapeHTML(request.title)}
-                  </strong>
+        root.querySelector("#calendarHeading").textContent =
+            formatHeading();
 
-                  <span>
-                    ${escapeHTML(requestStatusLabel(request.category))}
-                  </span>
-                </div>
+        root.querySelectorAll(".calendar-view-btn").forEach(button => {
+            const active =
+                button.dataset.calendarView === currentView;
 
-                <div class="text-sm text-on-surface-variant">
-                  ${escapeHTML(dateText(request.date))}
-                  –
-                  ${escapeHTML(dateText(request.endDate))}
-                  · Quantity: ${request.requestedQuantity}
-                </div>
-              </div>
-            `).join("")
-          : `
-            <p class="text-sm text-on-surface-variant">
-              No bookings are scheduled for your equipment.
-            </p>
-          `
-      );
+            button.classList.toggle("bg-blue-600", active);
+            button.classList.toggle("text-white", active);
+            button.classList.toggle("font-semibold", active);
+        });
+
+        const grid = root.querySelector("#calendarGrid");
+
+        if (currentView === "month") {
+            grid.innerHTML = renderMonth(bookings);
+        } else if (currentView === "week") {
+            grid.innerHTML = renderWeek(bookings);
+        } else {
+            grid.innerHTML = renderDay(bookings);
+        }
+
+        renderDetails(bookings);
     }
+
+    root.querySelector("#calendarPrev").addEventListener(
+        "click", () => {
+            if (currentView === "month") {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+            } else if (currentView === "week") {
+                currentDate = addDays(currentDate, -7);
+            } else {
+                currentDate = addDays(currentDate, -1);
+            }
+
+            render();
+        }
+    );
+
+    root.querySelector("#calendarNext").addEventListener(
+        "click", () => {
+            if (currentView === "month") {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+            } else if (currentView === "week") {
+                currentDate = addDays(currentDate, 7);
+            } else {
+                currentDate = addDays(currentDate, 1);
+            }
+
+            render();
+        }
+    );
+
+    root.querySelector("#calendarToday").addEventListener(
+        "click", () => {
+            currentDate = new Date();
+            render();
+        }
+    );
+
+    root.querySelectorAll(".calendar-view-btn").forEach(button => {
+        button.addEventListener("click", () => {
+            currentView = button.dataset.calendarView;
+            render();
+        });
+    });
+
+    root.querySelector("#calendarStatus").addEventListener(
+        "change", render
+    );
+
+    root.querySelector("#calendarEquipment").addEventListener(
+        "change", render
+    );
 
     render();
 
     window.refreshCalendarPage = render;
-  }
+}
+
 
   // --------------------------------------------------
   // HISTORY PAGE
