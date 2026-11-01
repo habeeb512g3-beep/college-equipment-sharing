@@ -576,34 +576,15 @@
     if (submit) submit.disabled = true;
 
     try {
-      const now = new Date().toISOString();
-      const { data: request, error: requestError } = await state.client
-        .from("booking_requests")
-        .insert({
-          student_id: state.user.id,
-          request_date: now,
-          start_date: start.toISOString(),
-          due_date: due.toISOString(),
-          status: "pending",
-          created_at: now
-        })
-        .select("id")
-        .single();
-      if (requestError) throw requestError;
+      const { data: requestId, error: requestError } =
+  await state.client.rpc("create_student_booking", {
+    p_resource_id: item.id,
+    p_quantity: requestedQuantity,
+    p_start_date: start.toISOString(),
+    p_due_date: due.toISOString()
+  });
 
-      const { error: itemError } = await state.client
-        .from("booking_request_items")
-        .insert({
-          request_id: request.id,
-          resource_id: item.id,
-          requested_quantity: requestedQuantity,
-          approved_quantity: 0,
-          item_status: "pending"
-        });
-
-      if (itemError) {
-        // Best effort: remove the request header if its item row cannot be created.
-        await state.client.from("booking_requests")
+if (requestError) throw requestError;
           .delete().eq("id", request.id).eq("student_id", state.user.id);
         throw itemError;
       }
