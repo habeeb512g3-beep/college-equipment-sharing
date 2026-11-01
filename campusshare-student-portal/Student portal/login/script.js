@@ -144,11 +144,7 @@
           "Authentication service is not configured. Check js/supabase.js and reload."
         );
       }
-
-      console.log("Login password length:", password.length);
-console.log("Login password has outer spaces:",
-  password !== password.trim()
-);
+      
       const { data: authData, error: authError } =
         await client.auth.signInWithPassword({
           email,
