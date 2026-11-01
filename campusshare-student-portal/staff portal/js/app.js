@@ -2353,7 +2353,11 @@ function setupCalendarPage() {
     root.querySelector("#calendarPrev").addEventListener(
         "click", () => {
             if (currentView === "month") {
-                currentDate.setMonth(currentDate.getMonth() - 1);
+                currentDate = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() - 1,
+    1
+             );
             } else if (currentView === "week") {
                 currentDate = addDays(currentDate, -7);
             } else {
@@ -2367,7 +2371,11 @@ function setupCalendarPage() {
     root.querySelector("#calendarNext").addEventListener(
         "click", () => {
             if (currentView === "month") {
-                currentDate.setMonth(currentDate.getMonth() + 1);
+                currentDate = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    1
+             );
             } else if (currentView === "week") {
                 currentDate = addDays(currentDate, 7);
             } else {
