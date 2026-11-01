@@ -1688,14 +1688,19 @@
 
     if (!notification || notification.is_read) return;
 
-    try {
-      const { error } = await state.client
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("id", notificationId)
-        .eq("user_id", state.user.id);
+    const { data: updatedNotification, error } = await state.client
+  .from("notifications")
+  .update({ is_read: true })
+  .eq("id", notificationId)
+  .eq("user_id", state.user.id)
+  .select("id")
+  .maybeSingle();
 
-      if (error) throw error;
+if (error) throw error;
+
+if (!updatedNotification) {
+  throw new Error("The notification was not updated.");
+}
 
       notification.is_read = true;
       renderNotifications();
