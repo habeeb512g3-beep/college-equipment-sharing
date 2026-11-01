@@ -982,23 +982,23 @@
           return false;
         }
 
-        const { data: updatedProfile, error } = await state.client
-  .from("profiles")
-  .update({
-    full_name: fullName,
-    department: dept
-  })
-  .eq("id", state.user.id)
-  .select("id")
-  .maybeSingle();
+                const { data: updatedProfile, error } = await state.client
+          .from("profiles")
+          .update({
+            full_name: fullName,
+            department: dept
+          })
+          .eq("id", state.user.id)
+          .select("id")
+          .maybeSingle();
 
-if (error) {
-  throw new Error(`Profile update failed: ${error.message}`);
-}
+        if (error) {
+          throw new Error(`Profile update failed: ${error.message}`);
+        }
 
-if (!updatedProfile) {
-  throw new Error("Your profile was not updated. Check your account permissions.");
-}
+        if (!updatedProfile) {
+          throw new Error("Your profile was not updated. Check your permissions.");
+        }
         const { error: authError } =
           await state.client.auth.updateUser({
             data: {
