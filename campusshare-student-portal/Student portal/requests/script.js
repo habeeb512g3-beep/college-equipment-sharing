@@ -863,38 +863,52 @@
   }
 
   async function cancelRequest(request) {
-    if (!request || !state.user) return;
+  if (!request || !state.user) return;
 
-    if (!confirm(
-      "Cancel this equipment request? This will update its status in CampusShare."
-    )) {
+  if (!confirm(
+    "Cancel this equipment request? This will update its status in CampusShare."
+  )) {
+    return;
+  }
+
+  try {
+    // Cancel the parent booking request.
+    const { error: requestError } = await state.client
+      .from("booking_requests")
+      .update({ status: "cancelled" })
+      .eq("id", request.id)
+      .eq("student_id", state.user.id);
+
+    if (requestError) throw requestError;
+
+    // Cancel all item records belonging to this request.
+    const { error: itemError } = await state.client
+      .from("booking_request_items")
+      .update({ item_status: "cancelled" })
+      .eq("request_id", request.id);
+
+    if (itemError) {
+      console.error("Request cancelled, but item status update failed:", itemError);
+      showToast(
+        "The request was cancelled, but its item status could not be updated. Please contact the administrator.",
+        true
+      );
+      await loadRequestData();
       return;
     }
 
-    try {
-      const { error } = await state.client
-        .from("booking_requests")
-        .update({ status: "cancelled" })
-        .eq("id", request.id)
-        .eq("student_id", state.user.id);
+    closeModal();
+    showToast("Request cancelled.");
+    await loadRequestData();
 
-      if (error) throw error;
-
-      closeModal();
-      showToast("Request cancelled.");
-
-      await loadRequestData();
-
-    } catch (error) {
-      console.error("Could not cancel request:", error);
-
-      showToast(
-        error.message ||
-          "The request could not be cancelled. Check the booking_requests UPDATE policy.",
-        true
-      );
-    }
+  } catch (error) {
+    console.error("Could not cancel request:", error);
+    showToast(
+      error.message || "The request could not be cancelled.",
+      true
+    );
   }
+}
 
   function setupEvents() {
     ui.tabs.forEach(tab => {
