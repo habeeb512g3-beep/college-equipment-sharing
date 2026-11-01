@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f4f7fc" />
+  <meta name="description" content="CampusShare administrator dashboard for institutional equipment sharing." />
+  <title>Admin Dashboard | CampusShare</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin-dashboard.css" />
+  <style>body.auth-pending{visibility:hidden}</style>
+</head>
+<body class="auth-pending">
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#dashboard" aria-label="CampusShare Admin Console home">
+        <span class="brand-mark">✣</span>
+        <span class="brand-copy"><strong>CampusShare</strong><small>Admin Console</small></span>
+      </a>
+      <div class="node-pill"><span class="live-dot"></span> Production Node</div>
+      <nav class="side-nav" aria-label="Admin navigation">
+        <a class="nav-link active" href="index.html" aria-current="page"><span class="nav-icon">▦</span>Admin dashboard</a>
+        <a class="nav-link" href="users.html"><span class="nav-icon">♙</span>View and manage users</a>
+        <a class="nav-link" href="owner-applications.html"><span class="nav-icon">✓</span>Approve or reject Owner applications</a>
+        <a class="nav-link" href="equipment.html"><span class="nav-icon">▣</span>Manage all equipment</a>
+        <a class="nav-link" href="bookings.html"><span class="nav-icon">▤</span>Monitor bookings and borrowing</a>
+        <a class="nav-link" href="incidents.html"><span class="nav-icon">⚑</span>Manage incidents</a>
+        <a class="nav-link" href="activity-logs.html"><span class="nav-icon">◷</span>View notifications and activity logs</a>
+      </nav>
+      <div class="sidebar-bottom"><button class="text-button" id="adminLogoutBtn">↗ Sign out</button></div>
+    </aside>
+
+    <main class="main-area" id="dashboard">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation">☰</button>
+        <div class="top-search"><span>⌕</span><input id="globalSearch" type="search" data-admin-global-search placeholder="Search users, equipment, incidents…" aria-label="Search dashboard" /><kbd>⌘K</kbd></div>
+        <div class="top-actions">
+          <span class="admin-tag"><i></i> INSTITUTIONAL ADMIN</span>
+          <div class="admin-identity"><span><strong>Admin Supervisor</strong><small>Campus Operations</small></span><span class="avatar dark">AS</span></div>
+        </div>
+      </header>
+
+      <section class="page-heading">
+        <div>
+          <div class="eyebrow"><span class="live-dot"></span> OPERATIONAL · ACADEMIC TERM FALL 2025 · NODE SYNC ACTIVE</div>
+          <h1>Admin Dashboard</h1>
+          <p>Last automated snapshot: <strong id="snapshotTime">2 min ago</strong></p>
+        </div>
+        <div class="heading-actions">
+          <button class="btn btn-light" id="exportReport">⇩ Export System Report</button>
+          <button class="btn btn-light" id="openScanner">▣ RFID / QR Scanner</button>
+          <button class="btn btn-primary" id="openAddEquipment">＋ Add Equipment</button>
+        </div>
+      </section>
+
+      <section class="metrics-grid" aria-label="Institution overview">
+        <article class="metric-card accent-blue dashboard-link-card" data-go="equipment.html" role="link" tabindex="0" aria-label="Open equipment inventory">
+          <div class="metric-head"><span>TOTAL INVENTORY</span><span class="metric-icon">▣</span></div>
+          <div class="metric-value" id="inventoryTotal">1,120 <small>+4.8%</small></div>
+          <p>Across academic &amp; campus facilities</p>
+          <div class="mini-stats"><span>● 781 <small>Available</small></span><span>● 312 <small>On loan</small></span><span>● 27 <small>Maintenance</small></span></div>
+        </article>
+        <article class="metric-card accent-green dashboard-link-card" data-go="bookings.html" role="link" tabindex="0" aria-label="Open booking and borrowing monitor">
+          <div class="metric-head"><span>ACTIVE BORROWERS</span><span class="metric-icon">♙</span></div>
+          <div class="metric-value" id="borrowerTotal">186 <small>+6.2%</small></div>
+          <p>Students and faculty with active loans</p>
+          <div class="metric-foot"><span class="progress"><i style="width:68%"></i></span><small>68% of monthly target</small></div>
+        </article>
+        <article class="metric-card accent-purple dashboard-link-card" data-go="owner-applications.html" role="link" tabindex="0" aria-label="Review owner applications">
+          <div class="metric-head"><span>PENDING APPLICATIONS</span><span class="metric-icon">▤</span></div>
+          <div class="metric-value" id="pendingTotal">4 <small class="neutral">Awaiting review</small></div>
+          <p>Owner applications requiring approval</p>
+          <div class="metric-foot"><span class="status-dot purple"></span><small>Avg. decision time: 2.4 hours</small></div>
+        </article>
+        <article class="metric-card accent-red dashboard-link-card" data-go="incidents.html" role="link" tabindex="0" aria-label="Open incident manager">
+          <div class="metric-head"><span>OVERDUE REPORTS</span><span class="metric-icon">⚠</span></div>
+          <div class="metric-value" id="overdueTotal">7 <small class="negative">+2 this week</small></div>
+          <p>Active overdue or unresolved cases</p>
+          <div class="metric-foot"><span class="status-dot red"></span><small>5 awaiting custodian response</small></div>
+        </article>
+        <article class="metric-card accent-blue dashboard-link-card" data-go="users.html" role="link" tabindex="0" aria-label="Open user directory">
+          <div class="metric-head"><span>REGISTERED USERS</span><span class="metric-icon">♧</span></div>
+          <div class="metric-value">3,482 <small>+2.1%</small></div>
+          <p>Across 18 academic colleges</p>
+          <div class="metric-foot"><span class="status-dot green"></span><small>Directory sync OK</small></div>
+        </article>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="left-column">
+          <section class="panel roster-panel">
+            <div class="panel-heading dashboard-section-link" data-go="bookings.html" role="link" tabindex="0" aria-label="Open booking monitor">
+              <div><h2>Live Checkout &amp; Reservation Roster</h2><p>Real-time status of equipment currently checked out or awaiting collection.</p></div>
+              <div class="legend"><span class="legend-chip"><i class="green-dot"></i> Active</span><span class="legend-chip"><i class="amber-dot"></i> Due Today</span><span class="legend-chip"><i class="red-dot"></i> Overdue</span></div>
+            </div>
+            <div class="table-wrap">
+              <table class="roster-table">
+                <thead><tr><th>Borrower / NetID</th><th>Equipment &amp; Asset</th><th>Loan Status</th><th>Return / Action</th></tr></thead>
+                <tbody id="rosterBody"></tbody>
+              </table>
+            </div>
+            <div class="panel-footer"><span id="rosterCount">Showing 4 active records</span><a href="bookings.html">View full roster →</a></div>
+          </section>
+
+          <section class="panel utilization-panel">
+            <div class="panel-heading">
+              <div><h2>Fleet Utilization &amp; Department Inventory</h2><p>Current allocation and pressure across top university facilities.</p></div>
+              <span class="small-blue">LIVE · ACTIVE INVENTORY</span>
+            </div>
+            <div class="department-grid" id="departmentGrid">
+              <article class="department-card dashboard-link-card" data-go="equipment.html" role="link" tabindex="0"><div><strong>Robotics &amp; Mechatronics</strong><b>86% <small>active</small></b></div><span class="progress"><i style="width:86%"></i></span><small>420 Total Items · 298 on bench/loan</small></article>
+              <article class="department-card dashboard-link-card" data-go="equipment.html" role="link" tabindex="0"><div><strong>Media Arts &amp; Production</strong><b>76% <small>active</small></b></div><span class="progress"><i style="width:76%"></i></span><small>190 Total Items · 172 on loan/studio</small></article>
+              <article class="department-card dashboard-link-card" data-go="equipment.html" role="link" tabindex="0"><div><strong>Physics &amp; High-Precision Optics</strong><b>62% <small>active</small></b></div><span class="progress"><i style="width:62%"></i></span><small>210 Total Items · 130 active</small></article>
+              <article class="department-card dashboard-link-card" data-go="equipment.html" role="link" tabindex="0"><div><strong>Bioengineering Facilities</strong><b>92% <small>active</small></b></div><span class="progress"><i style="width:92%"></i></span><small>150 Total Items · 147 operational</small></article>
+            </div>
+            <div class="chart-heading"><strong>7-DAY CHECK-IN / CHECKOUT VOLUME</strong><span>Mon – Sun Trajectory</span></div>
+            <div class="chart-wrap"><svg viewBox="0 0 680 105" role="img" aria-label="Illustrative weekly checkout and check-in volume chart"><defs><linearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2468e8" stop-opacity=".22"/><stop offset="1" stop-color="#2468e8" stop-opacity="0"/></linearGradient></defs><path d="M5 70 C45 48 78 55 112 61 S180 82 220 54 S285 20 325 54 S393 74 430 43 S505 26 540 60 S615 96 675 22 L675 100 L5 100Z" fill="url(#areaFill)"/><path d="M5 70 C45 48 78 55 112 61 S180 82 220 54 S285 20 325 54 S393 74 430 43 S505 26 540 60 S615 96 675 22" fill="none" stroke="#2873e9" stroke-width="3" stroke-linecap="round"/></svg></div>
+          </section>
+        </div>
+
+        <div class="right-column">
+          <section class="panel verification-panel">
+            <div class="panel-heading compact dashboard-section-link" data-go="owner-applications.html" role="link" tabindex="0"><div><h2>Owner Verification Queue</h2><p>Pending new owner registrations</p></div><span class="count-pill" id="ownerQueueCount">4 Pending</span></div>
+            <div id="ownerQueue" class="owner-queue"></div>
+            <a class="panel-link" href="owner-applications.html">Review all applications →</a>
+          </section>
+
+          <section class="panel incident-panel">
+            <div class="panel-heading compact dashboard-section-link" data-go="incidents.html" role="link" tabindex="0"><div><h2>⚠ Incident &amp; Damage Triage</h2><p>Open cases requiring institutional response</p></div><span class="count-pill red" id="incidentCount">2 Escalations</span></div>
+            <div id="incidentList" class="incident-list"></div>
+            <a class="panel-link" href="incidents.html">Open incident manager →</a>
+          </section>
+
+          <section class="panel telemetry-panel">
+            <div class="panel-heading compact dashboard-section-link" data-go="activity-logs.html" role="link" tabindex="0"><div><h2>▣ Live Security &amp; Telemetry</h2><p>Infrastructure and integration status</p></div><span class="small-green">Auto-refreshing</span></div>
+            <div class="telemetry-list">
+              <div data-go="activity-logs.html" role="link" tabindex="0"><span class="status-dot green"></span><p><strong>Smart Lock-out validated</strong><small>User: 0842 RFID Card Tap</small></p><time>2m ago</time></div>
+              <div data-go="activity-logs.html" role="link" tabindex="0"><span class="status-dot green"></span><p><strong>Inventory safety sync</strong><small>Central Asset API responded 87ms</small></p><time>4m ago</time></div>
+              <div data-go="activity-logs.html" role="link" tabindex="0"><span class="status-dot amber"></span><p><strong>Security Alert: Lab 04</strong><small>Keypad retry threshold reached</small></p><time>8m ago</time></div>
+              <div data-go="activity-logs.html" role="link" tabindex="0"><span class="status-dot green"></span><p><strong>Admin privilege granted</strong><small>Institutional Admin sign-in verified</small></p><time>20m ago</time></div>
+            </div>
+            <a class="panel-link" href="activity-logs.html">View system activity logs →</a>
+          </section>
+        </div>
+      </section>
+      <footer class="page-footer"><span>CampusShare Admin Console · Production Node</span><span>System snapshot <strong id="footerTime">just now</strong></span></footer>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header"><div><span class="modal-kicker">CAMPUSSHARE ADMIN</span><h2 id="modalTitle">Action</h2></div><button class="icon-button" id="closeModal" aria-label="Close dialog">×</button></div>
+      <div class="modal-content" id="modalContent"></div>
+    </section>
+  </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase.js"></script>
+<script src="../js/database.js"></script>
+<script src="admin-auth.js"></script>
+<script src="admin-dashboard.js"></script>
+<script src="admin-navigation.js"></script>
+</body>
+</html>
