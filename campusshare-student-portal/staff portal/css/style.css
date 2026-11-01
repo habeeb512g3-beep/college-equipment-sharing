@@ -1,16 +1,1014 @@
-@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}
+/* CampusShare Staff Portal shared stylesheet
+   Path: staff portal/css/style.css
+   Designed for the current app.js .cs-* shared layout. */
 
-/* Preserved additional styles from the updated staff portal */
-/* Live cross-portal workflow panels */
-#studentPortalLiveRequests, #dashboardLiveStudentRequests, #persistentCalendarBookings, #persistentCompletedHistory { border: 1px solid rgba(100,116,139,.18); }
-#studentPortalLiveRequests button, #dashboardLiveStudentRequests button, #persistentCalendarBookings button { cursor: pointer; transition: filter .15s ease, transform .15s ease; }
-#studentPortalLiveRequests button:hover, #dashboardLiveStudentRequests button:hover, #persistentCalendarBookings button:hover { filter: brightness(.96); transform: translateY(-1px); }
-#studentPortalLiveRequests article, #dashboardLiveStudentRequests > div { background: rgba(148,163,184,.04); }
-@media print { button, input, select, nav { display: none !important; } #persistentCompletedHistory { border: 0; } }
+:root {
+  --cs-navy: #213145;
+  --cs-teal: #00685f;
+  --cs-teal-bright: #008378;
+  --cs-teal-soft: #89f5e7;
+  --cs-bg: #f6f8fc;
+  --cs-white: #fff;
+  --cs-surface-low: #eff4ff;
+  --cs-text: #0b1c30;
+  --cs-muted: #58657b;
+  --cs-border: #e5eaf2;
+  --cs-error: #ba1a1a;
+  --cs-sidebar-width: 270px;
+  --cs-radius: 14px;
+  --cs-shadow: 0 1px 3px rgba(15,23,42,.05), 0 8px 24px rgba(15,23,42,.035);
+  --md-sys-color-surface: #fff;
+  --md-sys-color-primary: #00685f;
+}
 
-/* Live student booking request workflow */
-#studentPortalLiveRequests [data-live-id] { background: var(--md-sys-color-surface, #fff); }
-#studentPortalLiveRequests button:focus-visible, #studentPortalLiveRequests input:focus-visible { outline: 2px solid var(--md-sys-color-primary, #315b9a); outline-offset: 2px; }
-#studentPortalLiveRequests [data-action], #studentPortalLiveRequests [data-filter] { transition: background-color .15s ease, border-color .15s ease; }
-#studentPortalLiveRequests [data-select-request] { width: 16px; height: 16px; margin-top: 4px; flex: 0 0 auto; accent-color: var(--md-sys-color-primary, #315b9a); }
-@media print { #studentPortalLiveRequests button, #studentPortalLiveRequests input[type=checkbox] { display: none !important; } }
+/* Base */
+html, body {
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #aab8c8 transparent;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  background: var(--cs-bg);
+  color: var(--cs-text);
+  font-family: Inter, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed !important;
+  opacity: .55;
+}
+
+img, svg {
+  max-width: 100%;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+::selection {
+  background: rgba(0,131,120,.18);
+  color: var(--cs-text);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 20px;
+  background: #cbd5e1;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Shared sidebar and logo */
+.cs-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  width: var(--cs-sidebar-width);
+  min-height: 100vh;
+  overflow-y: auto;
+  background: var(--cs-navy);
+  color: #eaf1ff;
+  border-right: 1px solid rgba(255,255,255,.06);
+  box-shadow: 4px 0 18px rgba(15,23,42,.06);
+}
+
+.cs-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 18px 12px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -.7px;
+}
+
+.cs-brand:hover {
+  color: #fff;
+}
+
+.cs-brand-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: 9px;
+  background: #102b57;
+  color: #fff;
+}
+
+.cs-brand-mark svg {
+  width: 22px;
+  height: 22px;
+}
+
+.cs-brand-light {
+  font-weight: 600;
+}
+
+.cs-sidebar-tag {
+  width: max-content;
+  margin: 0 18px 20px;
+  padding: 6px 9px;
+  border-radius: 5px;
+  background: rgba(255,255,255,.1);
+  color: var(--cs-teal-soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.cs-nav {
+  display: grid;
+  gap: 5px;
+  padding: 0 12px;
+}
+
+.cs-nav-label {
+  padding: 10px 9px 7px;
+  color: #aebbc7;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.cs-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 13px 14px;
+  border-radius: 9px;
+  color: #c4d0d9;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background .16s ease, color .16s ease;
+}
+
+.cs-nav a:hover {
+  background: rgba(255,255,255,.08);
+  color: #fff;
+}
+
+.cs-nav a.active {
+  background: var(--cs-teal-bright);
+  color: #fff;
+}
+
+.cs-nav .material-symbols-outlined {
+  flex: 0 0 auto;
+  font-size: 21px;
+}
+
+.cs-sidebar-footer {
+  margin-top: auto;
+  padding: 17px 18px;
+  border-top: 1px solid rgba(255,255,255,.12);
+  color: #aebbc7;
+  font-size: 12px;
+}
+
+aside a[data-path="settings"],
+aside a[data-path="help-and-support"] {
+  display: none !important;
+}
+
+/* Shared header, profile and logout */
+.cs-shell {
+  min-height: 100vh;
+  margin-left: var(--cs-sidebar-width);
+  background: var(--cs-bg);
+}
+
+.cs-header {
+  position: fixed;
+  z-index: 40;
+  top: 0;
+  right: 0;
+  left: var(--cs-sidebar-width);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 70px;
+  padding: 12px 26px;
+  border-bottom: 1px solid rgba(226,232,240,.85);
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 1px 8px rgba(15,23,42,.035);
+  backdrop-filter: blur(14px);
+}
+
+.cs-crumb {
+  color: var(--cs-muted);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.cs-crumb strong {
+  color: var(--cs-text);
+}
+
+.cs-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cs-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--cs-teal-soft);
+  color: var(--cs-teal);
+  font-weight: 800;
+}
+
+.cs-profile-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cs-profile-copy strong,
+.cs-profile-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-profile-copy strong {
+  color: var(--cs-text);
+  font-size: 13px;
+}
+
+.cs-profile-copy span {
+  margin-top: 2px;
+  color: var(--cs-muted);
+  font-size: 11px;
+}
+
+#staffLogoutButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 15px;
+  border: 1px solid #d5dee8;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--cs-text);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#staffLogoutButton:hover {
+  border-color: var(--cs-teal);
+  background: #effcf9;
+  color: var(--cs-teal);
+}
+
+#staffLogoutButton:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+/* Main content and page headings */
+.cs-main {
+  width: 100%;
+  max-width: 1800px;
+  min-height: calc(100vh - 70px);
+  margin: 0 auto;
+  padding: 96px 26px 42px;
+  background: var(--cs-bg);
+  color: var(--cs-text);
+}
+
+.cs-hero {
+  position: relative;
+  margin-bottom: 22px;
+  padding: 25px 28px;
+  overflow: hidden;
+  border: 1px solid var(--cs-border);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(11,28,48,.03);
+}
+
+.cs-kicker {
+  color: var(--cs-teal);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.cs-title {
+  margin: 8px 0 7px;
+  color: var(--cs-text);
+  font-size: 28px;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -.7px;
+}
+
+.cs-subtitle {
+  margin: 0;
+  color: var(--cs-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.cs-muted {
+  color: var(--cs-muted);
+}
+
+/* Dashboard metric cards and content panels */
+.cs-grid {
+  display: grid;
+  grid-template-columns: repeat(6,minmax(0,1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.cs-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.cs-card {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--cs-border);
+  border-radius: var(--cs-radius);
+  background: #fff;
+  box-shadow: var(--cs-shadow);
+}
+
+.cs-card-label {
+  color: var(--cs-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.cs-card-value {
+  margin-top: 11px;
+  color: var(--cs-text);
+  font-size: 29px;
+  font-weight: 750;
+  letter-spacing: -.8px;
+}
+
+.cs-card-note {
+  margin-top: 5px;
+  color: var(--cs-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.cs-panel {
+  margin-bottom: 18px;
+  padding: 20px;
+  border: 1px solid var(--cs-border);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(11,28,48,.03);
+}
+
+.cs-panel-title {
+  margin: 0;
+  color: var(--cs-text);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.cs-list {
+  display: grid;
+  gap: 10px;
+}
+
+.cs-item {
+  padding: 15px;
+  border: 1px solid var(--cs-border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.cs-empty {
+  padding: 32px 18px;
+  border: 1px dashed #bcc9c6;
+  border-radius: 12px;
+  background: #fbfcff;
+  color: var(--cs-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.cs-error {
+  margin: 10px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fff4e5;
+  color: #704214;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.cs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cs-two-col {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 16px;
+}
+
+.cs-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 12px;
+}
+
+/* Buttons */
+.cs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 37px;
+  padding: 9px 13px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease,
+              color .15s ease, transform .15s ease;
+}
+
+.cs-btn:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.cs-btn-primary {
+  border-color: var(--cs-teal);
+  background: var(--cs-teal);
+  color: #fff;
+}
+
+.cs-btn-primary:hover:not(:disabled) {
+  border-color: var(--cs-teal-bright);
+  background: var(--cs-teal-bright);
+  color: #fff;
+}
+
+.cs-btn-light {
+  border-color: #d5dee8;
+  background: #fff;
+  color: var(--cs-text);
+}
+
+.cs-btn-light:hover:not(:disabled) {
+  background: var(--cs-surface-low);
+}
+
+.cs-btn-danger {
+  border-color: #fecaca;
+  background: #ffdad6;
+  color: #93000a;
+}
+
+.cs-btn-danger:hover:not(:disabled) {
+  background: #fecaca;
+}
+
+/* Forms and filters */
+.cs-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--cs-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cs-input,
+.cs-select,
+.cs-textarea {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  outline: none;
+  background: #f8faff;
+  color: var(--cs-text);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.cs-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.cs-input:focus,
+.cs-select:focus,
+.cs-textarea:focus {
+  border-color: var(--cs-teal);
+  outline: 2px solid rgba(0,131,120,.14);
+  background: #fff;
+}
+
+.cs-input::placeholder,
+.cs-textarea::placeholder {
+  color: #8a98a9;
+}
+
+/* Tables */
+.cs-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--cs-border);
+  border-radius: 11px;
+}
+
+.cs-table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+  background: #fff;
+  color: var(--cs-text);
+  font-size: 13px;
+}
+
+.cs-table th {
+  padding: 12px;
+  background: var(--cs-surface-low);
+  color: var(--cs-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cs-table td {
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--cs-border);
+  vertical-align: top;
+}
+
+.cs-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.cs-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+/* Request tabs and status */
+.cs-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 14px 0;
+}
+
+.cs-tab {
+  padding: 8px 11px;
+  border: 1px solid #d5dde8;
+  border-radius: 9px;
+  background: #fff;
+  color: var(--cs-muted);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.cs-tab:hover {
+  background: var(--cs-surface-low);
+}
+
+.cs-tab.active {
+  border-color: var(--cs-teal);
+  background: var(--cs-teal);
+  color: #fff;
+}
+
+.cs-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 99px;
+  background: var(--cs-surface-low);
+  color: var(--cs-navy);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Equipment images and extra form fields */
+.cs-equipment-img {
+  display: block;
+  width: 100%;
+  height: 155px;
+  object-fit: cover;
+  border-radius: 9px;
+  background: var(--cs-surface-low);
+}
+
+#addEquipmentModal .cs-extra-field {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+#addEquipmentModal .cs-extra-field label {
+  color: var(--cs-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#addEquipmentModal .cs-extra-field input,
+#addEquipmentModal .cs-extra-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #bcc9c6;
+  border-radius: 8px;
+  outline: none;
+  background: #f8faff;
+  color: var(--cs-text);
+}
+
+#addEquipmentModal .cs-extra-field input:focus,
+#addEquipmentModal .cs-extra-field select:focus {
+  border-color: var(--cs-teal);
+  box-shadow: 0 0 0 3px rgba(0,131,120,.12);
+}
+
+#addEquipmentModal {
+  z-index: 1000;
+}
+
+#addEquipmentModal.hidden {
+  display: none !important;
+}
+
+#addEquipmentModal:not(.hidden) {
+  display: flex !important;
+}
+
+/* Legacy live panels retained for other page versions */
+#studentPortalLiveRequests,
+#dashboardLiveStudentRequests,
+#persistentCalendarBookings,
+#persistentCompletedHistory,
+#dashboardRecentRequests {
+  border: 1px solid rgba(100,116,139,.18);
+  border-radius: var(--cs-radius);
+  background: #fff;
+  box-shadow: var(--cs-shadow);
+}
+
+#studentPortalLiveRequests button,
+#dashboardLiveStudentRequests button,
+#persistentCalendarBookings button {
+  cursor: pointer;
+  transition: filter .15s ease, transform .15s ease;
+}
+
+#studentPortalLiveRequests button:hover,
+#dashboardLiveStudentRequests button:hover,
+#persistentCalendarBookings button:hover {
+  filter: brightness(.96);
+  transform: translateY(-1px);
+}
+
+#studentPortalLiveRequests article,
+#dashboardLiveStudentRequests > div {
+  border-color: var(--cs-border);
+  background: rgba(148,163,184,.04);
+}
+
+#studentPortalLiveRequests [data-live-id] {
+  border: 1px solid var(--cs-border);
+  border-radius: 12px;
+  background: var(--md-sys-color-surface,#fff);
+}
+
+#studentPortalLiveRequests button:focus-visible,
+#studentPortalLiveRequests input:focus-visible,
+.cs-btn:focus-visible,
+.cs-tab:focus-visible,
+.cs-nav a:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary,#00685f);
+  outline-offset: 2px;
+}
+
+#studentPortalLiveRequests [data-select-request],
+#studentPortalLiveRequests [data-select-live] {
+  width: 16px;
+  height: 16px;
+  margin-top: 4px;
+  flex: 0 0 auto;
+  accent-color: var(--md-sys-color-primary,#00685f);
+}
+
+#persistentCalendarBookings > div,
+#persistentCalendarBookings article {
+  border-color: var(--cs-border);
+}
+
+#persistentCompletedHistory [data-history-row] {
+  padding: 13px 4px;
+  border-bottom: 1px solid var(--cs-border);
+}
+
+#persistentCompletedHistory [data-history-row]:last-child {
+  border-bottom: 0;
+}
+
+/* Hide old Settings and Help & Support navigation */
+a[data-path="settings"],
+a[data-path="help-and-support"] {
+  display: none !important;
+}
+
+/* Toasts */
+#appToast,
+#toastNotification,
+#toast-notification {
+  z-index: 99999;
+  max-width: min(420px,calc(100vw - 32px));
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 11px;
+  background: var(--cs-navy);
+  color: #fff;
+  box-shadow: 0 12px 32px rgba(15,23,42,.2);
+}
+
+/* Status helpers */
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-approved,
+.status-returned {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-borrowed {
+  background: #ccfbf1;
+  color: #115e59;
+}
+
+/* Keyboard accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-color: var(--cs-teal);
+  outline-offset: 2px;
+}
+
+/* Tablet layout */
+@media (max-width: 1250px) {
+  .cs-grid {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+}
+
+@media (max-width: 850px) {
+  :root {
+    --cs-sidebar-width: 220px;
+  }
+
+  .cs-sidebar {
+    width: var(--cs-sidebar-width);
+  }
+
+  .cs-shell {
+    margin-left: var(--cs-sidebar-width);
+  }
+
+  .cs-header {
+    left: var(--cs-sidebar-width);
+  }
+
+  .cs-grid,
+  .cs-grid-4 {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+
+  .cs-main {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+}
+
+/* Mobile layout */
+@media (max-width: 620px) {
+  :root {
+    --cs-sidebar-width: 0px;
+  }
+
+  .cs-sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .cs-brand {
+    padding-bottom: 10px;
+  }
+
+  .cs-sidebar-tag {
+    margin-bottom: 12px;
+  }
+
+  .cs-nav {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    padding-bottom: 12px;
+  }
+
+  .cs-nav-label {
+    grid-column: 1 / -1;
+  }
+
+  .cs-nav a {
+    min-height: 42px;
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .cs-sidebar-footer {
+    display: none;
+  }
+
+  .cs-shell {
+    margin-left: 0;
+  }
+
+  .cs-header {
+    position: relative;
+    right: auto;
+    left: auto;
+    flex-wrap: wrap;
+    min-height: 64px;
+    padding: 12px 16px;
+  }
+
+  .cs-crumb {
+    font-size: 12px;
+  }
+
+  .cs-profile-copy span:last-child {
+    display: none;
+  }
+
+  #staffLogoutButton {
+    min-height: 36px;
+    padding: 7px 10px;
+  }
+
+  .cs-main {
+    padding: 20px 14px 32px;
+  }
+
+  .cs-grid,
+  .cs-grid-4,
+  .cs-two-col,
+  .cs-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-title {
+    font-size: 24px;
+  }
+
+  .cs-hero,
+  .cs-panel {
+    padding: 18px;
+  }
+
+  .cs-row {
+    align-items: flex-start;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .cs-sidebar,
+  .cs-header,
+  button,
+  input,
+  select,
+  nav,
+  #staffLogoutButton {
+    display: none !important;
+  }
+
+  .cs-shell {
+    margin: 0 !important;
+  }
+
+  .cs-main {
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .cs-panel,
+  .cs-card {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  #persistentCompletedHistory,
+  #studentPortalLiveRequests {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  #persistentCompletedHistory [data-history-row] {
+    break-inside: avoid;
+  }
+}vvvvvvvvv
