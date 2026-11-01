@@ -1332,6 +1332,47 @@
     renderPage();
   }
 
+  // Automatically refresh when a student submits a request.
+let bookingRefreshTimer = null;
+
+function subscribeToBookingChanges() {
+  const client = db();
+
+  if (!client || !state.user) return;
+
+  const scheduleRefresh = () => {
+    clearTimeout(bookingRefreshTimer);
+
+    bookingRefreshTimer = setTimeout(() => {
+      refreshData().catch(error => {
+        console.error("Booking refresh failed:", error);
+      });
+    }, 400);
+  };
+
+  client
+    .channel("campusshare-staff-booking-updates")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "booking_requests"
+      },
+      scheduleRefresh
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "booking_request_items"
+      },
+      scheduleRefresh
+    )
+    .subscribe();
+}
+
   // ============================================================
   // REAL DATABASE COUNTS
   // ============================================================
