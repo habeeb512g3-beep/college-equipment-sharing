@@ -1,10 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShareSpace | My Equipment</title>
+
+    <title>CampusShare | My Equipment</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,85 +71,108 @@
     </script>
 
     <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        body {
+            min-height: 100vh;
+        }
+
+        button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .equipment-card[hidden] {
+            display: none !important;
+        }
+
+        #equipmentGridContainer:empty {
+            display: block;
+        }
+    </style>
 </head>
 
 <body class="bg-surface font-sans text-on-surface antialiased">
 
     <!-- SIDEBAR -->
-    <aside class="fixed left-0 top-0 h-full w-72 bg-inverse-surface text-inverse-on-surface z-50 flex flex-col justify-between shadow-lg">
+    <aside class="fixed left-0 top-0 h-full w-72 bg-inverse-surface text-inverse-on-surface z-50 flex flex-col shadow-lg">
 
-        <div class="flex flex-col flex-1 min-h-0">
+        <!-- BRAND -->
+        <div class="p-6">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-3xl text-primary-fixed">
+                    inventory_2
+                </span>
 
-            <div class="p-6 flex flex-col gap-2">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-3xl text-primary-fixed">inventory_2</span>
-                    <span class="text-xl font-bold text-white">ShareSpace</span>
-                </div>
-
-                <div class="inline-flex items-center px-2 py-1 rounded bg-white/10 text-primary-fixed text-xs uppercase tracking-wider">
-                    Owner Portal
-                </div>
+                <span class="text-xl font-bold text-white">
+                    CampusShare
+                </span>
             </div>
 
-            <nav class="flex-1 px-4 py-2 space-y-1">
-
-                <div class="px-2 pb-2 text-xs uppercase text-outline-variant tracking-wider">
-                    Main Menu
-                </div>
-
-                <a href="dashboard.html"
-                   data-path="dashboard"
-                   class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white">
-                    <span class="material-symbols-outlined">grid_view</span>
-                    Dashboard
-                </a>
-
-                <a href="equipment.html"
-                   data-path="my-equipment"
-                   aria-current="page"
-                   class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-container text-white">
-                    <span class="material-symbols-outlined">inventory_2</span>
-                    My Equipment
-                </a>
-
-                <a href="requests.html"
-                   data-path="booking-requests"
-                   class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white">
-                    <span class="material-symbols-outlined">event_available</span>
-                    Booking Requests
-                </a>
-
-                <a href="calendar.html"
-                   data-path="calendar"
-                   class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white">
-                    <span class="material-symbols-outlined">calendar_month</span>
-                    Calendar
-                </a>
-
-                <a href="history.html"
-                   data-path="equipment-history"
-                   class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white">
-                    <span class="material-symbols-outlined">history</span>
-                    Equipment History
-                </a>
-
-            </nav>
+            <div class="inline-flex items-center px-2 py-1 mt-3 rounded bg-white/10 text-primary-fixed text-xs uppercase tracking-wider">
+                Staff Portal
+            </div>
         </div>
 
-        <div class="p-4 border-t border-white/10">
-            <a href="#"
-               data-path="settings"
-               class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white">
-                <span class="material-symbols-outlined">settings</span>
-                Settings
+        <!-- NAVIGATION -->
+        <nav class="flex-1 px-4 py-2 space-y-1">
+
+            <div class="px-2 pb-2 text-xs uppercase text-outline-variant tracking-wider">
+                Main Menu
+            </div>
+
+            <a
+                href="dashboard.html"
+                data-path="dashboard"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white"
+            >
+                <span class="material-symbols-outlined">grid_view</span>
+                Dashboard
             </a>
 
-            <a href="#"
-               data-path="help-and-support"
-               class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white">
-                <span class="material-symbols-outlined">support</span>
-                Help &amp; Support
+            <a
+                href="equipment.html"
+                data-path="my-equipment"
+                aria-current="page"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-container text-white"
+            >
+                <span class="material-symbols-outlined">inventory_2</span>
+                My Equipment
             </a>
+
+            <a
+                href="requests.html"
+                data-path="booking-requests"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white"
+            >
+                <span class="material-symbols-outlined">event_available</span>
+                Booking Requests
+            </a>
+
+            <a
+                href="calendar.html"
+                data-path="calendar"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white"
+            >
+                <span class="material-symbols-outlined">calendar_month</span>
+                Calendar
+            </a>
+
+            <a
+                href="history.html"
+                data-path="equipment-history"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg text-outline-variant hover:bg-white/10 hover:text-white"
+            >
+                <span class="material-symbols-outlined">history</span>
+                Equipment History
+            </a>
+
+        </nav>
+
+        <div class="p-4 border-t border-white/10">
+            <p class="text-xs text-outline-variant">
+                CampusShare Staff Portal
+            </p>
         </div>
 
     </aside>
@@ -162,9 +185,15 @@
         <header class="fixed top-0 left-72 right-0 h-16 bg-white/90 backdrop-blur-xl shadow-sm z-40 px-6 flex items-center justify-between">
 
             <div class="flex items-center gap-3">
-                <span class="text-sm text-on-surface-variant">ShareSpace</span>
+                <span class="text-sm text-on-surface-variant">
+                    CampusShare
+                </span>
+
                 <span class="text-outline">/</span>
-                <span class="text-sm font-semibold">My Equipment</span>
+
+                <span class="text-sm font-semibold">
+                    My Equipment
+                </span>
             </div>
 
             <div class="flex items-center gap-4">
@@ -172,20 +201,26 @@
                 <button
                     id="headerAddEquipmentBtn"
                     type="button"
-                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary-container text-white text-sm font-semibold">
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary-container text-white text-sm font-semibold"
+                >
                     <span class="material-symbols-outlined text-lg">add</span>
                     Add Equipment
                 </button>
 
-                <button type="button" class="relative p-2 rounded-full hover:bg-surface-container">
-                    <span class="material-symbols-outlined">notifications</span>
-                </button>
-
                 <div class="flex items-center gap-2">
-                    <div class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold">
-                        O
+                    <div
+                        id="staffProfileInitial"
+                        class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold"
+                    >
+                        S
                     </div>
-                    <span class="hidden md:block text-sm font-medium">Owner</span>
+
+                    <span
+                        id="staffDisplayName"
+                        class="hidden md:block text-sm font-medium"
+                    >
+                        Staff Member
+                    </span>
                 </div>
 
             </div>
@@ -193,7 +228,7 @@
 
 
         <!-- PAGE BODY -->
-        <main class="pt-16 px-6 py-6 min-h-screen">
+        <main class="pt-24 px-6 py-6 min-h-screen">
 
             <!-- PAGE TITLE -->
             <section class="mb-6 bg-white p-6 rounded-xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -216,7 +251,8 @@
                 <button
                     id="openAddModalBtn"
                     type="button"
-                    class="flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-primary hover:bg-primary-container text-white font-semibold">
+                    class="flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-primary hover:bg-primary-container text-white font-semibold"
+                >
                     <span class="material-symbols-outlined">add</span>
                     Add Equipment
                 </button>
@@ -229,9 +265,13 @@
 
                 <div class="bg-white p-5 rounded-xl shadow-sm">
                     <div class="text-xs uppercase text-outline font-semibold">
-                        Total Equipment
+                        Total Equipment Units
                     </div>
-                    <div id="totalEquipmentCount" class="text-2xl font-bold mt-2">
+
+                    <div
+                        id="totalEquipmentCount"
+                        class="text-2xl font-bold mt-2"
+                    >
                         0
                     </div>
                 </div>
@@ -240,7 +280,11 @@
                     <div class="text-xs uppercase text-outline font-semibold">
                         Available
                     </div>
-                    <div id="availableCount" class="text-2xl font-bold text-primary mt-2">
+
+                    <div
+                        id="availableCount"
+                        class="text-2xl font-bold text-primary mt-2"
+                    >
                         0
                     </div>
                 </div>
@@ -249,7 +293,11 @@
                     <div class="text-xs uppercase text-outline font-semibold">
                         Currently In Use
                     </div>
-                    <div id="inUseCount" class="text-2xl font-bold text-secondary mt-2">
+
+                    <div
+                        id="inUseCount"
+                        class="text-2xl font-bold text-secondary mt-2"
+                    >
                         0
                     </div>
                 </div>
@@ -258,7 +306,11 @@
                     <div class="text-xs uppercase text-outline font-semibold">
                         Maintenance
                     </div>
-                    <div id="maintenanceCount" class="text-2xl font-bold text-tertiary mt-2">
+
+                    <div
+                        id="maintenanceCount"
+                        class="text-2xl font-bold text-tertiary mt-2"
+                    >
                         0
                     </div>
                 </div>
@@ -269,31 +321,37 @@
             <!-- SEARCH AND FILTERS -->
             <section class="bg-white p-5 rounded-xl shadow-sm mb-6">
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                     <div class="relative">
-                        <span class="material-symbols-outlined absolute left-3 top-3 text-outline">search</span>
+                        <span class="material-symbols-outlined absolute left-3 top-3 text-outline">
+                            search
+                        </span>
 
                         <input
                             id="equipmentSearchInput"
                             type="text"
                             placeholder="Search equipment..."
-                            class="w-full h-11 pl-10 pr-4 rounded-lg bg-surface border border-outline-variant/40 focus:outline-none focus:ring-2 focus:ring-primary">
+                            class="w-full h-11 pl-10 pr-4 rounded-lg bg-surface border border-outline-variant/40 focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
                     </div>
 
                     <select
                         id="categoryFilter"
-                        class="h-11 px-3 rounded-lg bg-surface border border-outline-variant/40">
+                        class="h-11 px-3 rounded-lg bg-surface border border-outline-variant/40"
+                    >
                         <option value="all">All Categories</option>
                     </select>
 
                     <select
                         id="statusFilter"
-                        class="h-11 px-3 rounded-lg bg-surface border border-outline-variant/40">
+                        class="h-11 px-3 rounded-lg bg-surface border border-outline-variant/40"
+                    >
                         <option value="all">All Statuses</option>
                         <option value="available">Available</option>
                         <option value="in-use">In Use</option>
                         <option value="maintenance">Maintenance</option>
+                        <option value="overdue">Overdue</option>
                     </select>
 
                 </div>
@@ -302,7 +360,8 @@
                     <button
                         id="clearFiltersBtn"
                         type="button"
-                        class="text-sm text-primary hover:underline">
+                        class="text-sm text-primary hover:underline"
+                    >
                         Reset Filters
                     </button>
                 </div>
@@ -317,7 +376,8 @@
                     id="gridToggleBtn"
                     type="button"
                     class="p-2 rounded-lg bg-primary text-white"
-                    title="Grid View">
+                    title="Grid View"
+                >
                     <span class="material-symbols-outlined">grid_view</span>
                 </button>
 
@@ -325,7 +385,8 @@
                     id="tableToggleBtn"
                     type="button"
                     class="p-2 rounded-lg bg-surface-container text-on-surface"
-                    title="Table View">
+                    title="Table View"
+                >
                     <span class="material-symbols-outlined">table_rows</span>
                 </button>
 
@@ -335,8 +396,8 @@
             <!-- EMPTY SEARCH MESSAGE -->
             <div
                 id="emptySearchState"
-                class="hidden flex-col items-center justify-center p-12 bg-white rounded-xl shadow-sm my-4 text-center">
-
+                class="hidden flex flex-col items-center justify-center p-12 bg-white rounded-xl shadow-sm my-4 text-center"
+            >
                 <span class="material-symbols-outlined text-5xl text-outline">
                     search_off
                 </span>
@@ -348,49 +409,23 @@
                 <p class="text-sm text-on-surface-variant mt-2">
                     Try changing your search or filters.
                 </p>
-
             </div>
 
 
             <!-- EQUIPMENT GRID -->
             <section
                 id="equipmentGridContainer"
-                class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
-
-                <div
-                    id="noEquipmentMessage"
-                    class="col-span-full flex flex-col items-center justify-center p-12 bg-white rounded-xl shadow-sm text-center">
-
-                    <div class="w-16 h-16 rounded-full bg-surface-container-high flex items-center justify-center">
-                        <span class="material-symbols-outlined text-4xl text-outline">
-                            inventory_2
-                        </span>
-                    </div>
-
-                    <h3 class="mt-4 text-lg font-semibold text-on-surface">
-                        No Equipment Added Yet
-                    </h3>
-
-                    <p class="mt-2 text-sm text-on-surface-variant max-w-md">
-                        You haven't added any equipment. Click the button below to add your first item.
-                    </p>
-
-                    <button
-                        type="button"
-                        onclick="document.getElementById('openAddModalBtn').click()"
-                        class="mt-5 px-5 py-2 rounded-lg bg-primary hover:bg-primary-container text-white font-semibold">
-                        Add Your First Equipment
-                    </button>
-
-                </div>
-
+                class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8"
+            >
+                <!-- Equipment cards are loaded from Supabase by app.js -->
             </section>
 
 
             <!-- TABLE VIEW -->
             <section
                 id="equipmentTableContainer"
-                class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-8">
+                class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-8"
+            >
 
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
@@ -401,39 +436,40 @@
                                 <th class="px-4 py-4">Category</th>
                                 <th class="px-4 py-4">Location</th>
                                 <th class="px-4 py-4">Status</th>
+                                <th class="px-4 py-4">Quantity</th>
                                 <th class="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
 
                         <tbody
                             id="equipmentTableBody"
-                            class="divide-y divide-surface-container-high/50 text-sm">
-                            <!-- Real equipment rows will be loaded here -->
+                            class="divide-y divide-surface-container-high/50 text-sm"
+                        >
+                            <!-- Real equipment rows are loaded here -->
                         </tbody>
 
                     </table>
-                </div>
-
-                <div
-                    id="emptyEquipmentTableMessage"
-                    class="p-10 text-center text-sm text-on-surface-variant">
-                    No equipment available yet.
                 </div>
 
             </section>
 
 
             <!-- INVENTORY FOOTER -->
-            <section class="bg-white rounded-xl shadow-sm p-5 flex items-center justify-between">
+            <section class="bg-white rounded-xl shadow-sm p-5 flex flex-col sm:flex-row items-center justify-between gap-2">
 
                 <div class="text-sm text-on-surface-variant">
                     Showing
-                    <span id="visibleCount" class="font-semibold text-on-surface">0</span>
+                    <span
+                        id="visibleCount"
+                        class="font-semibold text-on-surface"
+                    >
+                        0
+                    </span>
                     equipment items
                 </div>
 
                 <span class="text-xs text-outline">
-                    ShareSpace Equipment Inventory
+                    CampusShare Equipment Inventory
                 </span>
 
             </section>
@@ -445,13 +481,14 @@
     <!-- ADD EQUIPMENT MODAL -->
     <div
         id="addEquipmentModal"
-        class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4"
+    >
 
         <!-- BACKGROUND OVERLAY -->
         <div
             id="modalOverlay"
-            class="fixed inset-0 bg-inverse-surface/60 backdrop-blur-sm">
-        </div>
+            class="fixed inset-0 bg-inverse-surface/60 backdrop-blur-sm"
+        ></div>
 
 
         <!-- MODAL CONTENT -->
@@ -462,7 +499,10 @@
 
                 <div>
                     <div class="flex items-center gap-2 text-primary text-xs uppercase font-semibold">
-                        <span class="material-symbols-outlined text-base">inventory_2</span>
+                        <span class="material-symbols-outlined text-base">
+                            inventory_2
+                        </span>
+
                         Equipment Inventory
                     </div>
 
@@ -474,7 +514,9 @@
                 <button
                     id="closeAddModalBtn"
                     type="button"
-                    class="p-2 rounded-full hover:bg-surface-container">
+                    class="p-2 rounded-full hover:bg-surface-container"
+                    aria-label="Close modal"
+                >
                     <span class="material-symbols-outlined">close</span>
                 </button>
 
@@ -484,10 +526,14 @@
             <!-- FORM BODY -->
             <div
                 id="equipmentFormBody"
-                class="p-6 overflow-y-auto space-y-5">
+                class="p-6 overflow-y-auto space-y-5"
+            >
 
                 <div>
-                    <label for="equipmentNameField" class="block text-sm font-semibold mb-2">
+                    <label
+                        for="equipmentNameField"
+                        class="block text-sm font-semibold mb-2"
+                    >
                         Equipment Name *
                     </label>
 
@@ -495,13 +541,18 @@
                         id="equipmentNameField"
                         type="text"
                         required
+                        maxlength="150"
                         placeholder="Enter equipment name"
-                        class="w-full h-11 px-3 rounded-lg bg-surface border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary">
+                        class="w-full h-11 px-3 rounded-lg bg-surface border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
                 </div>
 
 
                 <div>
-                    <label for="equipmentDescriptionField" class="block text-sm font-semibold mb-2">
+                    <label
+                        for="equipmentDescriptionField"
+                        class="block text-sm font-semibold mb-2"
+                    >
                         Description
                     </label>
 
@@ -509,12 +560,16 @@
                         id="equipmentDescriptionField"
                         rows="4"
                         placeholder="Describe the equipment and its use"
-                        class="w-full p-3 rounded-lg bg-surface border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                        class="w-full p-3 rounded-lg bg-surface border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                    ></textarea>
                 </div>
 
 
                 <div>
-                    <label for="equipmentImageField" class="block text-sm font-semibold mb-2">
+                    <label
+                        for="equipmentImageField"
+                        class="block text-sm font-semibold mb-2"
+                    >
                         Equipment Image
                     </label>
 
@@ -522,17 +577,22 @@
                         id="equipmentImageField"
                         type="file"
                         accept="image/*"
-                        class="w-full p-3 rounded-lg bg-surface border border-outline-variant/50">
+                        class="w-full p-3 rounded-lg bg-surface border border-outline-variant/50"
+                    >
 
                     <img
                         id="equipmentImagePreview"
                         class="hidden mt-3 w-36 h-28 object-cover rounded-lg"
-                        alt="Equipment preview">
+                        alt="Equipment preview"
+                    >
                 </div>
 
 
                 <div>
-                    <label for="equipmentLocationField" class="block text-sm font-semibold mb-2">
+                    <label
+                        for="equipmentLocationField"
+                        class="block text-sm font-semibold mb-2"
+                    >
                         Equipment Location *
                     </label>
 
@@ -540,8 +600,10 @@
                         id="equipmentLocationField"
                         type="text"
                         required
+                        maxlength="150"
                         placeholder="Enter building, room or lab"
-                        class="w-full h-11 px-3 rounded-lg bg-surface border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary">
+                        class="w-full h-11 px-3 rounded-lg bg-surface border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
                 </div>
 
             </div>
@@ -553,27 +615,18 @@
                 <button
                     id="cancelModalBtn"
                     type="button"
-                    class="px-5 py-2 rounded-lg text-secondary hover:bg-surface-container font-semibold">
+                    class="px-5 py-2 rounded-lg text-secondary hover:bg-surface-container font-semibold"
+                >
                     Cancel
                 </button>
 
-                <div class="flex flex-wrap items-center justify-end gap-2">
-
-                    <button
-                        id="saveDraftBtn"
-                        type="button"
-                        class="px-4 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container font-semibold">
-                        Save as Draft
-                    </button>
-
-                    <button
-                        id="publishEquipmentBtn"
-                        type="button"
-                        class="px-5 py-2 rounded-lg bg-primary hover:bg-primary-container text-white font-semibold">
-                        Save &amp; Publish
-                    </button>
-
-                </div>
+                <button
+                    id="publishEquipmentBtn"
+                    type="button"
+                    class="px-5 py-2 rounded-lg bg-primary hover:bg-primary-container text-white font-semibold"
+                >
+                    Save Equipment
+                </button>
 
             </div>
 
@@ -581,11 +634,45 @@
     </div>
 
 
-    <!-- SCRIPTS -->
+    <!-- SUPABASE AND CAMPUSSHARE SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../js/supabase.js"></script>
     <script src="../js/database.js"></script>
     <script src="js/app.js"></script>
+
+    <!-- PAGE-SPECIFIC BUTTONS -->
+    <script>
+        // Make both Add Equipment buttons open the same modal.
+        document
+            .getElementById("headerAddEquipmentBtn")
+            ?.addEventListener("click", () => {
+                document
+                    .getElementById("openAddModalBtn")
+                    ?.click();
+            });
+
+        // Reset search and filter fields.
+        document
+            .getElementById("clearFiltersBtn")
+            ?.addEventListener("click", () => {
+                const search =
+                    document.getElementById("equipmentSearchInput");
+
+                const category =
+                    document.getElementById("categoryFilter");
+
+                const status =
+                    document.getElementById("statusFilter");
+
+                if (search) search.value = "";
+                if (category) category.value = "all";
+                if (status) status.value = "all";
+
+                search?.dispatchEvent(new Event("input"));
+                category?.dispatchEvent(new Event("change"));
+                status?.dispatchEvent(new Event("change"));
+            });
+    </script>
 
 </body>
 </html>
