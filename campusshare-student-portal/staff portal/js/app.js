@@ -966,7 +966,7 @@
               owner_id: state.user.id,
               total_quantity: 1,
               available_quantity: 1,
-              category_id: null
+              category_id: "b5327fb8-029d-411b-912c-b1c319becc36"
             }
           );
 
